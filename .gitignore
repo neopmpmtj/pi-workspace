@@ -19,6 +19,7 @@ service_account*.json
 **/sessions/
 *.session.jsonl
 *.db
+*.sqlite3
 
 # ── Node modules & packages ────────────────────────────────────────
 node_modules/
