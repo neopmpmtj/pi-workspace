@@ -1,0 +1,24 @@
+# SPEECH TO TEXT DEPENDENCIES
+keyboard==0.13.5
+sounddevice==0.4.6
+soundfile==0.12.1
+pydub==0.25.1
+numpy==1.26.4
+pyperclip==1.9.0
+pyautogui==0.9.54
+requests==2.32.3
+
+# PyInstaller / EXE Build Dependencies
+certifi>=2023.7.22  # HTTPS certificate verification for OpenAI API
+Pillow>=10.0.0  # Required by pyautogui for screenshot/image operations
+pyscreeze>=0.1.29  # PyAutoGUI dependency for screen interaction
+pymsgbox>=1.0.9  # PyAutoGUI dependency for message boxes
+mouseinfo>=0.1.3  # PyAutoGUI dependency for mouse information
+
+# Build tool (install separately when building exe)
+# pyinstaller>=5.13.0
+
+django
+django-bootstrap5
+# python3-tk  (install via: sudo apt install python3-tk)
+# python3-dev  (install via: sudo apt install python3-dev)

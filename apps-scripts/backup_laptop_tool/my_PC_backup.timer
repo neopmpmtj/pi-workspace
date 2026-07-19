@@ -1,0 +1,10 @@
+[Unit]
+Description=Run my_PC_backup.service every 24 hours
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=24h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

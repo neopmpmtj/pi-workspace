@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "cron-mrolh92n-gwmn6q",
+      "name": "Daily Laptop Backup",
+      "schedule": {
+        "kind": "cron",
+        "expr": "20 8 * * *",
+        "tz": "Europe/Lisbon"
+      },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Run the backup script: cd /home/pmpmt/.pi/apps-scripts/backup_laptop_tool/src/backup_PC_tool && python main.py. Report the result - whether it succeeded or failed and any relevant output."
+      },
+      "delivery": {
+        "mode": "log"
+      },
+      "enabled": true,
+      "deleteAfterRun": false,
+      "description": "Daily backup of ~/.pi configurations to Google Drive at 08:10 Lisbon time. Timezone: Europe/Lisbon",
+      "createdAtMs": 1784271998255,
+      "updatedAtMs": 1784272366981,
+      "state": {
+        "nextRunAtMs": 1784532000000,
+        "lastRunAtMs": 1784450026106,
+        "lastRunStatus": "ok",
+        "lastDurationMs": 28180,
+        "consecutiveErrors": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "blacklist": [
+    ".git",
+    "venv",
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".backup_PC_cache"
+  ]
+}

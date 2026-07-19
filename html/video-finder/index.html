@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Finder — Pi Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+    --text: #e1e4ed; --muted: #8b8fa3; --accent: #6c8cff;
+    --green: #4ade80; --orange: #fb923c; --red: #f87171;
+    --radius: 10px; --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; min-height: 100vh; padding: 24px; }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  header { display: flex; align-items: center; gap: 10px; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  header .back { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+  header .back:hover { color: var(--accent); }
+  header h1 { font-size: 1.4rem; font-weight: 700; }
+  header .badge { background: var(--accent); color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 18px; }
+  .card h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; color: var(--accent); }
+
+  .status { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 16px; transition: all 0.3s; }
+  .status-idle { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+  .status-loading { background: #1a2233; border: 1px solid var(--accent); color: var(--accent); }
+  .status-done { background: #12261e; border: 1px solid var(--green); color: var(--green); }
+  .status-error { background: #2d1417; border: 1px solid var(--red); color: var(--red); }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fg { display: flex; flex-direction: column; gap: 3px; }
+  .fg.full { grid-column: 1 / -1; }
+  .fg label { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
+  .fg input, .fg select, .fg textarea { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 7px 10px; font-size: 0.85rem; font-family: var(--font); }
+  .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--accent); }
+  .fg textarea { resize: vertical; min-height: 52px; }
+
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: var(--font); }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #8aa8ff; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--border); color: var(--text); }
+  .btn-secondary:hover { background: #3a3f52; }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+  .btn-danger:hover { background: rgba(248,113,113,0.1); }
+  .btn-sm { padding: 4px 10px; font-size: 0.72rem; }
+
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .preset { font-size: 0.7rem; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .preset:hover { border-color: var(--accent); color: var(--text); }
+  .preset.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  .result-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 10px; }
+  .result-card h3 { font-size: 0.95rem; margin-bottom: 6px; }
+  .result-card h3 a { color: var(--accent); text-decoration: none; }
+  .result-card h3 a:hover { text-decoration: underline; }
+  .result-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+  .result-why { font-size: 0.8rem; border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text); }
+  .empty { text-align: center; padding: 30px; color: var(--muted); }
+
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; text-align: center; }
+  .stat .val { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+  .stat .lbl { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .stat-filters { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+  .stat-filters input { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 5px 8px; font-size: 0.78rem; width: 130px; }
+
+  .history-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .history-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; }
+  .history-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .history-table tr { cursor: pointer; transition: background 0.15s; }
+  .history-table tbody tr:hover { background: rgba(108,140,255,0.04); }
+  .history-table .expand-row { background: var(--bg); }
+  .history-table .expand-row td { padding: 0; }
+  .expand-inner { padding: 14px 16px; border-top: 1px solid var(--border); }
+  .expand-meta { display: flex; gap: 20px; font-size: 0.75rem; color: var(--muted); margin-bottom: 10px; flex-wrap: wrap; }
+  .expand-queries { font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; }
+  .expand-queries code { background: var(--surface); padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; }
+  .expand-results { margin-top: 8px; }
+  .expand-results .mini-result { font-size: 0.78rem; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .expand-results .mini-result:last-child { border-bottom: none; }
+  .expand-results .mini-result a { color: var(--accent); }
+
+  .compare-panel { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 2px solid var(--accent); padding: 20px 24px; z-index: 100; max-height: 55vh; overflow-y: auto; display: none; }
+  .compare-panel.open { display: block; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col h4 { font-size: 0.85rem; margin-bottom: 10px; color: var(--accent); }
+  .compare-col .cr { font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid var(--border); }
+
+  .selected-row { background: rgba(108,140,255,0.08) !important; }
+  .toast { position: fixed; top: 16px; right: 16px; padding: 10px 18px; border-radius: 8px; font-size: 0.8rem; z-index: 200; animation: slideIn 0.3s; }
+  .toast-ok { background: #12261e; border: 1px solid var(--green); color: var(--green); }
+  .toast-err { background: #2d1417; border: 1px solid var(--red); color: var(--red); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <a href="/skills/" class="back">&larr; Skills</a>
+  <h1>🎬 Video Finder</h1>
+  <span class="badge">Pi Skill</span>
+</header>
+
+<!-- Status -->
+<div id="statusBar" class="status status-idle">
+  <span id="statusIcon">⚪</span>
+  <span id="statusText">Ready</span>
+</div>
+
+<!-- Config -->
+<div class="card">
+  <h2>⚙️ Parameters</h2>
+  <div class="form-grid">
+    <div class="fg"><label>Max Results</label><input type="number" id="maxResults" value="2" min="1" max="10"></div>
+    <div class="fg"><label>Max Duration (min)</label><input type="number" id="maxDurationMinutes" value="15" min="0" max="180"></div>
+    <div class="fg"><label>Date Filter</label><select id="dateFilter"><option value="none">No filter</option><option value="day">Past day</option><option value="week">Past week</option><option value="month">Past month</option><option value="year" selected>Past year</option></select></div>
+    <div class="fg"><label>Similarity</label><select id="similarityDimension"><option value="auto" selected>Auto</option><option value="topic">Topic</option><option value="creator-style">Creator style</option><option value="production-style">Production style</option><option value="depth">Technical depth</option><option value="audience">Target audience</option></select></div>
+    <div class="fg"><label>Min Views</label><input type="number" id="minViews" value="0" min="0"></div>
+    <div class="fg"><label>Language</label><select id="language"><option value="en" selected>English</option><option value="any">Any</option></select></div>
+  </div>
+  <div class="presets">
+    <button class="preset" onclick="applyPreset('quick')">⚡ Quick</button>
+    <button class="preset active" onclick="applyPreset('default')">📋 Default</button>
+    <button class="preset" onclick="applyPreset('deep')">🔬 Deep dive</button>
+    <button class="preset" onclick="applyPreset('fresh')">🆕 Fresh</button>
+  </div>
+</div>
+
+<!-- Input -->
+<div class="card">
+  <h2>🔍 Reference Video or Topic</h2>
+  <div class="fg full"><textarea id="referenceInput" rows="2" placeholder="Paste YouTube URL or describe a topic..."></textarea></div>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+    <button class="btn btn-primary" id="searchBtn" onclick="triggerSearch()">🔍 Queue Search</button>
+    <button class="btn btn-primary" id="processBtn" onclick="triggerProcess()" style="display:none;background:var(--green);">▶ Process Now</button>
+    <button class="btn btn-secondary" onclick="resetForm()">↺ Reset</button>
+  </div>
+  <div style="margin-top:6px;font-size:0.7rem;color:var(--muted)" id="searchHint">💡 Click Queue, then Process — or run <code>/skill:video-finder</code> in Pi.</div>
+</div>
+
+<!-- Progress Panel -->
+<div class="card" id="progressCard" style="display:none;">
+  <h2>🖥️ Agent Progress <span id="progressSpinner" style="display:none;"><span class="spinner"></span></span></h2>
+  <pre id="progressContent" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:0.75rem;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,monospace;color:var(--text);margin:0;"></pre>
+</div>
+
+<!-- Live Results -->
+<div class="card">
+  <h2>📺 Live Results</h2>
+  <div id="liveResults"><div class="empty">Results will appear here when the search completes.</div></div>
+</div>
+
+<!-- Stats -->
+<div class="card">
+  <h2>📊 Stats</h2>
+  <div class="stat-filters">
+    <input type="date" id="statsDateFrom" onchange="loadStats()" title="From">
+    <span style="color:var(--muted)">to</span>
+    <input type="date" id="statsDateTo" onchange="loadStats()" title="To">
+    <button class="btn btn-sm btn-secondary" onclick="loadStats()">Refresh</button>
+  </div>
+  <div class="stats-bar" id="statsBar"><div class="stat"><div class="val">—</div><div class="lbl">Loading...</div></div></div>
+</div>
+
+<!-- History -->
+<div class="card">
+  <h2>📜 Search History <span style="font-size:0.7rem;font-weight:normal;color:var(--muted)" id="historyCount"></span></h2>
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+    <select id="histDimension" onchange="loadHistory()" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 8px;font-size:0.75rem;">
+      <option value="all">All dimensions</option><option value="auto">Auto</option><option value="topic">Topic</option><option value="creator-style">Creator style</option><option value="depth">Depth</option><option value="audience">Audience</option>
+    </select>
+    <select id="histTrigger" onchange="loadHistory()" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 8px;font-size:0.75rem;">
+      <option value="all">All triggers</option><option value="web-dashboard">Web dashboard</option><option value="slash-command">Slash command</option><option value="chat">Chat</option>
+    </select>
+    <button class="btn btn-sm btn-secondary" onclick="if(selectedForCompare.size===2) openCompare(); else toast('Select exactly 2 rows to compare','err')">📋 Compare Selected</button>
+    <button class="btn btn-sm btn-secondary" onclick="loadHistory()">🔄 Refresh</button>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="history-table">
+      <thead><tr>
+        <th style="width:24px;">#</th><th>When</th><th>Reference</th><th>Dimension</th><th>Results</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="historyBody"><tr><td colspan="6" class="empty" style="text-align:center;">No search history yet.</td></tr></tbody>
+    </table>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+    <button class="btn btn-sm btn-secondary" id="loadMoreBtn" onclick="loadMoreHistory()" style="display:none;">Load More</button>
+  </div>
+</div>
+
+<!-- Compare Panel -->
+<div class="compare-panel" id="comparePanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h3 style="font-size:1rem;">📋 Comparing Searches</h3>
+    <button class="btn btn-sm btn-secondary" onclick="closeCompare()">✕ Close</button>
+  </div>
+  <div class="compare-grid" id="compareContent"></div>
+</div>
+
+</div>
+
+<script>
+const API = '/video-finder/api';
+let pollTimer = null;
+let selectedForCompare = new Set();
+let historyOffset = 0;
+const HISTORY_LIMIT = 20;
+
+// ── Helpers ──
+function toast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function setStatus(state, msg) {
+  const bar = document.getElementById('statusBar');
+  const icon = document.getElementById('statusIcon');
+  const text = document.getElementById('statusText');
+  bar.className = `status status-${state}`;
+  icon.textContent = {idle:'⚪',loading:'🔵',done:'🟢',error:'🔴'}[state]||'⚪';
+  text.textContent = msg;
+}
+
+// ── Config ──
+async function loadConfig() {
+  try { const r = await (await fetch(`${API}/config`)).json();
+    Object.entries(r).forEach(([k,v]) => { const el = document.getElementById(k); if(el && k!=='notes') el.value = v; });
+  } catch(e) {}
+}
+async function saveConfig() {
+  const cfg = {};
+  ['maxResults','maxDurationMinutes','dateFilter','similarityDimension','minViews','language'].forEach(k => {
+    cfg[k] = document.getElementById(k).value;
+  });
+  cfg.maxResults = parseInt(cfg.maxResults);
+  cfg.maxDurationMinutes = parseInt(cfg.maxDurationMinutes);
+  cfg.minViews = parseInt(cfg.minViews);
+  try { await fetch(`${API}/config`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)}); }
+  catch(e) {}
+}
+
+function applyPreset(name) {
+  const presets = {
+    quick:   {maxResults:3,maxDurationMinutes:0,dateFilter:'none',similarityDimension:'auto'},
+    default: {maxResults:2,maxDurationMinutes:15,dateFilter:'year',similarityDimension:'auto'},
+    deep:    {maxResults:5,maxDurationMinutes:0,dateFilter:'none',similarityDimension:'topic'},
+    fresh:   {maxResults:2,maxDurationMinutes:15,dateFilter:'week',similarityDimension:'auto'},
+  };
+  const p = presets[name] || presets.default;
+  Object.entries(p).forEach(([k,v]) => { const el = document.getElementById(k); if(el) el.value = v; });
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.preset[onclick*="${name}"]`)?.classList.add('active');
+  saveConfig();
+}
+
+// ── Process (spawn Pi) ──
+async function triggerProcess() {
+  const pbtn = document.getElementById('processBtn');
+  pbtn.disabled = true; pbtn.innerHTML = '<span class="spinner"></span> Starting Pi...';
+  setStatus('loading','Spawning Pi agent — this may take a moment...');
+
+  // Show progress panel
+  document.getElementById('progressCard').style.display = '';
+  document.getElementById('progressSpinner').style.display = '';
+  document.getElementById('progressContent').textContent = 'Starting Pi agent...\n';
+
+  try {
+    const r = await (await fetch(`${API}/process`, {method:'POST'})).json();
+    if (r.status === 'started') {
+      setStatus('loading','Pi agent is processing...');
+      startProgressPolling();
+      startPolling(); // also poll for final results
+    } else if (r.status === 'already_running') {
+      setStatus('loading','Pi is already processing. Waiting for results...');
+      startProgressPolling();
+      startPolling();
+    } else if (r.status === 'no_pending_request') {
+      setStatus('error','No pending request. Queue a search first.');
+      document.getElementById('progressSpinner').style.display = 'none';
+    }
+  } catch(e) {
+    setStatus('error','Failed to start Pi agent. Run /skill:video-finder in terminal instead.');
+  }
+  pbtn.disabled = false; pbtn.innerHTML = '▶ Process Now';
+}
+
+let progressTimer = null;
+async function startProgressPolling() {
+  if (progressTimer) clearInterval(progressTimer);
+  progressTimer = setInterval(checkProgress, 1500);
+  checkProgress();
+}
+
+async function checkProgress() {
+  try {
+    const r = await (await fetch(`${API}/progress`)).json();
+    const el = document.getElementById('progressContent');
+    if (el && r.progress) {
+      el.textContent = r.progress;
+      el.scrollTop = el.scrollHeight;
+    }
+    if (!r.processing) {
+      document.getElementById('progressSpinner').style.display = 'none';
+      // Keep polling a bit longer for final results
+    }
+    // If results are done, stop progress polling
+    try {
+      const res = await (await fetch(`${API}/results`)).json();
+      if (res.status === 'done' || res.status === 'error') {
+        if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+        document.getElementById('progressSpinner').style.display = 'none';
+      }
+    } catch(e) {}
+  } catch(e) {}
+}
+async function triggerSearch() {
+  const ref = document.getElementById('referenceInput').value.trim();
+  if(!ref) { setStatus('error','Please paste a URL or describe a topic.'); return; }
+  await saveConfig();
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Queuing...';
+  setStatus('loading','Request queued. Click Process Now or run /skill:video-finder in Pi.');
+  const isUrl = /youtube\.com|youtu\.be/i.test(ref);
+  try {
+    await fetch(`${API}/search`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reference:ref,isUrl})});
+    // Show the Process button
+    document.getElementById('processBtn').style.display = '';
+    document.getElementById('searchHint').innerHTML = '✅ Queued! Click <strong>▶ Process Now</strong> to run.';
+  } catch(e) { setStatus('error','Server error. Is the dashboard running?'); }
+  btn.disabled = false; btn.innerHTML = '🔍 Queue Search';
+}
+
+function startPolling() {
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(checkResults, 2000);
+  checkResults();
+}
+
+async function checkResults() {
+  try {
+    const r = await (await fetch(`${API}/results`)).json();
+    if(r.status==='done') {
+      clearInterval(pollTimer); pollTimer=null;
+      renderLiveResults(r.results||[]);
+      setStatus('done',`✅ Found ${r.results?.length||0} similar video(s).`);
+      document.getElementById('searchBtn').disabled=false;
+      document.getElementById('searchBtn').innerHTML='🔍 Find Similar Videos';
+      loadHistory(); loadStats(); // refresh in case agent recorded to DB
+    } else if(r.status==='error') {
+      clearInterval(pollTimer); pollTimer=null;
+      setStatus('error',r.error||'Search failed.');
+      document.getElementById('searchBtn').disabled=false;
+      document.getElementById('searchBtn').innerHTML='🔍 Find Similar Videos';
+    }
+  } catch(e) {}
+}
+
+function renderLiveResults(results) {
+  const el = document.getElementById('liveResults');
+  if(!results||!results.length) { el.innerHTML='<div class="empty">No similar videos found.</div>'; return; }
+  el.innerHTML = results.map((v,i) => `
+    <div class="result-card">
+      <h3><a href="${v.url||v.link||'#'}" target="_blank">${v.title||'Untitled'}</a></h3>
+      <div class="result-meta">
+        <span>📺 ${v.channel||'—'}</span><span>⏱ ${v.duration||'—'}</span><span>📅 ${v.published||v.date||'—'}</span>
+        ${v.views?`<span>👁 ${v.views.toLocaleString()}</span>`:''}
+      </div>
+      ${v.why?`<div class="result-why">${v.why}</div>`:''}
+    </div>`).join('');
+}
+
+// ── History ──
+async function loadHistory(reset=true) {
+  if(reset) historyOffset=0;
+  const dim = document.getElementById('histDimension').value;
+  const trig = document.getElementById('histTrigger').value;
+  const params = new URLSearchParams({limit:HISTORY_LIMIT,offset:historyOffset});
+  if(dim!=='all') params.set('dimension',dim);
+  if(trig!=='all') params.set('trigger',trig);
+  try {
+    const r = await (await fetch(`${API}/history?${params}`)).json();
+    document.getElementById('historyCount').textContent = `(${r.total||0} total)`;
+    const tbody = document.getElementById('historyBody');
+    if(reset) tbody.innerHTML = '';
+    if(!r.searches?.length && reset) { tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">No search history yet.</td></tr>'; }
+    r.searches?.forEach(s => renderHistoryRow(s, reset ? 'append' : 'append'));
+    document.getElementById('loadMoreBtn').style.display = (historyOffset+HISTORY_LIMIT < (r.total||0)) ? '' : 'none';
+  } catch(e) {}
+}
+
+function renderHistoryRow(s, mode) {
+  const tbody = document.getElementById('historyBody');
+  const date = s.timestamp ? new Date(s.timestamp).toLocaleString() : '—';
+  const ref = s.reference_title || (s.reference_url ? s.reference_url.slice(0,40)+'…' : '(topic search)');
+  const checked = selectedForCompare.has(s.id) ? 'checked' : '';
+  const row = document.createElement('tr');
+  row.id = `hist-row-${s.id}`;
+  row.innerHTML = `<td><input type="checkbox" ${checked} onchange="toggleCompare(${s.id},this.checked)" onclick="event.stopPropagation()"></td>
+    <td style="white-space:nowrap;font-size:0.75rem;">${date}</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${ref}">${ref}</td>
+    <td>${s.similarity_dimension}</td>
+    <td>${s.result_count}</td>
+    <td>
+      <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();rerunSearch(${s.id})" title="Re-run">🔄</button>
+      <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteSearch(${s.id})" title="Delete">🗑</button>
+    </td>`;
+  row.onclick = () => toggleExpand(s, row);
+  if(mode==='append') tbody.appendChild(row);
+}
+
+function toggleExpand(s, row) {
+  const existing = row.nextElementSibling;
+  if(existing?.classList.contains('expand-row')) { existing.remove(); return; }
+  const expandRow = document.createElement('tr');
+  expandRow.className = 'expand-row';
+  const resultsHtml = (s.results||[]).map((r,i) =>
+    `<div class="mini-result"><strong>${i+1}.</strong> <a href="${r.url||r.link||'#'}" target="_blank">${r.title||'Untitled'}</a> — ${r.channel||'—'}, ${r.duration||'—'}${r.why?`<br><span style="color:var(--muted);font-size:0.7rem;">💡 ${r.why}</span>`:''}</div>`
+  ).join('');
+  const queriesHtml = (s.query_phrases||[]).map(q => `<code>${q}</code>`).join(', ');
+  expandRow.innerHTML = `<td colspan="6"><div class="expand-inner">
+    <div class="expand-meta">
+      <span>🕐 ${s.timestamp?new Date(s.timestamp).toLocaleString():'—'}</span>
+      <span>📐 ${s.similarity_dimension}</span>
+      <span>⏱ ≤${s.max_duration_minutes||'∞'} min</span>
+      <span>📅 ${s.date_filter}</span>
+      <span>🏷 ${s.trigger_source}</span>
+      ${s.duration_ms?`<span>⚡ ${(s.duration_ms/1000).toFixed(1)}s</span>`:''}
+    </div>
+    ${queriesHtml?`<div class="expand-queries">🔎 Queries: ${queriesHtml}</div>`:''}
+    <div class="expand-results"><strong>Results (${s.result_count}):</strong>${resultsHtml||'<div style="color:var(--muted)">No results</div>'}</div>
+  </div></td>`;
+  row.after(expandRow);
+}
+
+function toggleCompare(id, checked) {
+  if(checked) selectedForCompare.add(id); else selectedForCompare.delete(id);
+  document.querySelectorAll('.history-table tbody tr:not(.expand-row)').forEach(r => {
+    const cb = r.querySelector('input[type=checkbox]');
+    if(cb && selectedForCompare.has(parseInt(r.id.replace('hist-row-','')))) r.classList.add('selected-row');
+    else r.classList.remove('selected-row');
+  });
+}
+
+async function openCompare() {
+  const ids = [...selectedForCompare];
+  if(ids.length!==2) return;
+  try {
+    const r = await (await fetch(`${API}/history/compare`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id1:ids[0],id2:ids[1]})})).json();
+    if(r.error) { toast(r.error,'err'); return; }
+    const cc = document.getElementById('compareContent');
+    const renderCol = (job, label) => `
+      <div class="compare-col">
+        <h4>${label}: ${job.title||'(untitled)'}</h4>
+        ${(job.results||[]).map(r => `<div class="cr"><a href="${r.url||r.link||'#'}" target="_blank">${r.title||'—'}</a> <span style="color:var(--muted)">${r.channel||''}</span></div>`).join('')}
+        ${!job.results?.length?'<div class="cr" style="color:var(--muted)">No results</div>':''}
+      </div>`;
+    cc.innerHTML = renderCol(r.job1, 'Search A') + renderCol(r.job2, 'Search B');
+    document.getElementById('comparePanel').classList.add('open');
+  } catch(e) { toast('Compare failed','err'); }
+}
+function closeCompare() { document.getElementById('comparePanel').classList.remove('open'); }
+
+async function rerunSearch(id) {
+  try {
+    const r = await (await fetch(`${API}/history/${id}/rerun`,{method:'POST'})).json();
+    if(r.status==='queued') { setStatus('loading','Re-run queued. Run /skill:video-finder in Pi...'); startPolling(); toast('Re-run queued'); }
+    else toast(r.error||'Failed','err');
+  } catch(e) { toast('Re-run failed','err'); }
+}
+
+async function deleteSearch(id) {
+  if(!confirm('Delete this search from history?')) return;
+  try {
+    await fetch(`${API}/history/${id}`,{method:'DELETE'});
+    document.getElementById(`hist-row-${id}`)?.remove();
+    selectedForCompare.delete(id);
+    loadHistory(); loadStats();
+    toast('Deleted');
+  } catch(e) { toast('Delete failed','err'); }
+}
+
+function loadMoreHistory() { historyOffset += HISTORY_LIMIT; loadHistory(false); }
+
+// ── Stats ──
+async function loadStats() {
+  const from = document.getElementById('statsDateFrom').value;
+  const to = document.getElementById('statsDateTo').value;
+  const params = new URLSearchParams();
+  if(from) params.set('dateFrom',from);
+  if(to) params.set('dateTo',to);
+  try {
+    const s = await (await fetch(`${API}/stats?${params}`)).json();
+    document.getElementById('statsBar').innerHTML = `
+      <div class="stat"><div class="val">${s.total||0}</div><div class="lbl">Total searches</div></div>
+      <div class="stat"><div class="val">${s.this_week||0}</div><div class="lbl">This week</div></div>
+      <div class="stat"><div class="val">${s.avg_results_per_search||0}</div><div class="lbl">Avg results/search</div></div>
+      <div class="stat"><div class="val">${s.top_dimension?.dimension||'—'}</div><div class="lbl">Top dimension (${s.top_dimension?.count||0})</div></div>
+    `;
+  } catch(e) {}
+}
+
+function resetForm() {
+  applyPreset('default');
+  document.getElementById('referenceInput').value='';
+  document.getElementById('liveResults').innerHTML='<div class="empty">Results will appear here when the search completes.</div>';
+  setStatus('idle','Ready');
+}
+
+// ── Init ──
+loadConfig(); loadHistory(); loadStats();
+// Auto-poll if there was a pending request or processing
+(async()=>{
+  try{
+    const s=await(await fetch(`${API}/status`)).json();
+    if(s.processing){startProgressPolling();document.getElementById('progressCard').style.display='';document.getElementById('processBtn').style.display='';}
+    if(s.request==='pending'){document.getElementById('processBtn').style.display='';document.getElementById('searchHint').innerHTML='✅ Queued! Click <strong>▶ Process Now</strong> to run.';}
+    if(s.request==='pending'||s.results==='processing')startPolling();
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+pyperclip==1.8.2
+openai>=1.40,<2.0
+python-dotenv>=1.0.0
+pyautogui>=0.9.54,<1.0
+
+# System dependencies (not Python packages):
+# notify-send - Install with: sudo apt-get install libnotify-bin
+# xclip or xsel - Required by pyperclip on Linux. Install with: sudo apt-get install xclip
+# python3-tk - Required by pyautogui on Linux. Install with: sudo apt-get install python3-tk

@@ -1,0 +1,35 @@
+{
+  "lastChangelogVersion": "0.80.10",
+  "theme": "dark",
+  "defaultProvider": "deepseek",
+  "defaultModel": "deepseek-v4-pro",
+  "defaultThinkingLevel": "high",
+  "compaction": {
+    "enabled": true
+  },
+  "collapseChangelog": false,
+  "doubleEscapeAction": "tree",
+  "images": {
+    "autoResize": true
+  },
+  "terminal": {
+    "showTerminalProgress": true
+  },
+  "steeringMode": "one-at-a-time",
+  "packages": [
+    "npm:pi-web-access",
+    "npm:pi-agent-browser-native",
+    "npm:pi-agents-pool"
+  ],
+  "hideThinkingBlock": false,
+  "followUpMode": "one-at-a-time",
+  "httpIdleTimeoutMs": 120000,
+  "treeFilterMode": "all",
+  "warnings": {
+    "anthropicExtraUsage": true
+  },
+  "enabledModels": [
+    "deepseek-v4-pro",
+    "deepseek-v4-flash"
+  ]
+}

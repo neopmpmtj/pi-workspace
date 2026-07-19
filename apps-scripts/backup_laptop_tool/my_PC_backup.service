@@ -1,0 +1,27 @@
+[Unit]
+Description=Google Drive snapshot backup of ~/.pi
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=pmpmt
+Group=pmpmt
+
+WorkingDirectory=/home/pmpmt/.pi
+
+Environment=BACKUP_INTERACTIVE=0
+Environment=BACKUP_TRIGGER=boot
+Environment=PYTHONPATH=/home/pmpmt/.pi/apps-scripts/backup_laptop_tool/src
+
+ExecStart=/home/pmpmt/.pi/apps-scripts/backup_laptop_tool/.venv/bin/python -m backup_PC_tool.main
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/home/pmpmt
+
+TimeoutStartSec=20min
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text Settings Dashboard</title>
+    {% load django_bootstrap5 %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .dashboard-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .dashboard-header h1 {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .dashboard-header p {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .form-check {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .form-check-input {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .form-check-label {
+            font-weight: 500;
+            color: #495057;
+            cursor: pointer;
+        }
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 15px 30px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 25px;
+            animation: slideDown 0.4s ease;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .settings-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="settings-icon">⚙️</div>
+            <h1>Speech-to-Text Settings</h1>
+            <p>Configure your transcription preferences on the fly</p>
+        </div>
+
+        {% if success %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Success!</strong> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% elif success == False %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <form method="post" action="">
+            <div class="mb-4">
+                <label for="language" class="form-label">Transcription Language</label>
+                <select class="form-select" id="language" name="language" required>
+                    <option value="en" {% if config.transcription.language == 'en' %}selected{% endif %}>English (en)</option>
+                    <option value="pt" {% if config.transcription.language == 'pt' %}selected{% endif %}>Portuguese (pt)</option>
+                    <option value="es" {% if config.transcription.language == 'es' %}selected{% endif %}>Spanish (es)</option>
+                    <option value="fr" {% if config.transcription.language == 'fr' %}selected{% endif %}>French (fr)</option>
+                    <option value="de" {% if config.transcription.language == 'de' %}selected{% endif %}>German (de)</option>
+                    <option value="it" {% if config.transcription.language == 'it' %}selected{% endif %}>Italian (it)</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="model" class="form-label">Transcription Model</label>
+                <select class="form-select" id="model" name="model" required>
+                    <option value="whisper-1" {% if config.transcription.model == 'whisper-1' %}selected{% endif %}>Whisper-1 (Standard)</option>
+                    <option value="gpt-4o-transcribe" {% if config.transcription.model == 'gpt-4o-transcribe' %}selected{% endif %}>GPT-4o Transcribe (High Accuracy)</option>
+                    <option value="gpt-4o-mini-transcribe" {% if config.transcription.model == 'gpt-4o-mini-transcribe' %}selected{% endif %}>GPT-4o Mini Transcribe (Fast)</option>
+                </select>
+            </div>
+
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="add_timestamp" name="add_timestamp" {% if config.paste.add_timestamp %}checked{% endif %}>
+                <label class="form-check-label" for="add_timestamp">
+                    Add Timestamp to Transcription
+                </label>
+            </div>
+
+            <div class="mb-4">
+                <label for="paste_hotkey" class="form-label">Paste Hotkey</label>
+                <select class="form-select" id="paste_hotkey" name="paste_hotkey" required>
+                    <option value="auto" {% if config.paste.hotkey == 'auto' %}selected{% endif %}>Auto (Windows: Ctrl+V, Linux: Ctrl+Shift+V, macOS: Command+V)</option>
+                    <option value="ctrl_v" {% if config.paste.hotkey == 'ctrl_v' %}selected{% endif %}>Ctrl+V</option>
+                    <option value="ctrl_shift_v" {% if config.paste.hotkey == 'ctrl_shift_v' %}selected{% endif %}>Ctrl+Shift+V</option>
+                    <option value="command_v" {% if config.paste.hotkey == 'command_v' %}selected{% endif %}>Command+V (macOS)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-save">Save Settings</button>
+        </form>
+
+        <div class="text-center mt-4">
+            <small class="text-muted">Changes take effect immediately on the next transcription</small>
+        </div>
+    </div>
+</body>
+</html>
+

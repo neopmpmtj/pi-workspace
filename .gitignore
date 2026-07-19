@@ -1,0 +1,52 @@
+# ── Secrets & credentials ──────────────────────────────────────────
+.env
+**/.env
+**/auth.json
+**/secrets/
+**/secrets/
+*.pem
+*.key
+*-key.json
+*_key.json
+*_keys.json
+service_account*.json
+*credential*.json
+*client_secret*.json
+*gdrive_token*.json
+*gdrive*.json
+
+# ── Sessions & state ───────────────────────────────────────────────
+**/sessions/
+*.session.jsonl
+*.db
+
+# ── Node modules & packages ────────────────────────────────────────
+node_modules/
+agent/npm/
+agent/git/
+**/node_modules/
+package-lock.json
+
+# ── Binaries & compiled assets ─────────────────────────────────────
+agent/bin/
+*.pyc
+__pycache__/
+*.egg-info/
+.venv/
+venv/
+
+# ── OS junk ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*~
+
+# ── IDE & editor ───────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Misc ───────────────────────────────────────────────────────────
+*.log
+*.tmp
+.cache/

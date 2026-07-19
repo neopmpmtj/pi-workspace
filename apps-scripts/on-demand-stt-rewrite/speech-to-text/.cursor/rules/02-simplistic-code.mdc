@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+
+- Always output simplistic code - prioritize clarity and readability over complex optimizations or clever tricks;
+

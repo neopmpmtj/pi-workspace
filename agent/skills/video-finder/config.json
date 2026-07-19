@@ -1,0 +1,9 @@
+{
+  "maxResults": 5,
+  "maxDurationMinutes": 0,
+  "dateFilter": "none",
+  "similarityDimension": "topic",
+  "minViews": 0,
+  "language": "en",
+  "outputTemplate": "detailed"
+}

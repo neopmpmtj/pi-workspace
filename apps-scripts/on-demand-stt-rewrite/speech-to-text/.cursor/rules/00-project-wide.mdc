@@ -1,0 +1,63 @@
+---
+alwaysApply: true
+---
+
+==================
+
+- Always output answers in English;
+- Document your code well for future maintenance;
+- The user is using a windows OS to develop but always creates os-agnostic code;
+- Use "production-minded development" - do not use sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+- Initialize paths - handling both frozen (PyInstaller) and regular Python execution
+
+==================
+
+*config files*
+- Use .YAML format
+ - configs loading order:
+  1- environment variables;
+  2- fallback to .env file in the root directory - make sure not to override any variables already set by the environment variables;
+  3- fallback to the default settings in the config file
+
+ ==================
+
+*modules and module level variables*
+- make modules that are self contained: always: always use SCRIPT_DIR
+- architecture enforces proper organization and configuration, with modules being responsible for their own settings . If anything is missing or incorrect, the system will explicitly tell you what's wrong rather than silently falling back to a default.
+
+ ==================
+
+*logging*
+-use centralized: 
+ - if the module is not present: alert the developer;
+  - ./common/logging_utils/logging_config.py
+    -edit the config file to create a logger to serve any new  script (if it does not exist):
+    e.g. "loggers": {
+          # Sample logger
+          "sample": {
+              # "file_level": "DEBUG",  # Removed - will use default
+              "log_filename": "sample.log",
+              "console_output": True,
+              "file_output": True
+          }
+          }
+
+    - Create many debug logs so the user can follow along and understans the flow of the scripts as they make their function calls
+
+ ==================
+
+*file and directory utilities*
+-use centralized:
+ - if the module is not present: alert the developer;
+  - ./common/utils
+    e.g. def resolve_path(path_input: Union[str, Path], base_dir: Path = None) -> Path:
+
+ ==================
+
+-**NEVER** output any code immediately when the developer is describing a script that they your help to create:
+ -  -rather; inform the user of what functions you will create and wait for: "ok proceed" by the user.
+-**ALWAYS** ask at the min. - one clarifying question;  there is no max. number of queston you may ask in order to provide best results.
+
+  ==================
+
+  

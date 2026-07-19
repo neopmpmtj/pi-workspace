@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Today's Token Details</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --border:   #2a2d3a;
+      --text:     #e1e4ed;
+      --muted:    #8b8fa3;
+      --accent:   #6c8cff;
+      --green:    #4ade80;
+      --orange:   #fb923c;
+      --red:      #f87171;
+      --purple:   #c084fc;
+      --cyan:     #22d3ee;
+      --surface-hover: #222636;
+      --surface-active: #252a3a;
+      --accent-dim: rgba(108,140,255,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* ── Header ────────────────────────── */
+    .back-link {
+      display: inline-block;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      margin-bottom: 20px;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .header-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+    .date-badge {
+      font-size: 0.85rem;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 12px;
+    }
+
+    /* ── Summary bar ───────────────────── */
+    .summary-bar {
+      display: flex;
+      gap: 24px;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .summary-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .summary-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .summary-value.tokens  { color: var(--accent); }
+    .summary-value.convs  { color: var(--cyan); }
+
+    /* ── Master-Detail Layout ──────────── */
+    .master-detail {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 16px;
+      height: calc(100vh - 220px);
+      min-height: 500px;
+    }
+    @media (max-width: 900px) {
+      .master-detail { grid-template-columns: 1fr; height: auto; }
+    }
+
+    /* ── Left Panel: Conversation List ─── */
+    .conv-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .conv-panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .conv-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .conv-list::-webkit-scrollbar { width: 6px; }
+    .conv-list::-webkit-scrollbar-track { background: transparent; }
+    .conv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .conv-item {
+      padding: 12px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.12s;
+      border: 1px solid transparent;
+    }
+    .conv-item:hover { background: var(--surface-hover); }
+    .conv-item.active {
+      background: var(--accent-dim);
+      border-color: rgba(108,140,255,0.25);
+    }
+    .conv-item + .conv-item { margin-top: 2px; }
+
+    .conv-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .conv-item-time {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .conv-item-model {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(108,140,255,0.12);
+      color: var(--accent);
+      font-weight: 600;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .conv-item-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .conv-item-stats span { white-space: nowrap; }
+    .conv-stat-val { color: var(--text); font-weight: 600; }
+
+    /* ── Right Panel: Turn Detail ──────── */
+    .detail-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .detail-panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 600;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .detail-panel-body {
+      flex: 1;
+      overflow: auto;
+    }
+    .detail-panel-body::-webkit-scrollbar { width: 6px; height: 6px; }
+    .detail-panel-body::-webkit-scrollbar-track { background: transparent; }
+    .detail-panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Turn Table ────────────────────── */
+    .turn-table {
+      width: 100%;
+      min-width: 700px;
+      border-collapse: collapse;
+    }
+    .turn-table th,
+    .turn-table td {
+      text-align: right;
+      padding: 9px 14px;
+      font-size: 0.82rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      white-space: nowrap;
+    }
+    .turn-table th:first-child,
+    .turn-table td:first-child { text-align: left; }
+    .turn-table th {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(255,255,255,0.015);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .turn-table tr:hover td { background: rgba(255,255,255,0.015); }
+    .turn-table td.role-cell {
+      text-align: left;
+      font-weight: 600;
+    }
+    .turn-table .role-user       { color: var(--accent); }
+    .turn-table .role-assistant  { color: var(--green); }
+    .turn-table .role-system     { color: var(--purple); }
+    .turn-table .role-toolResult { color: var(--orange); }
+    .turn-table td.total-col { font-weight: 700; color: var(--text); }
+    .turn-table td.time-cell {
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    .turn-table td.zero { color: var(--muted); opacity: 0.5; }
+
+    /* ── Empty / Placeholder ───────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--muted);
+      text-align: center;
+      padding: 40px;
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.3; }
+    .empty-state p { font-size: 0.9rem; }
+
+    .loading-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .error-banner {
+      background: rgba(248,113,113,0.1);
+      border: 1px solid var(--red);
+      color: var(--red);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/token-tracker" class="back-link">&larr; Back to Token Tracker</a>
+
+    <div class="header-row">
+      <h1>Today's Token Details</h1>
+      <span class="date-badge" id="date-badge"></span>
+    </div>
+
+    <div class="error-banner" id="error-banner"></div>
+
+    <!-- Day Summary -->
+    <div class="summary-bar" id="summary-bar">
+      <div class="summary-item">
+        <span class="summary-label">Total Tokens</span>
+        <span class="summary-value tokens" id="sum-tokens">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Conversations</span>
+        <span class="summary-value convs" id="sum-convs">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Input Tokens</span>
+        <span class="summary-value tokens" id="sum-input">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Output Tokens</span>
+        <span class="summary-value tokens" id="sum-output">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Cache Read</span>
+        <span class="summary-value tokens" id="sum-cacheread">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Reasoning</span>
+        <span class="summary-value tokens" id="sum-reasoning">—</span>
+      </div>
+    </div>
+
+    <!-- Master-Detail -->
+    <div class="master-detail">
+      <!-- Left: Conversation List -->
+      <div class="conv-panel">
+        <div class="conv-panel-header" id="conv-panel-header">Conversations</div>
+        <div class="conv-list" id="conv-list">
+          <div class="loading-state">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Right: Turn Detail -->
+      <div class="detail-panel">
+        <div class="detail-panel-header">
+          <span id="detail-title">Turn Detail</span>
+          <span id="detail-summary" style="font-weight:400;text-transform:none;letter-spacing:0"></span>
+        </div>
+        <div class="detail-panel-body" id="detail-body">
+          <div class="empty-state">
+            <div class="icon">&#x1F4CA;</div>
+            <p>Select a conversation from the left to see token breakdown</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    function fmt(n) {
+      if (n == null || isNaN(n)) return '—';
+      return Number(n).toLocaleString('en-US');
+    }
+
+    function fmtTime(ts) {
+      if (!ts) return '—';
+      try {
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return '—';
+        return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch { return '—'; }
+    }
+
+    function zero(v) {
+      return v > 0 ? fmt(v) : '<span class="zero">0</span>';
+    }
+
+    function showError(msg) {
+      const el = $('#error-banner');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+    function hideError() { $('#error-banner').style.display = 'none'; }
+
+    async function api(path) {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`API ${path} returned ${res.status}`);
+      return res.json();
+    }
+
+    // ── Date ────────────────────────────
+    const today = new Date().toISOString().split('T')[0];
+    const todayDisplay = new Date().toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    $('#date-badge').textContent = todayDisplay;
+    const QS = `?from=${today}&to=${today}`;
+
+    // ── Load ─────────────────────────────
+    let conversations = [];
+    let selectedConvId = null;
+
+    async function load() {
+      hideError();
+      try {
+        const [summary, convs] = await Promise.all([
+          api('/api/summary' + QS),
+          api('/api/conversations' + QS),
+        ]);
+
+        conversations = convs;
+        renderSummary(summary);
+        renderConversationList(convs);
+      } catch (err) {
+        showError('Failed to load data: ' + err.message);
+        console.error(err);
+      }
+    }
+
+    function renderSummary(s) {
+      $('#sum-tokens').textContent = fmt(s.total_tokens);
+      $('#sum-convs').textContent = fmt(s.total_conversations);
+      $('#sum-input').textContent = fmt(s.total_input_tokens);
+      $('#sum-output').textContent = fmt(s.total_output_tokens);
+      $('#sum-cacheread').textContent = fmt(s.total_cache_hit_tokens);
+      $('#sum-reasoning').textContent = fmt(s.total_reasoning_tokens);
+      // Total up reasoning from conversations' turns if we have them, or leave as —
+    }
+
+    function renderConversationList(convs) {
+      const list = $('#conv-list');
+      const header = $('#conv-panel-header');
+
+      if (!convs.length) {
+        list.innerHTML = '<div class="empty-state"><p>No conversations recorded today yet.</p></div>';
+        header.textContent = 'Conversations (0)';
+        return;
+      }
+
+      header.textContent = `Conversations (${convs.length})`;
+
+      list.innerHTML = convs.map(c => {
+        const time = c.started_at
+          ? new Date(c.started_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+          : '—';
+        const modelShort = (c.model || 'unknown').length > 28
+          ? (c.model || 'unknown').substring(0, 26) + '…'
+          : (c.model || 'unknown');
+
+        return `
+          <div class="conv-item" data-id="${c.id}" onclick="selectConversation(${c.id})">
+            <div class="conv-item-top">
+              <span class="conv-item-time">${esc(time)}</span>
+              <span class="conv-item-model" title="${esc(c.model || 'unknown')}">${esc(modelShort)}</span>
+            </div>
+            <div class="conv-item-stats">
+              <span>Turns: <span class="conv-stat-val">${fmt(c.turn_count)}</span></span>
+              <span>Tokens: <span class="conv-stat-val">${fmt(c.total_tokens)}</span></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // If previously selected, re-select it
+      if (selectedConvId) {
+        const item = list.querySelector(`[data-id="${selectedConvId}"]`);
+        if (item) item.classList.add('active');
+      }
+    }
+
+    async function selectConversation(id) {
+      selectedConvId = id;
+
+      // Update active state in list
+      $$('.conv-item').forEach(el => el.classList.remove('active'));
+      const item = $(`.conv-item[data-id="${id}"]`);
+      if (item) item.classList.add('active');
+
+      // Show loading
+      $('#detail-body').innerHTML = '<div class="loading-state">Loading turns…</div>';
+      $('#detail-title').textContent = 'Turn Detail';
+      $('#detail-summary').textContent = '';
+
+      try {
+        const turns = await api(`/api/conversations/${id}/turns`);
+        renderTurnDetail(turns);
+      } catch (err) {
+        $('#detail-body').innerHTML = `<div class="empty-state"><p style="color:var(--red)">Failed to load: ${esc(err.message)}</p></div>`;
+      }
+    }
+
+    function renderTurnDetail(turns) {
+      if (!turns.length) {
+        $('#detail-body').innerHTML = '<div class="empty-state"><p>No turns found for this conversation.</p></div>';
+        $('#detail-title').textContent = 'Turn Detail';
+        $('#detail-summary').textContent = '';
+        return;
+      }
+
+      // Only show turns that have token data (skip rows with all zeros)
+      const dataTurns = turns.filter(t =>
+        t.input_tokens > 0 || t.output_tokens > 0 || t.total_tokens > 0 ||
+        t.cache_hit_tokens > 0 || t.cache_miss_tokens > 0 || (t.reasoning_tokens || 0) > 0
+      );
+
+      // Show newest turns first
+      const displayTurns = (dataTurns.length > 0 ? dataTurns : turns).reverse();
+
+      // Totals for the header
+      const totalInput = displayTurns.reduce((s, t) => s + (t.input_tokens || 0), 0);
+      const totalOutput = displayTurns.reduce((s, t) => s + (t.output_tokens || 0), 0);
+      const totalAll = displayTurns.reduce((s, t) => s + (t.total_tokens || 0), 0);
+      const totalCacheRead = displayTurns.reduce((s, t) => s + (t.cache_hit_tokens || 0), 0);
+      const totalCacheWrite = displayTurns.reduce((s, t) => s + (t.cache_miss_tokens || 0), 0);
+      const totalReasoning = displayTurns.reduce((s, t) => s + (t.reasoning_tokens || 0), 0);
+
+      $('#detail-title').textContent = `Turn Detail (${displayTurns.length} turns)`;
+      $('#detail-summary').textContent = `Total: ${fmt(totalAll)} tokens`;
+
+      const rows = displayTurns.map(t => {
+        return `
+          <tr>
+            <td class="time-cell">${fmtTime(t.timestamp)}</td>
+            <td>${zero(t.input_tokens)}</td>
+            <td>${zero(t.output_tokens)}</td>
+            <td>${zero(t.cache_hit_tokens)}</td>
+            <td>${zero(t.cache_miss_tokens)}</td>
+            <td>${zero(t.reasoning_tokens || 0)}</td>
+            <td class="total-col">${fmt(t.total_tokens)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Footer row with totals
+      const footerRow = `
+        <tr style="border-top:2px solid var(--border);">
+          <td style="color:var(--muted);">TOTAL</td>
+          <td style="font-weight:700;">${fmt(totalInput)}</td>
+          <td style="font-weight:700;">${fmt(totalOutput)}</td>
+          <td style="font-weight:700;">${fmt(totalCacheRead)}</td>
+          <td style="font-weight:700;">${fmt(totalCacheWrite)}</td>
+          <td style="font-weight:700;">${fmt(totalReasoning)}</td>
+          <td class="total-col" style="font-weight:700; color:var(--accent);">${fmt(totalAll)}</td>
+        </tr>
+      `;
+
+      $('#detail-body').innerHTML = `
+        <table class="turn-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Input</th>
+              <th>Output</th>
+              <th>Cache Read</th>
+              <th>Cache Write</th>
+              <th>Reasoning</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+            ${footerRow}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = String(s);
+      return d.innerHTML;
+    }
+
+    // ── Init ──────────────────────────────
+    load();
+  </script>
+</body>
+</html>
