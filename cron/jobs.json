@@ -22,11 +22,12 @@
       "createdAtMs": 1784271998255,
       "updatedAtMs": 1784272366981,
       "state": {
-        "nextRunAtMs": 1784532000000,
-        "lastRunAtMs": 1784450026106,
-        "lastRunStatus": "ok",
-        "lastDurationMs": 28180,
-        "consecutiveErrors": 0
+        "nextRunAtMs": 1784704800000,
+        "lastRunAtMs": 1784631488775,
+        "lastRunStatus": "error",
+        "lastDurationMs": 15236,
+        "consecutiveErrors": 1,
+        "lastError": "Connection error."
       }
     }
   ]

@@ -33,7 +33,16 @@ metadata:
 
 Full Google Workspace access from any AI agent: Gmail, Calendar, Drive, Contacts, Sheets, and Docs. Uses the `gog` CLI with OAuth authentication.
 
-Works with **OpenClaw**, **Pi**, **Hermes**, and any agent supporting the AgentSkills standard.
+## 🚨 CRITICAL: Command Discovery Protocol
+
+**The `gog` CLI evolves independently of this document. Never trust hardcoded command examples — always verify against the live CLI.**
+
+Before running ANY gog command:
+1. **Discover subcommands:** `gog <service> --help`
+2. **Discover flags:** `gog <service> <subcommand> --help`
+3. **Then execute** with verified syntax
+
+A cached reference is auto-generated at `references/quickref.md` (run `scripts/generate-ref.sh` to regenerate). Use it as a starting point, but `--help` is the source of truth.
 
 ## First-Time Setup
 
@@ -98,81 +107,24 @@ GOG uses OAuth 2.0 with Google. Tokens are stored in a file-based keyring at `~/
 - **Token refresh:** Automatic — no manual re-auth needed once set up
 - **Multiple accounts:** `gog auth list` to see configured accounts
 
-## Gmail
+## Capabilities by Service
 
-### Search & Read
+> Use `gog <service> --help` for exact command names and flags. The subcommand list below shows what's possible.
 
-```bash
-# Search inbox (thread-based)
-gog gmail search "is:unread newer_than:7d" --max 10
+### Gmail (`gog gmail`)
 
-# Search messages (per-email, ignores threading)
-gog gmail messages search "in:inbox newer_than:24h" --max 50 --json
+**Capabilities:** Search threads and messages, read individual emails (full/metadata/raw), send plain-text/HTML/multi-part emails, reply to messages, create and send drafts, manage labels (add/remove/archive), download attachments, bulk operations via message IDs.
 
-# Get specific message
-gog gmail get <messageId> --format full --json
+**Key patterns:**
+- `gog gmail search` returns **threads** (groups messages by subject). Use `gog gmail messages search` for individual emails.
+- Send safety: review before sending in automated workflows.
+- Labels: add/remove labels via message IDs for inbox management.
 
-# Download attachment
-gog gmail attachment <messageId> <attachmentId> --out ./file.pdf
-```
+### Calendar (`gog calendar`)
 
-### Send & Reply
+**Capabilities:** List calendars, list/create/update/delete events, query by time range, set event colors (see table below), manage recurring events.
 
-```bash
-# Plain text send
-gog gmail send --to recipient@example.com --subject "Subject" --body "Message"
-
-# Multi-line via file
-gog gmail send --to recipient@example.com --subject "Subject" --body-file ./message.txt
-
-# HTML send
-gog gmail send --to recipient@example.com --subject "Subject" --body-html "<p>Hello</p>"
-
-# Reply to a message
-gog gmail send --to recipient@example.com --subject "Re: Original" --body "Reply" --reply-to-message-id <msgId>
-
-# Create draft
-gog gmail drafts create --to recipient@example.com --subject "Draft" --body-file ./message.txt
-
-# Send draft
-gog gmail drafts send <draftId>
-```
-
-### Labels & Organization
-
-```bash
-# Modify labels (add/remove)
-gog gmail messages modify <msgId> --add "LabelName"
-gog gmail messages modify <msgId> --remove INBOX
-
-# Archive (remove INBOX label)
-gog gmail messages modify <msgId> --remove INBOX
-```
-
-## Calendar
-
-```bash
-# List events
-gog calendar events primary --from 2026-07-11T00:00:00 --to 2026-07-12T23:59:59
-
-# Create event
-gog calendar create primary \
-  --summary "Team Meeting" \
-  --from 2026-07-11T14:00:00 \
-  --to 2026-07-11T15:00:00 \
-  --event-color 7
-
-# Update event
-gog calendar update primary <eventId> --summary "Updated Title" --event-color 4
-
-# Delete event
-gog calendar delete primary <eventId>
-
-# Show available colors
-gog calendar colors
-```
-
-### Event Colors
+**Event Colors:**
 
 | ID | Color | Hex |
 |----|-------|-----|
@@ -188,79 +140,30 @@ gog calendar colors
 | 10 | Basil | #51b749 |
 | 11 | Tomato | #dc2127 |
 
-## Google Drive
+### Google Drive (`gog drive`)
 
-```bash
-# Search files
-gog drive search "type:document" --max 10
+**Capabilities:** List files in folders, full-text search, print folder trees, get file metadata, download/upload files (with optional conversion to Google formats), create folders, move/rename/delete files, share/unshare, manage permissions and labels, list shared drives, track revisions and changes.
 
-# List files in folder
-gog drive files list --parent <folderId> --max 50 --json
+**Key patterns:**
+- `--convert` converts Office files to native Google format on upload.
+- File IDs are stable; save them for scripting.
 
-# Upload file
-gog drive upload ./document.pdf --json
+### Google Contacts (`gog contacts`)
 
-# Upload and convert to Google format
-gog drive upload ./spreadsheet.xlsx --convert --json
+**Capabilities:** List all contacts, search by name/email/phone, get individual contacts, export as vCard.
 
-# Download file
-gog drive download <fileId> --out ./downloaded.pdf
+### Google Sheets (`gog sheets`)
 
-# Move file to folder
-gog drive move <fileId> --parent <folderId>
+**Capabilities:** Read cell ranges, update cells, append rows, clear ranges, get sheet metadata (tabs, ranges), export to various formats.
 
-# Rename file
-gog drive rename <fileId> "New Name"
+**Key patterns:**
+- `--insert INSERT_ROWS` is critical for appending — it shifts existing rows down instead of overwriting.
+- Use `--values-json` with properly escaped JSON arrays for writes.
+- `--input USER_ENTERED` treats values as if typed by a user (preserves formatting).
 
-# Delete file
-gog drive delete <fileId>
-```
+### Google Docs (`gog docs`)
 
-## Google Sheets
-
-```bash
-# Read cell range
-gog sheets get <sheetId> "Sheet1!A1:D10" --json
-
-# Update cells
-gog sheets update <sheetId> "Sheet1!A1:B2" \
-  --values-json '[["Header1","Header2"],["val1","val2"]]' \
-  --input USER_ENTERED
-
-# Append rows (INSERT_ROWS preserves existing data below)
-gog sheets append <sheetId> "Sheet1!A:C" \
-  --values-json '[["x","y","z"]]' \
-  --insert INSERT_ROWS
-
-# Clear range
-gog sheets clear <sheetId> "Sheet1!A2:Z"
-
-# Get sheet metadata (tabs, ranges)
-gog sheets metadata <sheetId> --json
-```
-
-## Google Docs
-
-```bash
-# Export to text
-gog docs export <docId> --format txt --out /tmp/doc.txt
-
-# View document content
-gog docs cat <docId>
-
-# Copy document
-gog docs copy <docId> --name "Copy of Document"
-```
-
-## Google Contacts
-
-```bash
-# List contacts
-gog contacts list --max 20 --json
-
-# Search contacts
-gog contacts search "John" --json
-```
+**Capabilities:** Export to multiple formats (pdf, docx, txt, md, html), read document content as text, get metadata, create new docs, copy existing docs.
 
 ## Scripting Tips
 
@@ -272,43 +175,21 @@ gog contacts search "John" --json
 
 ## Common Patterns
 
-### Check Inbox (Agent Workflow)
-
-```bash
-gog gmail messages search "in:inbox newer_than:24h" --max 50 --json
-```
+### Check Inbox
+Use `gog gmail messages` (not `gog gmail`) to search individual emails. Add `--max` to limit results and `--json` for parsing.
 
 ### Send Attachment via Gmail
-
-```bash
-gog gmail send \
-  --to recipient@example.com \
-  --subject "Here is the file" \
-  --body "Please find the attachment." \
-  --attach ./document.pdf
-```
+Use `gog gmail send` with `--attach` pointing to a local file.
 
 ### Export Sheet to XLSX
-
-```bash
-gog sheets export <sheetId> --out ./exported.xlsx --format xlsx
-```
+Use `gog sheets` export commands with `--format xlsx` and `--out`.
 
 ### Bulk Archive Old Emails
-
-```bash
-# Find old emails
-gog gmail messages search "older_than:30d in:inbox" --max 100 --json | \
-  python3 -c "import sys,json; [print(m['id']) for m in json.load(sys.stdin)['messages']]" | \
-  while read id; do gog gmail messages modify "$id" --remove INBOX; done
-```
+Search messages → extract IDs (e.g., with `python3` or `jq`) → pipe to `gog gmail messages modify --remove INBOX`.
 
 ## Notes
 
-- **Gmail search** (`gog gmail search`) returns threads. Use `gog gmail messages search` for individual emails.
-- **Sheets `--insert INSERT_ROWS`** is important for appending — it shifts existing rows down instead of overwriting.
-- **Drive upload `--convert`** converts Office files to native Google format.
 - **Calendar event IDs** are stable; save them for updates/deletes.
 - **Confirm before sending** emails in automated workflows.
 - **Rate limits**: Google has usage quotas. Leave pauses between bulk operations.
-- **Keyring**: The file-based keyring stores OAuth tokens encrypted with your password at `~/.config/gogcli/`.
+- **Keyring**: File-based encrypted token storage at `~/.config/gogcli/`.

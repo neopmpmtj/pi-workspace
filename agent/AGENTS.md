@@ -35,6 +35,16 @@ If at any point during our conversation I raise a topic or express an interest t
 
 This gives me the opportunity to decide whether to make it permanent or keep it ephemeral.
 
+## CLI Tool Hygiene
+
+Skill docs in `~/.pi/agent/skills/` can have stale or incorrect command names because the CLI tools they document (e.g., `gog`, `gh`, `yt-dlp`) evolve independently. Before running any command found in a skill's SKILL.md:
+
+1. Run `<tool> --help` or `<tool> <subcommand> --help` first to verify the command exists.
+2. If it fails, explore the parent command's help to discover the correct subcommand.
+3. Then execute the verified command.
+
+**Pattern:** `tool --help` → verify → execute. One extra round trip saves failures and confusion.
+
 ## APPEND_SYSTEM.md Location
 
 When directed or asked to add, edit, or append to the APPEND_SYSTEM.md file, always use `~/.pi/agents/APPEND_SYSTEM.md`. Do **not** create a new `APPEND_SYSTEM.md` at the project level (`~/.pi/APPEND_SYSTEM.md`).
