@@ -66,7 +66,7 @@
         }
       }
     ],
-    "checkedAt": 1784465834667
+    "checkedAt": 1784712410166
   },
   "gemini": {
     "models": [
@@ -6839,6 +6839,52 @@
         }
       },
       {
+        "id": "gemini-3.5-flash-lite",
+        "name": "Gemini 3.5 Flash Lite",
+        "api": "google-generative-ai",
+        "provider": "google",
+        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+        "reasoning": true,
+        "input": [
+          "text",
+          "image"
+        ],
+        "cost": {
+          "input": 0.3,
+          "output": 2.5,
+          "cacheRead": 0.03,
+          "cacheWrite": 0
+        },
+        "contextWindow": 1048576,
+        "maxTokens": 65536,
+        "thinkingLevelMap": {
+          "off": null
+        }
+      },
+      {
+        "id": "gemini-3.6-flash",
+        "name": "Gemini 3.6 Flash",
+        "api": "google-generative-ai",
+        "provider": "google",
+        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+        "reasoning": true,
+        "input": [
+          "text",
+          "image"
+        ],
+        "cost": {
+          "input": 1.5,
+          "output": 7.5,
+          "cacheRead": 0.15,
+          "cacheWrite": 0
+        },
+        "contextWindow": 1048576,
+        "maxTokens": 65536,
+        "thinkingLevelMap": {
+          "off": null
+        }
+      },
+      {
         "id": "gemini-flash-latest",
         "name": "Gemini Flash Latest",
         "api": "google-generative-ai",
@@ -6939,7 +6985,7 @@
         }
       }
     ],
-    "checkedAt": 1784465834660
+    "checkedAt": 1784712410173
   },
   "openai": {
     "models": [
@@ -8049,6 +8095,6 @@
         "maxTokens": 100000
       }
     ],
-    "checkedAt": 1784474124891
+    "checkedAt": 1784712410175
   }
 }

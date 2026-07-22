@@ -22,7 +22,7 @@
       "createdAtMs": 1784271998255,
       "updatedAtMs": 1784272366981,
       "state": {
-        "nextRunAtMs": 1784704800000,
+        "nextRunAtMs": 1784791200000,
         "lastRunAtMs": 1784631488775,
         "lastRunStatus": "error",
         "lastDurationMs": 15236,
