@@ -29,6 +29,31 @@
         "consecutiveErrors": 1,
         "lastError": "Connection error."
       }
+    },
+    {
+      "id": "cron-mrvwkizj-wiulnr",
+      "name": "gog-token-keepalive",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 8 * * *",
+        "tz": "Europe/Lisbon"
+      },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Run 'gog drive ls' to refresh the Google OAuth token. If it fails with auth error, report the failure so the user knows they need to re-authenticate.",
+        "timeoutSeconds": 30
+      },
+      "delivery": {
+        "mode": "log"
+      },
+      "enabled": true,
+      "deleteAfterRun": false,
+      "description": "Daily Google OAuth token refresh to prevent expiry and detect failures early",
+      "createdAtMs": 1784713890079,
+      "updatedAtMs": 1784713890079,
+      "state": {
+        "nextRunAtMs": 1784790000000
+      }
     }
   ]
 }
