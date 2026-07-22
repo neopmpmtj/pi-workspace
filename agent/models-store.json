@@ -66,7 +66,8 @@
         }
       }
     ],
-    "checkedAt": 1784712410166
+    "checkedAt": 1784717103100,
+    "lastModified": 1784714835000
   },
   "gemini": {
     "models": [
@@ -6985,7 +6986,8 @@
         }
       }
     ],
-    "checkedAt": 1784712410173
+    "checkedAt": 1784717103113,
+    "lastModified": 1784714839000
   },
   "openai": {
     "models": [
@@ -7208,7 +7210,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": "minimal",
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7254,7 +7262,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7277,7 +7291,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": "minimal",
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7300,7 +7320,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": "minimal",
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7323,7 +7349,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": null,
+          "low": null,
+          "medium": null,
+          "high": "high",
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7346,7 +7378,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": "none"
+          "off": "none",
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7369,7 +7407,13 @@
         "contextWindow": 128000,
         "maxTokens": 16384,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": null,
+          "low": null,
+          "medium": "medium",
+          "high": null,
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7392,7 +7436,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7415,7 +7465,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7438,7 +7494,13 @@
         "contextWindow": 400000,
         "maxTokens": 128000,
         "thinkingLevelMap": {
-          "off": null
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
         }
       },
       {
@@ -7462,7 +7524,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7486,7 +7553,12 @@
         "maxTokens": 16384,
         "thinkingLevelMap": {
           "off": null,
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": null,
+          "medium": "medium",
+          "high": null,
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7510,7 +7582,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": null,
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7534,7 +7611,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": null,
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": null,
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7582,7 +7664,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7606,7 +7693,12 @@
         "maxTokens": 32000,
         "thinkingLevelMap": {
           "off": null,
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7639,7 +7731,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         },
         "compat": {
           "supportsToolSearch": true
@@ -7666,7 +7763,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         },
         "compat": {
           "supportsToolSearch": true
@@ -7693,7 +7795,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7726,7 +7833,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": null,
-          "xhigh": "xhigh"
+          "minimal": null,
+          "low": null,
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         },
         "compat": {
           "supportsToolSearch": true
@@ -7762,8 +7874,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
           "xhigh": "xhigh",
-          "minimal": null
+          "max": null
         },
         "compat": {
           "supportsToolSearch": true
@@ -7799,9 +7915,12 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": null,
-          "xhigh": "xhigh",
           "minimal": null,
-          "low": null
+          "low": null,
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
         }
       },
       {
@@ -7834,6 +7953,10 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
           "xhigh": "xhigh",
           "max": "max"
         },
@@ -7871,6 +7994,10 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
           "xhigh": "xhigh",
           "max": "max"
         },
@@ -7908,6 +8035,10 @@
         "maxTokens": 128000,
         "thinkingLevelMap": {
           "off": "none",
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
           "xhigh": "xhigh",
           "max": "max"
         },
@@ -7933,7 +8064,16 @@
           "cacheWrite": 0
         },
         "contextWindow": 128000,
-        "maxTokens": 32000
+        "maxTokens": 32000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": "minimal",
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": null
+        }
       },
       {
         "id": "o1",
@@ -7953,7 +8093,16 @@
           "cacheWrite": 0
         },
         "contextWindow": 200000,
-        "maxTokens": 100000
+        "maxTokens": 100000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
+        }
       },
       {
         "id": "o1-pro",
@@ -7973,7 +8122,16 @@
           "cacheWrite": 0
         },
         "contextWindow": 200000,
-        "maxTokens": 100000
+        "maxTokens": 100000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
+        }
       },
       {
         "id": "o3",
@@ -7993,7 +8151,16 @@
           "cacheWrite": 0
         },
         "contextWindow": 200000,
-        "maxTokens": 100000
+        "maxTokens": 100000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
+        }
       },
       {
         "id": "o3-deep-research",
@@ -8013,7 +8180,16 @@
           "cacheWrite": 0
         },
         "contextWindow": 200000,
-        "maxTokens": 100000
+        "maxTokens": 100000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": null,
+          "medium": "medium",
+          "high": null,
+          "xhigh": null,
+          "max": null
+        }
       },
       {
         "id": "o3-mini",
@@ -8032,7 +8208,16 @@
           "cacheWrite": 0
         },
         "contextWindow": 200000,
-        "maxTokens": 100000
+        "maxTokens": 100000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
+        }
       },
       {
         "id": "o3-pro",
@@ -8052,7 +8237,16 @@
           "cacheWrite": 0
         },
         "contextWindow": 200000,
-        "maxTokens": 100000
+        "maxTokens": 100000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
+        }
       },
       {
         "id": "o4-mini",
@@ -8072,7 +8266,16 @@
           "cacheWrite": 0
         },
         "contextWindow": 200000,
-        "maxTokens": 100000
+        "maxTokens": 100000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
+        }
       },
       {
         "id": "o4-mini-deep-research",
@@ -8092,9 +8295,19 @@
           "cacheWrite": 0
         },
         "contextWindow": 200000,
-        "maxTokens": 100000
+        "maxTokens": 100000,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": null,
+          "medium": "medium",
+          "high": null,
+          "xhigh": null,
+          "max": null
+        }
       }
     ],
-    "checkedAt": 1784712410175
+    "checkedAt": 1784717103122,
+    "lastModified": 1784714855000
   }
 }
