@@ -35,9 +35,16 @@ Three dummy extensions were planted, each logging a distinct tag to the console:
 
 `[AGENT-FRONTEND-DUMMY]` **never fired** — not from cwd=`~/.pi/`, not from cwd=`~/.pi/agent-frontend/`.
 
-**Finding:** Pi uses exactly **ONE global config directory** (`~/.pi/agent/`, overridable via `PI_CODING_AGENT_DIR`). It does not recursively scan for sibling `agent-*` directories. The `agent-frontend/` directory — despite having the same internal structure (its own `extensions/`, `skills/`, `settings.json`, `sessions/`) — is invisible unless explicitly targeted with the env var.
+**Finding:** Pi has **two additive extension tiers**:
 
-**Finding:** Project-local discovery is `<cwd>/.pi/extensions/`. When cwd is `~/.pi/`, this resolves to `~/.pi/.pi/extensions/`. This is not a dual `.pi` convention — it's simply `<cwd>` + `.pi/extensions/`.
+| Tier | Path | Scope |
+|------|------|-------|
+| **Global** | `~/.pi/agent/extensions/` | Fixed — loads for every session, regardless of cwd |
+| **Project-local** | `<cwd>/.pi/extensions/` | Moves with cwd — loads in addition to global |
+
+Both tiers fire on startup. There is exactly **one global config directory** (`~/.pi/agent/`, overridable via `PI_CODING_AGENT_DIR`). It does not recursively scan for sibling `agent-*` directories. The `agent-frontend/` directory — despite having the same internal structure (its own `extensions/`, `skills/`, `settings.json`, `sessions/`) — is an *alternative* global config, invisible unless `PI_CODING_AGENT_DIR` targets it. It does not auto-load alongside `agent/`.
+
+**Finding:** Project-local discovery is `<cwd>/.pi/extensions/`. When cwd is `~/.pi/`, this resolves to `~/.pi/.pi/extensions/` — not a double-`.pi` convention, just `<cwd>` + `.pi/extensions/`. Both dummies fire: `[AGENT-DUMMY]` from global and `[PROJECT-DUMMY]` from project-local.
 
 ### Phase 2 — Event Lifecycle: console.log Failure
 
@@ -167,34 +174,51 @@ This matches the documentation — extensions can block tool execution at `tool_
 
 Both prompts started at `turn #0`. Turn indices are scoped to the agent run, not the session.
 
-### 6. Extension Discovery Is Exact, Not Recursive
+### 6. Extension Discovery: Two Additive Tiers, Not Recursive
 
 | Directory | Loaded? | Mechanism |
 |-----------|---------|-----------|
-| `~/.pi/agent/extensions/` | ✅ Always | Global config dir (`PI_CODING_AGENT_DIR`, defaults to `~/.pi/agent/`) |
-| `<cwd>/.pi/extensions/` | ✅ If exists | Project-local discovery |
-| `~/.pi/agent-frontend/extensions/` | ❌ Never | Only loaded if `PI_CODING_AGENT_DIR=~/.pi/agent-frontend` |
+| `~/.pi/agent/extensions/` | ✅ Always | Global — one fixed dir (`PI_CODING_AGENT_DIR` overrides) |
+| `<cwd>/.pi/extensions/` | ✅ If exists | Project-local — additive, moves with cwd |
+| `~/.pi/agent-frontend/extensions/` | ❌ Never | Alternative global — only if `PI_CODING_AGENT_DIR` targets it |
 
-Pi does not scan for sibling `agent-*` directories or recursively discover `index.ts` files. There is exactly one global config directory.
+Pi does not scan for sibling `agent-*` directories or recursively discover `index.ts` files. Extensions from global and project-local both fire — they are cumulative, not mutually exclusive.
 
 ---
 
-## Event Registration Reference
+## Complete Event Registry
 
-The tracer registers handlers for every documented lifecycle event. This is the complete event subscription surface used:
+The tracer now registers handlers for **all 28 documented lifecycle events**:
 
 ```
-Startup:     project_trust → session_start → resources_discover
-Input:       input (before skill/template expansion)
-Agent:       before_agent_start → agent_start → agent_end → agent_settled
-Turn:        turn_start → context (×N) → turn_end
-Message:     message_start → message_update → message_end
-Tool:        tool_execution_start → tool_call → tool_execution_update (×N)
-             → tool_result → tool_execution_end
-Session:     session_shutdown
+STARTUP (3):      project_trust → session_start → resources_discover
+INPUT (1):        input [HOOK]
+AGENT (4):        before_agent_start [HOOK] → agent_start → agent_end → agent_settled
+TURN (2):         turn_start → turn_end
+MESSAGE (3):      message_start → message_update → message_end [HOOK]
+TOOL (5):         tool_execution_start → tool_call [HOOK] → tool_execution_update
+                  → tool_result [HOOK] → tool_execution_end
+CONTEXT (1):      context [HOOK]
+PROVIDER (2):     before_provider_headers [HOOK] → after_provider_response
+SESSION (8):      session_info_changed → session_before_switch [HOOK]
+                  → session_before_fork [HOOK] → session_before_compact [HOOK]
+                  → session_compact → session_before_tree [HOOK] → session_tree
+                  → session_shutdown
+MODEL (2):        model_select → thinking_level_select
+USER BASH (1):    user_bash [HOOK]
 ```
 
-All events are documented in `~/.pi/agent/npm/node_modules/@earendil-works/pi-coding-agent/docs/extensions.md`.
+### Events Not Yet Verified (require manual triggering)
+
+These are registered but have not been tested in live sessions:
+
+- **Session navigation**: `session_before_switch`, `session_before_fork`, `session_before_compact`, `session_compact`, `session_before_tree`, `session_tree` — triggered by `/new`, `/resume`, `/fork`, `/clone`, `/compact`, `/tree`
+- **Session rename**: `session_info_changed` — triggered by `/name`
+- **Model/thinking**: `model_select`, `thinking_level_select` — triggered by `/model`, Ctrl+P, Shift+Tab
+- **Provider HTTP**: `before_provider_headers`, `after_provider_response` — fire on every LLM request
+- **User bash**: `user_bash` — triggered by `!command` or `!!command` in the editor
+
+All event signatures are documented in `~/.pi/agent/npm/node_modules/@earendil-works/pi-coding-agent/docs/extensions.md`.
 
 ---
 
@@ -225,6 +249,73 @@ To disable the tracer, rename `index.ts` → `index.ts.disabled` and `/reload`.
 
 ---
 
+## Events vs. Hooks
+
+Pi calls everything "events" and uses a uniform `pi.on(...)` API, but the handler signatures reveal two distinct categories:
+
+### Hooks (12) — Return values control behavior
+
+| Hook | What it can do | Return shape |
+|------|---------------|--------------|
+| `input` | Handle entirely, transform text, or pass through | `{ action: "handled" \| "transform" \| "continue" }` |
+| `before_agent_start` | Inject a message, modify system prompt | `{ message?, systemPrompt? }` |
+| `message_end` | Replace the finalized message (same role) | `{ message }` |
+| `tool_call` | Block execution | `{ block: true, reason? }` |
+| `tool_result` | Modify content, details, isError, usage | `{ content?, details?, isError?, usage? }` |
+| `context` | Filter or modify messages before LLM call | `{ messages }` |
+| `before_provider_headers` | Add, override, or delete HTTP headers (mutate in-place) | Mutate `event.headers` |
+| `user_bash` | Intercept `!`/`!!` commands, replace execution | `{ operations? }` or `{ result? }` |
+| `session_before_switch` | Cancel session switch | `{ cancel: true }` |
+| `session_before_fork` | Cancel fork/clone | `{ cancel: true }` |
+| `session_before_compact` | Cancel compaction or provide custom summary | `{ cancel: true }` or `{ compaction: {...} }` |
+| `session_before_tree` | Cancel tree navigation or provide custom summary | `{ cancel: true }` or `{ summary: {...} }` |
+
+### Events (16) — Pure notification, return values ignored
+
+| Event | Fires when |
+|-------|-----------|
+| `project_trust` | Project trust decision needed |
+| `session_start` | Session created, loaded, or reloaded |
+| `resources_discover` | After `session_start` (startup or reload) |
+| `session_info_changed` | `/name` or `pi.setSessionName()` |
+| `session_compact` | Compaction entry written |
+| `session_tree` | Tree navigation complete |
+| `session_shutdown` | Session runtime torn down |
+| `agent_start` | Agent run begins |
+| `agent_end` | Agent run ends (retry/compaction may follow) |
+| `agent_settled` | Fully idle — no more automatic work |
+| `turn_start` | One LLM round-trip begins |
+| `turn_end` | One LLM round-trip ends |
+| `message_start` | New message appears |
+| `message_update` | Assistant streaming delta |
+| `tool_execution_start` | Tool execution pre-flight |
+| `tool_execution_update` | Streaming tool output (×N) |
+| `tool_execution_end` | Tool execution finalized |
+| `model_select` | Model changed (/model, Ctrl+P, restore) |
+| `thinking_level_select` | Thinking level changed |
+
+**Key takeaway:** The most powerful interception points are hooks — they let you gate, transform, or redirect Pi's behavior at critical junctures. Events are timeline markers useful for logging, observability, and UI updates.
+
+---
+
+## Session Progress Checkpoint
+
+This document captures the complete state of the "Pi Agent Inner Workings" investigation as of **2026-07-23**. If this conversation is resumed after a cutoff, reading this document will restore context. The investigation path so far:
+
+1. ✅ **Extension discovery** — Confirmed which directories Pi auto-scans (`~/.pi/agent/extensions/` global + `<cwd>/.pi/extensions/` project-local). Proved `~/.pi/agent-frontend/extensions/` is invisible unless `PI_CODING_AGENT_DIR` targets it.
+
+2. ✅ **Full event lifecycle** — All 28 documented events are registered in the tracer at `~/.pi/agent/extensions/dummy/index.ts`. Output goes to `/tmp/pi-event-trace.log`.
+
+3. ✅ **Events vs. Hooks** — Categorized: 12 hooks (return values control behavior) vs. 16+ pure events (notification-only).
+
+4. ⬜ **Next: Verify untested events** — Session navigation hooks (`session_before_switch`, `session_before_fork`, `session_before_compact`, `session_before_tree`), model/thinking events, provider HTTP events, and `user_bash` need manual triggering.
+
+5. ⬜ **Next: Deeper into the loop** — Trace the core agent loop internals (`agent-loop.ts`) to understand streaming, tool execution batching, and stop conditions. The Pi Agent Harness report at `~/.pi/miscelaneous_documentation/pi_agent_harness_report.pdf` provides the roadmap.
+
+6. ⬜ **Next: Extension API exploration** — Tool registration (`pi.registerTool()`), custom commands, UI components, and the `ctx` object surface.
+
+---
+
 ## Limitations & Future Work
 
 1. **The tracer logs from a single extension.** If multiple extensions subscribe to the same events, handler order is extension-load-order, not captured by this trace.
@@ -236,3 +327,5 @@ To disable the tracer, rename `index.ts` → `index.ts.disabled` and `/reload`.
 4. **`message_update` is silenced** to avoid log spam during streaming. Enable it if streaming tokens need tracing.
 
 5. **RPC/print mode not tested.** The tracer was only verified in interactive (TUI) mode. Event availability in `--mode rpc` and `--mode json` may differ.
+
+6. **11 events pending manual verification.** Session navigation, model/thinking, provider HTTP, and user_bash events are registered but haven't been triggered in a live session yet.
