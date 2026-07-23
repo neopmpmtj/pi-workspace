@@ -12,6 +12,7 @@ import { parseArgs } from 'node:util';
 import { spawn } from 'node:child_process';
 import { handleBackupApi } from './backup/api.mjs';
 import { handleVideoFinderApi } from './video-finder/api.mjs';
+import { handleCodebaseSummaryApi } from './codebase-summary/api.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = join(__dirname, 'token-tracker', 'db', 'token_usage_tracker.db');
@@ -560,6 +561,18 @@ function router(req, res) {
     return handleVideoFinderApi(req, res, url);
   }
 
+  // ── Codebase Summary section ──
+  if (path === '/codebase-summary' || path === '/codebase-summary/') {
+    return serveStatic(res, join(__dirname, 'codebase-summary', 'index.html'));
+  }
+  if (path.startsWith('/codebase-summary/api/')) {
+    return handleCodebaseSummaryApi(req, res, url);
+  }
+  if (path.startsWith('/codebase-summary/')) {
+    const subPath = path.replace('/codebase-summary/', '');
+    return serveStatic(res, join(__dirname, 'codebase-summary', subPath));
+  }
+
   // ── Backup Dashboard (native Node) ──
   // Static assets + REST API. The backup *engine* (Python) is invoked as a
   // subprocess by backup/api.mjs for backups and OAuth.
@@ -638,7 +651,8 @@ const server = createServer(router);
 server.listen(PORT, () => {
   console.log(`\n  🏠 Pi Dashboard running at http://localhost:${PORT}/`);
   console.log(`  🧩 Skills          →  http://localhost:${PORT}/skills/`);
-  console.log(`  🎬 Video Finder    →  http://localhost:${PORT}/video-finder/\n`);
+  console.log(`  🎬 Video Finder    →  http://localhost:${PORT}/video-finder/`);
+  console.log(`  📋 Codebase Summary →  http://localhost:${PORT}/codebase-summary/\n`);
   // Initial sync + periodic every 30s
   runSync();
   setInterval(runSync, 30_000);
