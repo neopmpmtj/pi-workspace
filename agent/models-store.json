@@ -66,8 +66,8 @@
         }
       }
     ],
-    "checkedAt": 1784717103100,
-    "lastModified": 1784714835000
+    "checkedAt": 1784798119827,
+    "lastModified": 1784796477000
   },
   "gemini": {
     "models": [
@@ -6986,8 +6986,8 @@
         }
       }
     ],
-    "checkedAt": 1784717103113,
-    "lastModified": 1784714839000
+    "checkedAt": 1784798119861,
+    "lastModified": 1784796481000
   },
   "openai": {
     "models": [
@@ -8307,7 +8307,7 @@
         }
       }
     ],
-    "checkedAt": 1784717103122,
-    "lastModified": 1784714855000
+    "checkedAt": 1784798119840,
+    "lastModified": 1784796494000
   }
 }
