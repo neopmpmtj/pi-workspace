@@ -7,6 +7,7 @@ export default function (pi: ExtensionAPI) {
   // ── Startup events ──
   pi.on("project_trust", async (event) => {
     console.log(`[TRACE] project_trust — cwd: ${event.cwd}`);
+    return { trusted: "undecided" };
   });
 
   pi.on("session_start", async (event) => {
