@@ -1,7 +1,10 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { appendFileSync } from "node:fs";
 
-const LOG = "/tmp/pi-event-trace.log";
+// One log file per session — survives forks, /new, and /resume.
+// Format: /tmp/pi-event-trace-YYYY-MM-DDTHH-mm-ss-SSS.log
+const SESSION_START = new Date();
+const LOG = `/tmp/pi-event-trace-${SESSION_START.toISOString().replace(/:/g, "-").replace(/\..+/, "")}.log`;
 
 function log(msg: string) {
   const ts = new Date().toISOString().slice(11, 23); // HH:MM:SS.mmm
@@ -9,10 +12,8 @@ function log(msg: string) {
 }
 
 export default function (pi: ExtensionAPI) {
-  // Clear log on startup
-  const { writeFileSync } = require("node:fs");
-  writeFileSync(LOG, "");
   log("=== EXTENSION FACTORY EXECUTED ===");
+  console.log(`[AGENT-DUMMY] Tracing to: ${LOG}`);
 
   // ══════════════════════════════════════════════════════════════
   // STARTUP EVENTS
