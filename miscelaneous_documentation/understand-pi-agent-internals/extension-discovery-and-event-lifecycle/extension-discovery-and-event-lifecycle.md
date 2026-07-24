@@ -226,11 +226,11 @@ All event signatures are documented in `~/.pi/agent/npm/node_modules/@earendil-w
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `~/.pi/agent/extensions/dummy/index.ts` | 110 | Full lifecycle tracer (file-based logging to `/tmp/pi-event-trace.log`) |
+| `~/.pi/agent/extensions/dummy/index.ts` | 201 | Full lifecycle tracer (timestamped log per session: `/tmp/pi-event-trace-<iso>.log`) |
 | `~/.pi/agent-frontend/extensions/agent-frontend-dummy/index.ts` | 16 | Control extension — proved NOT auto-loaded |
 | `~/.pi/.pi/extensions/project-dummy/index.ts.disabled` | 17 | Control extension — proved project-local loading, now disabled |
-| `/tmp/pi-event-trace.log` | — | Trace output (cleared on each startup) |
-| **Total** | **143** | |
+| `/tmp/pi-event-trace-*.log` | — | Trace output (one file per session, never wiped) |
+| **Total** | **234** | |
 
 ---
 
