@@ -239,6 +239,7 @@ function spawnEngine({ interactive, trigger }) {
         ...process.env,
         PYTHONPATH: BACKUP_SRC,
         BACKUP_INTERACTIVE: interactive ? '1' : '0',
+        BROWSER: 'firefox',  // ensure the OAuth flow can open a browser
         ...(trigger ? { BACKUP_TRIGGER: trigger } : {}),
       },
     }
@@ -303,7 +304,16 @@ async function runAuth() {
     }), 300000);
   });
   try {
-    return await Promise.race([done, timeout]);
+    const result = await Promise.race([done, timeout]);
+    // Sugar: surface a human-readable error field for non-success results
+    if (!result.success) {
+      const errLines = (result.stderr || '').trim().split('\n').filter(l => l.trim());
+      const outLines = (result.stdout || '').trim().split('\n').filter(l => l.trim());
+      const lastErr = errLines[errLines.length - 1];
+      const lastOut = outLines[outLines.length - 1];
+      result.error = lastErr || lastOut || `Process exited with code ${result.exitCode ?? -1}`;
+    }
+    return result;
   } finally {
     clearTimeout(timeoutId);
   }

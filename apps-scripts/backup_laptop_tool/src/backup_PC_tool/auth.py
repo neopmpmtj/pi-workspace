@@ -100,7 +100,17 @@ def get_drive_credentials(interactive: bool = True) -> Credentials:
     flow = InstalledAppFlow.from_client_config(_build_client_config(), GOOGLE_DRIVE_SCOPES)
     print("Opening browser for Google authorization...", flush=True)
     print("Make sure you sign in as the correct Google account.", flush=True)
-    creds = flow.run_local_server(port=0)
+    # Try auto-launch; if it fails, log a clear message so the server can
+    # surface it to the user who is already looking at a browser.
+    try:
+        creds = flow.run_local_server(port=0)
+    except Exception as e:
+        raise RuntimeError(
+            f"Could not open browser: {e}\n"
+            f"To authorize manually, run this command on the machine:\n"
+            f"  cd {Path.cwd()} && BACKUP_INTERACTIVE=1 BROWSER=firefox "
+            f"{__file__}"
+        ) from e
     _save_credentials(creds, token_path)
     return creds
 

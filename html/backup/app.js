@@ -207,6 +207,24 @@ async function runBackup() {
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
+function extractAuthError(result) {
+  // Try stderr first (Python tracebacks), then stdout, then fallback
+  if (result.stderr && result.stderr.trim()) {
+    // Take the last meaningful line (usually the error summary)
+    const lines = result.stderr.trim().split('\n').filter(l => l.trim());
+    return lines[lines.length - 1];
+  }
+  if (result.stdout && result.stdout.trim()) {
+    const lines = result.stdout.trim().split('\n').filter(l => l.trim());
+    const last = lines[lines.length - 1];
+    if (last.toLowerCase().includes('error') || last.toLowerCase().includes('fail') || last.toLowerCase().includes('traceback'))
+      return last;
+  }
+  if (result.exitCode != null && result.exitCode !== 0)
+    return 'Process exited with code ' + result.exitCode;
+  return 'Unknown error (no details available)';
+}
+
 async function runAuth() {
   const btn = document.getElementById('btnAuth');
   btn.disabled = true;
@@ -221,7 +239,15 @@ async function runAuth() {
       toast('Authorization successful! Token saved.');
       await loadSettings();
     } else {
-      toast('Authorization failed: ' + (result.error || 'unknown error'), 'error');
+      // Extract the actual error from stderr/stdout for meaningful diagnostics
+      const errDetail = extractAuthError(result);
+      toast('Authorization failed: ' + errDetail, 'error');
+      showStatus('❌ Auth failed: ' + errDetail, false);
+      document.getElementById('historyLogDetail').style.display = 'block';
+      document.getElementById('historyLogDetail').innerHTML =
+        '<span class="error">' + escHtml(errDetail) + '</span>' +
+        (result.stdout ? '<pre>' + escHtml(result.stdout) + '</pre>' : '') +
+        (result.stderr ? '<pre class="error">' + escHtml(result.stderr) + '</pre>' : '');
     }
   } catch (err) {
     btn.disabled = false;
