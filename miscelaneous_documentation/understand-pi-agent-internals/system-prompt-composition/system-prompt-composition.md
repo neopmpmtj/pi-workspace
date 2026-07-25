@@ -1,30 +1,57 @@
-# Pi System Prompt Composition — Analysis Report
+# Pi Prompt Structure — What the LLM Receives
 
 **Date:** 2026-07-25
 **System:** Ubuntu 24.04 (Pi v0.81.1)
-**Source:** `@earendil-works/pi-coding-agent/dist/core/system-prompt.js`
-**Live verification:** Full prompt captured to `/tmp/pi-system-prompt.txt` — 13,165 chars
+**Sources:** `system-prompt.js`, `agent-loop.js`, `agent-session.js`
+**Live verification:** System prompt captured to `/tmp/pi-system-prompt.txt` — 13,165 chars
 
 ---
 
 ## Overview
 
-Every LLM call sends the full system prompt. It is assembled by `buildSystemPrompt()` in `system-prompt.js` and never changes mid-session (except via `before_agent_start` hook modifications). The composition follows a strict order.
+Every LLM call sends **three things**: the system prompt, the conversation history, and tool definitions. The system prompt is fixed per session (assembled once by `buildSystemPrompt()`). The conversation history grows with every turn. Together they form the full context.
+
+```
+FINAL PROMPT TO LLM:
+
+┌─────────────────────────────────────────┐
+│ SYSTEM PROMPT (fixed, ~13K chars)       │
+│  1. Agent identity                      │
+│  2. Available tools (one-liners)        │
+│  3. Guidelines (auto + tool-specific)   │
+│  4. Pi documentation paths              │
+│  5. APPEND_SYSTEM.md content            │
+│  6. <project_context> AGENTS.md files   │
+│  7. <available_skills> XML block        │
+│  8. Current working directory           │
+├─────────────────────────────────────────┤
+│ CONVERSATION HISTORY (grows each turn)  │
+│  • User messages (text + images)        │
+│  • Assistant responses                  │
+│  • Tool call results                    │
+│  • !bash command output                 │
+│  • Compaction summaries (if compacted)  │
+│  • Extension-injected messages          │
+├─────────────────────────────────────────┤
+│ TOOL DEFINITIONS (JSON schemas)         │
+│  • Active tool parameter schemas        │
+└─────────────────────────────────────────┘
+```
 
 ---
 
-## The 8 Sections (in order)
+## Part 1: System Prompt
+
+Assembled by `buildSystemPrompt()` in `system-prompt.js`. Static within a session — only changes via `before_agent_start` hook modifications.
 
 ### 1. Agent Identity (always present)
-
-Fixed text that establishes Pi's role:
 
 ```
 You are an expert coding assistant operating inside pi, a coding agent harness. 
 You help users by reading files, executing commands, editing code, and writing new files.
 ```
 
-This is hardcoded in `system-prompt.js`. Cannot be changed without modifying Pi source.
+Hardcoded. Cannot be changed without modifying Pi source.
 
 ### 2. Available Tools (dynamic)
 
@@ -43,48 +70,25 @@ Available tools:
 - spawn_agent: Spawn sub-agents for parallel or delegated work...
 ```
 
-Only tools with `promptSnippet` appear here. Tools without one (like `save_note` from the notes demo) are still callable but don't get a one-line listing.
+Tools without `promptSnippet` are still callable but don't appear in this list.
 
 ### 3. Guidelines (auto-generated + tool-specific + always)
 
-Three sources merged with deduplication:
+Three sources, deduplicated:
 
 | Source | Example |
 |--------|---------|
-| **Auto-detected** | "Use bash for file operations like ls, rg, find" (when bash is active but grep/find/ls are not) |
-| **Tool `promptGuidelines`** | "Use agent_browser for real browser or live web content." — from pi-agent-browser-native |
+| **Auto-detected** | "Use bash for file operations like ls, rg, find" (when bash active but grep/find/ls not) |
+| **Tool `promptGuidelines`** | "Use agent_browser for real browser or live web content." |
 | **Always appended** | "Be concise in your responses", "Show file paths clearly when working with files" |
 
 ### 4. Pi Documentation Paths (always present)
 
-```
-Pi documentation (read only when the user asks about pi itself...):
-- Main documentation: /home/pmpmt/.nvm/.../README.md
-- Additional docs: /home/pmpmt/.nvm/.../docs
-- Examples: /home/pmpmt/.nvm/.../examples
-```
-
-Points to the installed npm package paths so the LLM can `read` Pi's own docs.
+Points to installed npm package paths so the LLM can `read` Pi's own docs when asked.
 
 ### 5. Custom Append — APPEND_SYSTEM.md / `--append-system-prompt`
 
-Inserted directly after Pi docs, **before** project context and skills. In this installation:
-
-```
-# User Location Context
-## Detected Location
-- **Country**: Portugal (PT)
-- **City**: Vila Real
-...
-
-# Secrets Management Rule
-All API keys, tokens, credentials, and other secrets MUST be stored in `~/.pi/agent/.env`...
-
-# CLI Tool Hygiene
-Skill docs can be stale. Before using a CLI tool from a skill...
-```
-
-This comes from `~/.pi/agent/APPEND_SYSTEM.md`. It is NOT wrapped in `<project_context>` tags — it's raw markdown injected directly into the prompt.
+Inserted directly after Pi docs, **before** project context. Raw markdown — NOT wrapped in `<project_context>` tags.
 
 Sources checked (in order):
 - `~/.pi/agent/APPEND_SYSTEM.md` (global)
@@ -93,34 +97,24 @@ Sources checked (in order):
 
 ### 6. Project Context — AGENTS.md / CLAUDE.md
 
-All discovered context files wrapped in `<project_context>` tags:
+All discovered context files, wrapped in `<project_context>` tags:
 
 ```xml
 <project_context>
 <project_instructions path="/home/pmpmt/.pi/agent/AGENTS.md">
-## Orchestrator Role
-You are the **Orchestrator**. Your job is to coordinate and delegate...
-...
-## CLI Tool Hygiene
-...
-## APPEND_SYSTEM.md Location
-...
+...full content...
 </project_instructions>
 </project_context>
 ```
 
-Discovered from (in order):
-1. `~/.pi/agent/AGENTS.md` (global)
-2. Parent directories walking up from cwd
-3. Current directory
-
-In this session, only the global AGENTS.md loads because:
-- `~/.pi/AGENTS.md` exists but is **empty** (0 bytes)
-- cwd is `~/.pi/` so no project-local AGENTS.md
+Discovery order:
+1. `~/.pi/agent/AGENTS.md` or `CLAUDE.md` (global)
+2. Parent directories walking up from cwd → root
+3. Current working directory
 
 ### 7. Skills (if `read` tool is active)
 
-Only injected when the `read` tool is enabled. This is because skills instruct the LLM to `read` their SKILL.md files — without the `read` tool, skills are useless:
+XML block with name, description, and file path for each loaded skill. The LLM uses `read` to load full `SKILL.md` content on demand (progressive disclosure). Skills with `disable-model-invocation: true` are excluded.
 
 ```xml
 <available_skills>
@@ -128,14 +122,6 @@ Only injected when the `read` tool is enabled. This is because skills instruct t
     <name>gog-workspace</name>
     <description>Google Workspace CLI for Gmail, Calendar, Drive...</description>
     <location>/home/pmpmt/.pi/agent/skills/gog-workspace/SKILL.md</location>
-  </skill>
-  <skill>
-    <name>video-finder</name>
-    ...
-  </skill>
-  <skill>
-    <name>librarian</name>
-    ...
   </skill>
 </available_skills>
 ```
@@ -150,7 +136,7 @@ Current working directory: /home/pmpmt
 
 ## Custom Prompt Mode (SYSTEM.md / `--system-prompt`)
 
-If a custom system prompt is provided, sections 1–4 are **replaced** by the custom text. Sections 5–8 still append:
+If a custom system prompt is provided, sections 1–4 are **replaced** by custom text. Sections 5–8 still append:
 
 ```
 [custom prompt]
@@ -160,18 +146,75 @@ If a custom system prompt is provided, sections 1–4 are **replaced** by the cu
 Current working directory: /home/pmpmt
 ```
 
-Custom prompt sources (checked in order):
+Custom prompt sources:
 1. `.pi/SYSTEM.md` (project-local)
 2. `~/.pi/agent/SYSTEM.md` (global)
 3. `--system-prompt` CLI flag
 
-This installation has **no custom prompt** — section 1–4 is the default Pi agent text.
+---
+
+## Part 2: Conversation History
+
+After the system prompt, every message in the session is sent. This grows with each turn.
+
+### Message Types Sent
+
+| Type | Source | Notes |
+|------|--------|-------|
+| **User messages** | Your input | Text + optional images (pasted or `@file`) |
+| **Assistant responses** | LLM output | Streamed token-by-token, including thinking blocks |
+| **Tool results** | Tool execution | The output of `read`, `bash`, `edit`, `write`, etc. |
+| **Bash execution** | `!command` in editor | Sent to LLM; `!!command` runs without sending |
+| **Custom messages** | Extension-injected | Via `before_agent_start` or `sendCustomMessage()` |
+| **Compaction summaries** | Automatic/manual compaction | Older messages summarized into a single entry |
+| **Branch summaries** | `/tree` navigation | Context from abandoned branches |
+
+### File References (`@file`)
+
+CLI file arguments are included in the initial user message:
+
+```bash
+pi @README.md "summarize this"
+```
+
+### Images
+
+Pasted (Ctrl+V) or `@image.png` references become base64-encoded content blocks in user messages.
+
+### Extension Interception Points
+
+Two hooks can modify what reaches the LLM:
+
+| Hook | Can… |
+|------|------|
+| `before_agent_start` | Inject custom messages or modify the system prompt |
+| `context` | Filter or mutate the entire message array before each LLM call |
+
+---
+
+## Part 3: Tool Definitions
+
+Alongside the system prompt and history, the LLM receives JSON schemas for every active tool. These describe the tool's name, description, and parameter structure so the model can produce valid structured tool calls.
+
+---
+
+## Compaction
+
+When the conversation history approaches the model's context window limit, older messages are summarized. The LLM sees:
+
+```
+[System prompt]
+[Compaction summary of old messages]
+[Recent unsummarized messages]
+```
+
+Full history remains in the session JSONL file — compaction only affects what the model sees.
 
 ---
 
 ## Verification
 
-The full 13,165-char prompt was captured from a live session using the event tracer:
+The full system prompt was captured from a live session:
 
 ```typescript
 pi.on("before_agent_start", async (event, ctx) => {
@@ -179,24 +222,24 @@ pi.on("before_agent_start", async (event, ctx) => {
 });
 ```
 
-The entire prompt can be inspected at `/tmp/pi-system-prompt.txt` after any prompt is sent.
+Inspect at `/tmp/pi-system-prompt.txt` after any prompt.
 
 ---
 
 ## Session Progress Checkpoint
 
-This completes the Pi Agent internals investigation:
+This document is part of the Pi Agent internals investigation:
 
 1. ✅ **Extension discovery** — `extension-discovery-and-event-lifecycle/`
 2. ✅ **Full event lifecycle** — 28/32 events verified, hooks vs events catalogued
-3. ✅ **Core agent loop** — `core-agent-loop/` — inner/outer loops, queues, tool execution, stop conditions
-4. ✅ **AgentSession preflight** — command expansion, input interception, skill/template expansion, auth, compaction, before_agent_start
-5. ✅ **System prompt composition** — this document — all 8 sections verified from live capture
+3. ✅ **Core agent loop** — `core-agent-loop/`
+4. ✅ **AgentSession preflight** — command expansion, input hooks, auth, compaction
+5. ✅ **Prompt structure** — this document — system prompt + conversation history + tool definitions
 
-**The full stack, bottom to top:**
+**The full stack:**
 
 ```
-LLM receives:      [System Prompt] + [Conversation History]
+LLM receives:      [System Prompt] + [Conversation History] + [Tool Definitions]
                          ↑
 buildSystemPrompt()      │  system-prompt.js
                          ↑
@@ -208,7 +251,7 @@ runLoop()                │  agent-loop.js (inner/outer loops)
                          ↑
 tool execution           │  agent-loop.js (parallel/sequential)
                          ↑
-Extension hooks          │  ExtensionRunner (tool_call, tool_result, context, etc.)
+Extension hooks          │  ExtensionRunner
                          ↑
 Session persistence      │  SessionManager (JSONL trees)
 ```
