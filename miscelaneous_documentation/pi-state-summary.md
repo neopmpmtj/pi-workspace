@@ -1,13 +1,13 @@
 # Pi State Summary
 
-> *Last updated: 2026-07-19 (multi-agent orchestrator)*
+> *Last updated: 2026-07-25 (pi-subagent integration)*
 > *Living document — increment when we build something new or make a significant change.*
 
 ---
 
 ## Quick Facts
 
-- **Pi version**: 0.80.10 (`pi-coding-agent`), Node v24.18.0 via nvm
+- **Pi version**: 0.81.1 (`pi-coding-agent`), Node v24.18.0 via nvm
 - **Config dir**: `/home/pmpmt/.pi/agent/`
 - **Provider**: DeepSeek (direct)
 - **Default model**: `deepseek-v4-pro` (thinking: high)
@@ -78,15 +78,14 @@
 - **Key design**: Timer capped at 60s max to recover from laptop sleep; `timer.unref()` for clean print-mode exit; auto-delete for one-shot `at` jobs
 - **Docs**: `miscelaneous_documentation/cron-job-system-setup/`
 
-### 10. Multi-Agent Orchestrator
-- **Location**: `~/.pi/agent/` (orchestrator) + `~/.pi/agent-frontend/` (specialist)
-- **Package**: `npm:pi-agents-pool` v0.2.0 — provides `spawn_agent`, `send_input`, `wait_agent`, `close_agent`, `resume_agent` tools
-- **Architecture**: Orchestrator delegates to child `pi --mode rpc` processes — each specialist is a persistent sub-agent with its own workspace, config, and instructions
-- **Specialist workspaces**: Each has its own `AGENTS.md` (role identity), `APPEND_SYSTEM.md` (protocols), `settings.json` (independent config), and isolated `sessions/`
-- **Communication**: JSON-line RPC over stdin/stdout; results auto-steer back via `<subagent_notification>` injection — no polling needed
-- **TUI widget**: Live agent status above the input (tool count, token count, elapsed time, current activity)
-- **Depth limiting**: `PI_SUBAGENT_MAX_DEPTH=2` (orchestrator → specialist → leaf)
-- **Docs**: `miscelaneous_documentation/multi-agent-orchestrator-setup/`
+### 10. Multi-Agent Orchestrator (pi-subagent)
+- **Location**: `~/.pi/agent/agents/*.md` (agent definitions) + `~/.pi/agent/AGENTS.md` (orchestrator instructions)
+- **Package**: `npm:@mjakl/pi-subagent` — provides `subagent` tool for delegating to specialized sub-agents
+- **Architecture**: Each agent is a Markdown file with YAML frontmatter. The orchestrator delegates via the `subagent` tool. Each subagent runs in its own isolated `pi` process (headless RPC mode) with its own system prompt.
+- **Agent definitions**: Markdown files at `~/.pi/agent/agents/*.md` with YAML frontmatter (`name`, `description`, `tools`, `model`, `thinking`). The Markdown body becomes the agent's system prompt.
+- **Available agents**: `frontend` (HTML/CSS/JS/UI), `explore` (codebase exploration, auto-created as starter)
+- **Key design**: Clean context separation — subagents don't see the orchestrator's session history or full AGENTS.md. Each agent has its own tool allowlist and model/thinking settings.
+- **Docs**: `miscelaneous_documentation/understand-pi-agent-internals/` (entire internals investigation)
 
 ---
 
@@ -104,7 +103,7 @@
 | Terminal progress | shown |
 | Images auto-resize | enabled |
 | Hide thinking block | false |
-| Installed packages | pi-web-access, pi-agent-browser-native, pi-agents-pool |
+| Installed packages | pi-web-access, pi-agent-browser-native, pi-agents-pool, pi-subagent |
 
 ---
 
@@ -120,9 +119,8 @@
 | `~/.pi/agent/APPEND_SYSTEM.md` | Auto-detected location context |
 | `~/.pi/agent/prompts/` | Custom prompt files |
 | `~/.pi/agent/extensions/` | Custom extension files (cron.ts, git-commit.ts) |
-| `~/.pi/agent-frontend/AGENTS.md` | Front-End specialist role definition |
-| `~/.pi/agent-frontend/APPEND_SYSTEM.md` | Front-End reporting protocol |
-| `~/.pi/agent-frontend/settings.json` | Front-End specialist config |
+| `~/.pi/agent/agents/frontend.md` | Front-End sub-agent definition (YAML + Markdown) |
+| `~/.pi/agent/agents/explore.md` | Codebase exploration sub-agent (auto-created) |
 | `~/.pi/cron/jobs.json` | Cron job persistent store |
 | `~/.pi/cron/runs/` | Per-job run history (JSONL) |
 
@@ -130,20 +128,18 @@
 
 ## Reference Docs
 
-- **Location**: `/home/pmpmt/.pi/agent/miscelaneous_documentation/`
-  - `context_flow_in_pi/prompt-structure.md` — How pi structures agent system prompts
-  - `speech-to-text-keyboard-shortcut-fix/` — Debug reports for STT issues
+- **Location**: `/home/pmpmt/.pi/miscelaneous_documentation/`
+  - `understand-pi-agent-internals/` — Full Pi internals investigation (extensions, events, loop, prompt, sub-agents)
   - `token-usage-dashboard-setup/` — Full token tracker setup docs
   - `backup-laptop-tool-setup/` — Backup tool setup & integration report
   - `cron-job-system-setup/` — Cron job system architecture & implementation
-  - `multi-agent-orchestrator-setup/` — Multi-agent orchestrator & specialist workspaces
+  - `multi-agent-orchestrator-setup/` — Multi-agent orchestrator & specialist workspaces (pre-pi-subagent)
 
 ---
 
 ## Session History
 
 - Orchestrator sessions: `/home/pmpmt/.pi/agent/sessions/--home-pmpmt-.pi--/`
-- Front-End specialist sessions: `/home/pmpmt/.pi/agent-frontend/sessions/--home-pmpmt-.pi--/`
 - Token tracker DB auto-syncs from orchestrator sessions
 
 ---
@@ -152,6 +148,7 @@
 
 | Date | What Changed |
 |---|---|
+| 2026-07-25 | **pi-subagent integration.** Installed `@mjakl/pi-subagent`. Created `~/.pi/agent/agents/frontend.md` with YAML frontmatter (tools, model, thinking). Updated orchestrator `AGENTS.md` delegation protocol to use `subagent` tool. Completed full Pi internals investigation (extensions, events, core loop, AgentSession, system prompt) — documented in `understand-pi-agent-internals/`. |
 | 2026-07-19 | **Multi-agent orchestrator.** Installed `pi-agents-pool` (5 delegation tools). Created `agent-frontend/` specialist workspace with own AGENTS.md, APPEND_SYSTEM.md, settings.json, and isolated sessions. Configured orchestrator `AGENTS.md` with full delegation protocol. Auto-steer via `<subagent_notification>` from child `pi --mode rpc` processes. TUI widget for live agent status. |
 | 2026-07-17 | **Cron job system.** Built in-process scheduler extension (`~/.pi/cron/` + `~/.pi/agent/extensions/cron.ts`). Three schedule types (at/every/cron). JSON persistence + JSONL run history. Agent-accessible `cron` tool + `/cron` TUI command. Research and architecture adapted from OpenClaw's cron implementation. |
 | 2026-07-13 | **Secrets management.** Moved API keys out of plain-text `auth.json` into `~/.pi/agent/.env`. Pi resolves `$VAR` at runtime via wrapper script. Pattern established for all future secrets. |

@@ -1,8 +1,110 @@
 # Pi Multi-Agent Orchestrator — Setup & Implementation Report
 
-**Date:** 2026-07-19
-**System:** Ubuntu 24.04 (Pi v0.80.x)
-**Location:** `~/.pi/agent/` (orchestrator) + `~/.pi/agent-frontend/` (specialist)
+**Date:** 2026-07-19 (original) · **Updated:** 2026-07-25 (pi-subagent migration)
+**System:** Ubuntu 24.04 (Pi v0.81.1)
+**Current package:** `@mjakl/pi-subagent` (replaces `pi-agents-pool`)
+**Location:** `~/.pi/agent/agents/*.md` (agent definitions) + `~/.pi/agent/AGENTS.md` (orchestrator)
+
+---
+
+## Current System: pi-subagent (2026-07-25)
+
+### What changed
+
+The original `pi-agents-pool` package (5 tools, workspace directories) has been replaced with `@mjakl/pi-subagent` (1 tool, Markdown agent files). The architecture is the same — sub-agents run in isolated Pi RPC processes — but the definition format is simpler.
+
+| | Before (pi-agents-pool) | After (pi-subagent) |
+|---|---|---|
+| **Agent definition** | Full workspace dir (AGENTS.md + APPEND_SYSTEM.md + settings.json) | Single `.md` file with YAML frontmatter |
+| **Tool** | 5 tools (`spawn_agent`, `send_input`, etc.) | 1 tool (`subagent`) |
+| **Context separation** | Separate `PI_CODING_AGENT_DIR` per agent | System prompt from `.md` body |
+| **Model/thinking per agent** | Via workspace `settings.json` | Via YAML frontmatter (`model`, `thinking`) |
+| **Tool allowlist per agent** | Via workspace `settings.json` | Via YAML frontmatter (`tools`, `noTools`) |
+| **Auto-discovery** | Manual listing in AGENTS.md | Auto-scans `~/.pi/agent/agents/*.md` |
+
+### Agent file format
+
+```markdown
+---
+name: frontend
+description: Front-end specialist for HTML, CSS, JavaScript, visual design
+tools: read,write,edit,bash
+model: deepseek-v4-flash
+thinking: low
+---
+
+You are the Front-End Specialist for this project...
+```
+
+### Installed agents
+
+| Agent | File | Tools | Model |
+|-------|------|-------|-------|
+| `frontend` | `~/.pi/agent/agents/frontend.md` | read, write, edit, bash | deepseek-v4-flash |
+| `explore` | `~/.pi/agent/agents/explore.md` (auto-created) | read, grep, find, ls | parent default |
+
+### Flow
+
+```
+Orchestrator calls: subagent({ agent: "frontend", prompt: "Build a login page" })
+  → Extension reads ~/.pi/agent/agents/frontend.md
+  → Spawns separate pi process (RPC mode) with frontend.md body as system prompt
+  → Sub-agent runs, returns result
+  → Orchestrator receives result, relays to user
+```
+
+### Key design benefit
+
+Sub-agents start with a **clean context** — no orchestrator session history, no orchestrator AGENTS.md. Each agent gets only its own system prompt + Pi's default tool/guideline text. This keeps the orchestrator's AGENTS.md lean and prevents role-bleed.
+
+### How to Recreate (from scratch)
+
+```bash
+# 1. Install the package
+pi install npm:@mjakl/pi-subagent
+
+# 2. Create an agent definition
+mkdir -p ~/.pi/agent/agents
+cat > ~/.pi/agent/agents/frontend.md << 'EOF'
+---
+name: frontend
+description: Front-end specialist for HTML, CSS, JavaScript, visual design, and UI work.
+tools: read,write,edit,bash
+model: deepseek-v4-flash
+thinking: low
+---
+
+You are the Front-End Specialist for this project.
+...
+EOF
+
+# 3. Update orchestrator AGENTS.md to use subagent tool:
+#    "Delegate using the `subagent` tool with the agent name and a clear prompt"
+#    "Available Specialists: frontend, explore"
+
+# 4. Restart Pi — agents are auto-discovered
+```
+
+### Skills with sub-agents
+
+Sub-agents inherit the global `~/.pi/agent/skills/` directory. Any skill installed there is available to all agents. To direct an agent to use a specific skill, include instructions in its `.md` file:
+
+```markdown
+## Available Skills
+- Use `/skill:librarian` when researching front-end libraries or frameworks
+```
+
+The sub-agent's Pi process loads skills from the global directory at startup, just like the orchestrator does.
+
+### Cleanup notes
+
+The old `agent-frontend/` workspace has been fully removed. Its content lives in `~/.pi/agent/agents/frontend.md`.
+
+---
+
+## Historical: pi-agents-pool system (2026-07-19)
+
+> The sections below document the original `pi-agents-pool` architecture. This system is superseded by `pi-subagent` but the design rationale, RPC protocol, and workspace concepts remain relevant.
 
 ---
 

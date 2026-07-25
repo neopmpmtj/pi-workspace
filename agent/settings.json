@@ -19,7 +19,8 @@
   "packages": [
     "npm:pi-web-access",
     "npm:pi-agent-browser-native",
-    "npm:pi-agents-pool"
+    "npm:pi-agents-pool",
+    "npm:@mjakl/pi-subagent"
   ],
   "hideThinkingBlock": false,
   "followUpMode": "one-at-a-time",
