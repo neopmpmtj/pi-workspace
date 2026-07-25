@@ -262,6 +262,6 @@ This document captures the **core agent loop** analysis — the second major sta
 1. ✅ **Extension discovery** — `extension-discovery-and-event-lifecycle/`
 2. ✅ **Full event lifecycle** — 28 of 32 events verified
 3. ✅ **Core agent loop** — this document
-4. ⬜ **Next: Extension API** — `pi.registerTool()`, `pi.registerCommand()`, `pi.registerProvider()`, `ctx.ui.*`, custom UI components
-5. ⬜ **Next: AgentSession** — how prompts are preflighted, how sessions persist, how compaction and retry work
-6. ⬜ **Next: System prompt composition** — `system-prompt.ts`, how AGENTS.md, skills, and tool descriptions are assembled
+4. ✅ **Extension API** — `pi.registerTool()`, `pi.registerCommand()`, `ctx.ui.*`, `pi.appendEntry()` demonstrated with session notes extension (removed after demo)
+5. ✅ **AgentSession preflight** — command expansion, input hooks, skill/template expansion, auth, compaction, before_agent_start
+6. ✅ **System prompt composition** — `system-prompt-composition/` — all 8 sections verified from live capture

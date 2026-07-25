@@ -308,11 +308,15 @@ This document captures the complete state of the "Pi Agent Inner Workings" inves
 
 3. ✅ **Events vs. Hooks** — Categorized: 12 hooks (return values control behavior) vs. 16+ pure events (notification-only).
 
-4. ⬜ **Next: Verify untested events** — Session navigation hooks (`session_before_switch`, `session_before_fork`, `session_before_compact`, `session_before_tree`), model/thinking events, provider HTTP events, and `user_bash` need manual triggering.
+4. ✅ **Verified untested events** — 28 of 32 events confirmed. Remaining: `project_trust` (already trusted), `session_before_compact`/`session_compact` (need long session), `message_update` (silenced).
 
-5. ⬜ **Next: Deeper into the loop** — Trace the core agent loop internals (`agent-loop.ts`) to understand streaming, tool execution batching, and stop conditions. The Pi Agent Harness report at `~/.pi/miscelaneous_documentation/pi_agent_harness_report.pdf` provides the roadmap.
+5. ✅ **Core agent loop** — `core-agent-loop/` — inner/outer loops, steering/follow-up queues, parallel vs sequential tool execution, stop conditions, context pipeline.
 
-6. ⬜ **Next: Extension API exploration** — Tool registration (`pi.registerTool()`), custom commands, UI components, and the `ctx` object surface.
+6. ✅ **Extension API** — `pi.registerTool()`, `pi.registerCommand()`, `ctx.ui.*`, `pi.appendEntry()` demonstrated and documented.
+
+7. ✅ **AgentSession preflight** — Command expansion, input hooks, skill/template expansion, auth validation, compaction check, before_agent_start → agent loop.
+
+8. ✅ **System prompt composition** — `system-prompt-composition/` — All 8 sections verified from live 13,165-char capture.
 
 ---
 

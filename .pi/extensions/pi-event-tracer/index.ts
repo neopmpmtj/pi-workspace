@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, writeFileSync } from "node:fs";
 
 // One log file per session — survives forks, /new, and /resume.
 // Format: /tmp/pi-event-trace-YYYY-MM-DDTHH-mm-ss-SSS.log
@@ -43,8 +43,11 @@ export default function (pi: ExtensionAPI) {
   // AGENT LIFECYCLE — before_agent_start is a hook (inject/modify)
   // ══════════════════════════════════════════════════════════════
 
-  pi.on("before_agent_start", async (event) => {
+  pi.on("before_agent_start", async (event, ctx) => {
     log(`before_agent_start — prompt: "${event.prompt.slice(0, 80)}"`);
+    const sp = ctx.getSystemPrompt();
+    log(`SYSTEM PROMPT: ${sp.length} chars saved to /tmp/pi-system-prompt.txt`);
+    writeFileSync("/tmp/pi-system-prompt.txt", sp);
   });
 
   pi.on("agent_start", async () => {
