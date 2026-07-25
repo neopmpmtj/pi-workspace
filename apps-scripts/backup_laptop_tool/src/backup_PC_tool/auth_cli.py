@@ -15,17 +15,21 @@ The script:
 Does NOT create a snapshot or upload anything.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
-# Ensure the package root is on sys.path
+# Make sure the package root is on sys.path for `python -m` usage.
+# When run as `python -m backup_PC_tool.auth_cli`, __package__ is
+# set to "backup_PC_tool", so we need the parent of the package dir
+# on sys.path — not the package dir itself.
 _pkg_root = Path(__file__).resolve().parent
-if str(_pkg_root) not in sys.path:
-    sys.path.insert(0, str(_pkg_root))
+_src_root = _pkg_root.parent
+if str(_src_root) not in sys.path:
+    sys.path.insert(0, str(_src_root))
 
-from auth import get_drive_credentials, GOOGLE_DRIVE_SCOPES
-from config import PROJECT_ROOT, get_token_file
+from backup_PC_tool.auth import GOOGLE_DRIVE_SCOPES
+from backup_PC_tool.config import PROJECT_ROOT, get_token_file, get_client_id, get_client_secret
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -33,7 +37,6 @@ from google.auth.exceptions import RefreshError
 
 
 def _build_client_config():
-    from config import get_client_id, get_client_secret
     return {
         "installed": {
             "client_id": get_client_id(),
@@ -107,7 +110,7 @@ def main():
         print("=" * 60, flush=True)
         print("To authorize manually, run this in your terminal:", flush=True)
         print("=" * 60, flush=True)
-        print(f"  cd {os.getcwd()}", flush=True)
+        print(f"  cd ~/.pi", flush=True)
         print(f"  BACKUP_INTERACTIVE=1 BROWSER=firefox python3 -m backup_PC_tool.auth_cli", flush=True)
         print("=" * 60, flush=True)
         return 1

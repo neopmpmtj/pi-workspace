@@ -235,15 +235,21 @@ function spawnEngine({ interactive, trigger }) {
     BACKUP_VENV_PYTHON, ['-m', 'backup_PC_tool.main'],
     {
       cwd: BACKUP_ROOT,
-      env: {
-        ...process.env,
-        PYTHONPATH: BACKUP_SRC,
-        BACKUP_INTERACTIVE: interactive ? '1' : '0',
-        BROWSER: 'firefox',
-        DISPLAY: process.env.DISPLAY || ':1',
-        XAUTHORITY: process.env.XAUTHORITY || '/run/user/1000/gdm/Xauthority',
-        ...(trigger ? { BACKUP_TRIGGER: trigger } : {}),
-      },
+      env: (() => {
+        const e = {
+          ...process.env,
+          PYTHONPATH: BACKUP_SRC,
+          BACKUP_INTERACTIVE: interactive ? '1' : '0',
+          BROWSER: 'firefox',
+          DISPLAY: process.env.DISPLAY || ':1',
+          XAUTHORITY: process.env.XAUTHORITY || '/run/user/1000/gdm/Xauthority',
+          ...(trigger ? { BACKUP_TRIGGER: trigger } : {}),
+        };
+        // Strip stale env vars that might have been inherited from a
+        // process started before they were removed from .env.
+        delete e.GOOGLE_SERVICE_ACCOUNT_KEY;
+        return e;
+      })(),
     }
   );
   let stdout = '', stderr = '';
@@ -301,13 +307,17 @@ async function runAuth() {
     BACKUP_VENV_PYTHON, ['-m', 'backup_PC_tool.auth_cli'],
     {
       cwd: BACKUP_ROOT,
-      env: {
-        ...process.env,
-        PYTHONPATH: BACKUP_SRC,
-        BROWSER: 'firefox',
-        DISPLAY: process.env.DISPLAY || ':1',
-        XAUTHORITY: process.env.XAUTHORITY || '/run/user/1000/gdm/Xauthority',
-      },
+      env: (() => {
+        const e = {
+          ...process.env,
+          PYTHONPATH: BACKUP_SRC,
+          BROWSER: 'firefox',
+          DISPLAY: process.env.DISPLAY || ':1',
+          XAUTHORITY: process.env.XAUTHORITY || '/run/user/1000/gdm/Xauthority',
+        };
+        delete e.GOOGLE_SERVICE_ACCOUNT_KEY;
+        return e;
+      })(),
     }
   );
   let stdout = '', stderr = '';

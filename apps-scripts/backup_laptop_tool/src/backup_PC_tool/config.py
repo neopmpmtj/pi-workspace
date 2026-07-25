@@ -103,9 +103,27 @@ def get_service_account_key_path() -> str | None:
 
     When set (and the file exists), the backup engine uses a service
     account instead of user OAuth — no browser, no token expiry.
+
+    Safety: if the key was removed from .env but still lingers in the
+    process environment (e.g. inherited from a parent process that
+    sourced an older .env), treat it as unset.
     """
     raw = (os.environ.get("GOOGLE_SERVICE_ACCOUNT_KEY") or "").strip()
     if not raw:
         return None
+
+    # Guard against stale inherited env vars: if the .env file no longer
+    # contains this key, don't use it — the user explicitly removed it.
+    env_path = Path.home() / ".pi" / "agent" / ".env"
+    if env_path.exists():
+        env_text = env_path.read_text(encoding="utf-8")
+        has_key = any(
+            line.strip() and not line.strip().startswith("#")
+            and line.strip().startswith("GOOGLE_SERVICE_ACCOUNT_KEY")
+            for line in env_text.splitlines()
+        )
+        if not has_key:
+            return None  # explicitly removed from .env — treat as unset
+
     p = Path(raw).expanduser().resolve()
     return str(p) if p.exists() else None
