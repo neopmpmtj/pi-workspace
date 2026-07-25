@@ -184,6 +184,18 @@ Both prompts started at `turn #0`. Turn indices are scoped to the agent run, not
 
 Pi does not scan for sibling `agent-*` directories or recursively discover `index.ts` files. Extensions from global and project-local both fire — they are cumulative, not mutually exclusive.
 
+### What loads within each extensions directory
+
+| Pattern | Example | Loads? |
+|---------|---------|--------|
+| `extensions/*.ts` | `cron.ts`, `git-commit.ts` | ✅ Any `.ts` file at the root of the directory |
+| `extensions/*/index.ts` | `observability/index.ts` | ✅ `index.ts` inside a subdirectory (the subdirectory's entry point) |
+| `extensions/*/helpers.ts` | `observability/helpers.ts` | ❌ Does NOT auto-load — only runs if `index.ts` imports it |
+
+Files at the root load by any name. Subdirectories use `index.ts` as the gate — this allows multi-file extensions without every `.ts` file auto-executing.
+
+**Load order within a tier:** files first, then subdirectories (alphabetical within each group).
+
 ---
 
 ## Complete Event Registry

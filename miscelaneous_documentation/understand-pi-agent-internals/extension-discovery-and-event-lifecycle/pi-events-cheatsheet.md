@@ -1,201 +1,188 @@
 # Pi Events & Hooks — Quick Reference
 
-> Portable cheatsheet. Read this alongside the full investigation at `extension-discovery-and-event-lifecycle.md`.
-> Tracer: `~/.pi/agent/extensions/dummy/index.ts` → output at `/tmp/pi-event-trace-<timestamp>.log`
+> Tracer: `~/.pi/.pi/extensions/pi-event-tracer/index.ts` → output at `/tmp/pi-event-trace-<timestamp>.log`
+> System prompt capture: `/tmp/pi-system-prompt.txt` (updated on every prompt)
 > **Total: 12 hooks + 20 events = 32**
 
-Verification key: ✅ verified in live session | ⬜ untested | 🔇 silenced in tracer
+Verification key: ✅ verified | ⬜ untested | 🔇 silenced in tracer
 
 ---
 
-## HOOKS (12) — Return values control behavior
+## At a Glance
 
-Hooks let you intercept, transform, block, or redirect Pi's behavior. Return `undefined` to pass through unchanged.
-
-### Input
-
-| Hook | Fires when | Can… |
-|------|-----------|------|
-| `input` ✅ | User submits text (before skill/template expansion) | Handle entirely, transform text, or let it pass |
-
-### Agent
-
-| Hook | Fires when | Can… |
-|------|-----------|------|
-| `before_agent_start` ✅ | Prompt accepted, before agent loop runs | Inject a persistent message, modify the system prompt |
-
-### Messages
-
-| Hook | Fires when | Can… |
-|------|-----------|------|
-| `message_end` ✅ | Any message finalized (user, assistant, toolResult) | Replace the message (must keep same `role`) |
-
-### Tools
-
-| Hook | Fires when | Can… |
-|------|-----------|------|
-| `tool_call` ✅ | After validation, before tool executes | Block execution (`{ block: true, reason? }`) |
-| `tool_result` ✅ | After tool finishes, before result message emitted | Modify content, details, isError, or usage |
-
-### Context
-
-| Hook | Fires when | Can… |
-|------|-----------|------|
-| `context` ✅ | Before each LLM request, with full message history | Filter or mutate the messages array |
-
-### Provider HTTP
-
-| Hook | Fires when | Can… |
-|------|-----------|------|
-| `before_provider_headers` ✅ | HTTP headers assembled, before request sent | Add, override, or delete headers (mutate `event.headers` in place) |
-
-### User Bash
-
-| Hook | Fires when | Can… |
-|------|-----------|------|
-| `user_bash` ✅ | User runs `!command` or `!!command` in editor | Replace execution entirely or wrap the built-in backend |
-
-### Session Navigation
-
-| Hook | Fires when | Can… |
-|------|-----------|------|
-| `session_before_switch` ✅ | `/new` or `/resume` | Cancel the switch |
-| `session_before_fork` ✅ | `/fork` or `/clone` | Cancel the fork/clone |
-| `session_before_compact` ⬜ | Manual or auto compaction triggered | Cancel compaction, or provide a custom summary |
-| `session_before_tree` ✅ | `/tree` navigation | Cancel navigation, or provide a custom summary |
+| Type | Count | Return value | Purpose |
+|------|-------|-------------|---------|
+| **Hook** | 12 | ✅ Controls behavior | Block, transform, cancel, inject, modify |
+| **Event** | 20 | ❌ Ignored | Timeline markers — logging, UI updates, observability |
 
 ---
 
-## EVENTS (20) — Pure notification, return values ignored
+## HOOKS — Return Values Control Behavior
 
-Events are timeline markers. Use them for logging, observability, status updates, and UI changes.
+Hooks intercept Pi at decision points. Return `undefined` to pass through unchanged. Return a value to block, transform, or redirect.
 
-### Startup
+### Input (1)
+
+| Hook | Triggers | Return shape |
+|------|----------|-------------|
+| `input` ✅ | User submits text, before skill/template expansion | `{ action: "handled" }` — stop, LLM never called<br>`{ action: "transform", text, images? }` — rewrite input<br>`{ action: "continue" }` — default |
+
+### Agent (1)
+
+| Hook | Triggers | Return shape |
+|------|----------|-------------|
+| `before_agent_start` ✅ | Prompt accepted, before loop runs | `{ message? }` — inject a persistent message into context<br>`{ systemPrompt? }` — replace system prompt for this turn |
+
+### Messages (1)
+
+| Hook | Triggers | Return shape |
+|------|----------|-------------|
+| `message_end` ✅ | Any message finalized (user, assistant, toolResult) | `{ message }` — replace the message (must keep same `role`) |
+
+### Tools (2)
+
+| Hook | Triggers | Return shape |
+|------|----------|-------------|
+| `tool_call` ✅ | After validation, before tool executes | `{ block: true, reason? }` — stop tool. Model sees reason as error |
+| `tool_result` ✅ | After tool finishes, before result emitted | `{ content?, details?, isError?, usage? }` — patch any field |
+
+### Context (1)
+
+| Hook | Triggers | Return shape |
+|------|----------|-------------|
+| `context` ✅ | Before each LLM call, with full message array | `{ messages }` — filtered/replaced message array |
+
+### Provider HTTP (1)
+
+| Hook | Triggers | Return shape |
+|------|----------|-------------|
+| `before_provider_headers` ✅ | HTTP headers assembled | Mutate `event.headers` in place — set to `null` to delete a header |
+
+### User Bash (1)
+
+| Hook | Triggers | Return shape |
+|------|----------|-------------|
+| `user_bash` ✅ | `!command` or `!!command` in editor | `{ operations? }` — custom BashOperations (SSH, wrapper)<br>`{ result? }` — skip execution, return this result directly |
+
+### Session Navigation (4)
+
+| Hook | Triggers | Return shape |
+|------|----------|-------------|
+| `session_before_switch` ✅ | `/new` or `/resume` | `{ cancel: true }` — abort the switch |
+| `session_before_fork` ✅ | `/fork` or `/clone` | `{ cancel: true }` — abort the fork/clone |
+| `session_before_compact` ⬜ | Manual or auto compaction | `{ cancel: true }` — abort compaction<br>`{ compaction: { summary, firstKeptEntryId, tokensBefore } }` — provide custom summary |
+| `session_before_tree` ✅ | `/tree` navigation | `{ cancel: true }` — abort navigation<br>`{ summary: { summary, details? } }` — provide custom summary |
+
+---
+
+## EVENTS — Pure Notification, Return Values Ignored
+
+Events are timeline markers. Subscribe to observe. Return values are discarded.
+
+### Startup (3)
 
 | Event | Fires when |
 |-------|-----------|
 | `project_trust` ⬜ | Project trust decision needed (before project resources load) |
 | `session_start` ✅ | Session created, loaded, reloaded, or switched |
-| `resources_discover` ✅ | After `session_start` — extensions can contribute extra skill/prompt/theme paths |
+| `resources_discover` ✅ | After `session_start` — contribute extra skill/prompt/theme paths |
 
-### Agent Run
-
-| Event | Fires when |
-|-------|-----------|
-| `agent_start` ✅ | Agent run begins (one prompt) |
-| `agent_end` ✅ | Agent run ends — retry, compaction, or follow-up may still follow |
-| `agent_settled` ✅ | Fully idle — no retries, compaction, or queued continuations remain |
-
-### Turns
+### Agent Run (3)
 
 | Event | Fires when |
 |-------|-----------|
-| `turn_start` ✅ | One LLM request + response cycle begins |
+| `agent_start` ✅ | Agent run begins |
+| `agent_end` ✅ | Run ends — retry, compaction, or follow-up may still follow |
+| `agent_settled` ✅ | **Fully idle** — no more automatic work. Use this for status integrations |
+
+### Turns (2)
+
+| Event | Fires when |
+|-------|-----------|
+| `turn_start` ✅ | One LLM request + response begins |
 | `turn_end` ✅ | One LLM request + response + tool batch completes |
 
-### Messages
+### Messages (2)
 
 | Event | Fires when |
 |-------|-----------|
-| `message_start` ✅ | A new message appears (user, assistant, or toolResult) |
-| `message_update` 🔇 | Assistant streaming — token-by-token deltas. Silenced in tracer to avoid spam |
+| `message_start` ✅ | New message appears (user, assistant, toolResult) |
+| `message_update` 🔇 | Assistant streaming — token-by-token deltas. Silenced in tracer |
 
-### Tools
-
-| Event | Fires when |
-|-------|-----------|
-| `tool_execution_start` ✅ | Tool execution pre-flight (before `tool_call`) |
-| `tool_execution_update` ✅ | Streaming tool output — can fire multiple times per tool |
-| `tool_execution_end` ✅ | Tool execution finalized (after `tool_result`) |
-
-### Session Lifecycle
+### Tools (3)
 
 | Event | Fires when |
 |-------|-----------|
-| `session_info_changed` ✅ | Session renamed via `/name` or `pi.setSessionName()` |
-| `session_compact` ⬜ | Compaction entry written to session (needs long session) |
+| `tool_execution_start` ✅ | Pre-flight (before `tool_call` hook) |
+| `tool_execution_update` ✅ | Streaming tool output — fires multiple times per tool |
+| `tool_execution_end` ✅ | Execution finalized (after `tool_result` hook) |
+
+### Session Lifecycle (4)
+
+| Event | Fires when |
+|-------|-----------|
+| `session_info_changed` ✅ | Session renamed (`/name` or `pi.setSessionName()`) |
+| `session_compact` ⬜ | Compaction entry written (needs long session to trigger) |
 | `session_tree` ✅ | Tree navigation complete |
-| `session_shutdown` ✅ | Session runtime torn down (quit, reload, new, resume, fork) |
+| `session_shutdown` ✅ | Runtime torn down (quit, reload, new, resume, fork) |
 
-### Model & Thinking
-
-| Event | Fires when |
-|-------|-----------|
-| `model_select` ✅ | Model changed via `/model`, Ctrl+P, or session restore |
-| `thinking_level_select` ✅ | Thinking level changed via keybinding, settings, or model change |
-
-### Provider
+### Model & Thinking (2)
 
 | Event | Fires when |
 |-------|-----------|
-| `after_provider_response` ✅ | HTTP response received, before stream body consumed |
+| `model_select` ✅ | Model changed (`/model`, Ctrl+P, session restore) |
+| `thinking_level_select` ✅ | Thinking level changed (keybinding, settings, model change) |
+
+### Provider (1)
+
+| Event | Fires when |
+|-------|-----------|
+| `after_provider_response` ✅ | HTTP response received, before stream consumed |
 
 ---
 
-## Flow Order (typical interactive session)
+## Flow Order
 
 ```
 STARTUP
   project_trust
   session_start
   resources_discover
-      │
-      ▼ (idle — waiting for input)
-      │
+      ↓ idle
 PROMPT
   input                   [HOOK]
   before_agent_start      [HOOK]
   agent_start
-      │
-      ┌─ turn_start ──────────────────────────┐
-      │  message_start (user)                 │
-      │  message_end   (user)                 │
-      │  context                 [HOOK]       │
-      │  before_provider_headers [HOOK]       │
-      │  ▶ LLM request                        │
-      │  after_provider_response              │
-      │  message_start (assistant)            │
-      │  message_update (assistant) ×N        │
-      │  message_end   (assistant)  [HOOK]    │
-      │                                       │
-      │  (if tools called:)                   │
-      │  tool_execution_start                 │
-      │  tool_call                [HOOK]      │
-      │  tool_execution_update ×N             │
-      │  tool_result              [HOOK]      │
-      │  tool_execution_end                   │
-      │  message_start (toolResult)           │
-      │  message_end   (toolResult) [HOOK]    │
-      │                                       │
-      │  ▶ loop back to turn_start if more    │
-      └───────────────────────────────────────┘
-      │
+    ┌ turn_start ──────────────────────────┐
+    │ message_start/end (user)             │
+    │ context                 [HOOK]       │
+    │ before_provider_headers [HOOK]       │
+    │ ▶ LLM request                        │
+    │ after_provider_response              │
+    │ message_start/update/end (assistant) │
+    │                                      │
+    │ (if tools:)                          │
+    │   tool_execution_start               │
+    │   tool_call              [HOOK]      │
+    │   tool_execution_update ×N           │
+    │   tool_result            [HOOK]      │
+    │   tool_execution_end                 │
+    │   message_start/end (toolResult)     │
+    │                                      │
+    │ ▶ loop back if more tools            │
+    └──────────────────────────────────────┘
   agent_end
   agent_settled
-      │
-      ▼ (idle)
+      ↓ idle
 ```
-
----
-
-## Unverified — Remaining (4)
-
-| Event | Type | Why not verified |
-|-------|------|-----------------|
-| `project_trust` | Event | Project `~/.pi/` already trusted — won't fire again unless trust is removed |
-| `message_update` | Event | Silenced in tracer (`🔇`). Uncomment the handler in `dummy/index.ts` to verify |
-| `session_before_compact` | Hook | Session too short — requires enough history to trigger `/compact` |
-| `session_compact` | Event | Same — fires after `session_before_compact` |
-
-All 4 are expected to work per the official Pi extensions docs; they just haven't been triggered in a live trace yet.
 
 ---
 
 ## Anti-Pitfalls
 
-- **Use `agent_settled`, not `agent_end`**, for status integrations. `agent_end` may be followed by auto-retry or compaction.
-- **`console.log` is unreliable in TUI mode.** The TUI owns stdout. Use file-based logging (`appendFileSync`) for traces.
-- **Hooks chain.** Multiple extensions can subscribe to the same hook — they run in extension load order, each seeing the previous handler's modifications.
-- **`tool_call` sees `event.input` as mutable.** Mutate it in place to patch arguments. No re-validation occurs after your mutation.
-- **`message_update` is high-frequency** during streaming. Don't do heavy work here.
-- **Session-scoped log files.** The tracer creates a timestamped log per session (`/tmp/pi-event-trace-<iso>.log`). Forks and `/new` get their own files — the parent session's log is never wiped.
+- **`agent_settled` is the true "done" signal.** `agent_end` may be followed by retry or compaction.
+- **`console.log` is unreliable in TUI mode.** Use file I/O for traces.
+- **Hooks chain.** Multiple handlers run in extension load order. Each sees the previous handler's changes.
+- **`tool_call` input is mutable.** Mutate `event.input` in place to patch arguments. No re-validation.
+- **Extensions load: files first, then subdirectories** — within each discovery tier.
+- **`-e` loads first,** before all auto-discovered extensions. One session only.
