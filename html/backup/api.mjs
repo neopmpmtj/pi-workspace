@@ -239,7 +239,9 @@ function spawnEngine({ interactive, trigger }) {
         ...process.env,
         PYTHONPATH: BACKUP_SRC,
         BACKUP_INTERACTIVE: interactive ? '1' : '0',
-        BROWSER: 'firefox',  // ensure the OAuth flow can open a browser
+        BROWSER: 'firefox',
+        DISPLAY: process.env.DISPLAY || ':1',
+        XAUTHORITY: process.env.XAUTHORITY || '/run/user/1000/gdm/Xauthority',
         ...(trigger ? { BACKUP_TRIGGER: trigger } : {}),
       },
     }
@@ -294,9 +296,27 @@ function getBackupStatus() {
 }
 
 async function runAuth() {
-  // Synchronous-ish: the request waits for the OAuth flow, but Node keeps
-  // serving other requests in the meantime (the whole reason we moved here).
-  const { done } = _spawnEngine({ interactive: true, trigger: 'auth' });
+  // Standalone auth — uses auth_cli.py which only does OAuth, no backup.
+  const child = spawn(
+    BACKUP_VENV_PYTHON, ['-m', 'backup_PC_tool.auth_cli'],
+    {
+      cwd: BACKUP_ROOT,
+      env: {
+        ...process.env,
+        PYTHONPATH: BACKUP_SRC,
+        BROWSER: 'firefox',
+        DISPLAY: process.env.DISPLAY || ':1',
+        XAUTHORITY: process.env.XAUTHORITY || '/run/user/1000/gdm/Xauthority',
+      },
+    }
+  );
+  let stdout = '', stderr = '';
+  child.stdout.on('data', (d) => { stdout += d.toString(); });
+  child.stderr.on('data', (d) => { stderr += d.toString(); });
+  const done = new Promise((resolve) => {
+    child.on('close', (code) => resolve({ success: code === 0, stdout, stderr, exitCode: code ?? -1 }));
+    child.on('error', (err) => resolve({ success: false, stdout, stderr: String(err), exitCode: -1 }));
+  });
   let timeoutId;
   const timeout = new Promise((resolve) => {
     timeoutId = setTimeout(() => resolve({
