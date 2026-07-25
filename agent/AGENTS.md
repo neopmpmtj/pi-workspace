@@ -39,6 +39,10 @@ If at any point during our conversation I raise a topic or express an interest t
 
 This gives me the opportunity to decide whether to make it permanent or keep it ephemeral.
 
+## Updating pi-state-summary.md
+
+When the user says "update pi-state-summary" (or similar): audit the entire `~/.pi/` directory — installed packages, agents, extensions, skills, cron jobs, dashboard, apps-scripts — and rewrite `/home/pmpmt/.pi/miscelaneous_documentation/pi-state-summary.md` to reflect current reality only. No history, no stale references. This document is a living inventory, not a changelog. Session-level changes are captured separately via the `/document` prompt.
+
 ## CLI Tool Hygiene
 
 Skill docs in `~/.pi/agent/skills/` can have stale or incorrect command names because the CLI tools they document (e.g., `gog`, `gh`, `yt-dlp`) evolve independently. Before running any command found in a skill's SKILL.md:
