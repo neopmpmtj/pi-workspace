@@ -22,10 +22,10 @@
       "createdAtMs": 1784271998255,
       "updatedAtMs": 1784272366981,
       "state": {
-        "nextRunAtMs": 1785050400000,
-        "lastRunAtMs": 1784967079571,
+        "nextRunAtMs": 1785136800000,
+        "lastRunAtMs": 1785081816860,
         "lastRunStatus": "ok",
-        "lastDurationMs": 26431,
+        "lastDurationMs": 25988,
         "consecutiveErrors": 0
       }
     },
@@ -51,10 +51,10 @@
       "createdAtMs": 1784713890079,
       "updatedAtMs": 1784713890079,
       "state": {
-        "nextRunAtMs": 1785049200000,
-        "lastRunAtMs": 1784967085307,
+        "nextRunAtMs": 1785135600000,
+        "lastRunAtMs": 1785081824654,
         "lastRunStatus": "ok",
-        "lastDurationMs": 5733,
+        "lastDurationMs": 7791,
         "consecutiveErrors": 0
       }
     }

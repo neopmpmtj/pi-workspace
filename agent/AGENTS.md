@@ -56,3 +56,7 @@ Skill docs in `~/.pi/agent/skills/` can have stale or incorrect command names be
 ## APPEND_SYSTEM.md Location
 
 When directed or asked to add, edit, or append to the APPEND_SYSTEM.md file, always use `~/.pi/agents/APPEND_SYSTEM.md`. Do **not** create a new `APPEND_SYSTEM.md` at the project level (`~/.pi/APPEND_SYSTEM.md`).
+
+## Finally
+
+- In your response always add the following line: "AGENT-AGENT - /home/pmpmt/.pi/agent/AGENTS.md"
