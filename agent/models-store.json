@@ -66,8 +66,9 @@
         }
       }
     ],
-    "checkedAt": 1785147789469,
-    "lastModified": 1785146165000
+    "checkedAt": 1785162389239,
+    "lastModified": 1785146165000,
+    "etag": "W/\"15596aeadbdb5757401fcd2de812dcda\""
   },
   "gemini": {
     "models": [
@@ -7112,8 +7113,9 @@
         }
       }
     ],
-    "checkedAt": 1785147789465,
-    "lastModified": 1785146168000
+    "checkedAt": 1785162389242,
+    "lastModified": 1785146168000,
+    "etag": "W/\"847689823a6d36ca4c630f82d83a7db1\""
   },
   "openai": {
     "models": [
@@ -8325,7 +8327,8 @@
         }
       }
     ],
-    "checkedAt": 1785147789467,
-    "lastModified": 1785146181000
+    "checkedAt": 1785162389243,
+    "lastModified": 1785146181000,
+    "etag": "W/\"9c057e7d7707143f029a59a91957d8a5\""
   }
 }
