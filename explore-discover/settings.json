@@ -2,5 +2,6 @@
   "defaultProvider": "deepseek",
   "defaultModel": "deepseek-v4-pro",
   "defaultThinkingLevel": "off",
-  "theme": "dark"
+  "theme": "dark",
+  "lastChangelogVersion": "0.81.1"
 }
