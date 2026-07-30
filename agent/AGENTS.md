@@ -57,6 +57,15 @@ Skill docs in `~/.pi/agent/skills/` can have stale or incorrect command names be
 
 When directed or asked to add, edit, or append to the APPEND_SYSTEM.md file, always use `~/.pi/agents/APPEND_SYSTEM.md`. Do **not** create a new `APPEND_SYSTEM.md` at the project level (`~/.pi/APPEND_SYSTEM.md`).
 
+## Subagent Troubleshooting
+
+When a subagent fails, the two most common causes (in order):
+
+1. **Missing tool** — the agent's YAML frontmatter `tools:` list doesn't include the tool it needs (e.g., `web_search`). The subagent runs as a separate `pi` process with only those tools. Check `~/.pi/agent/agents/<name>.md` and add the missing tool.
+2. **Invalid model name** — the `model:` field doesn't match any configured model. Check `~/.pi/agent/settings.json` under `enabledModels` for valid names. If the model name is unrecognized, pi falls back to OpenRouter (which likely has no key), producing "No API key found for openrouter."
+
+**Debugging:** Use `read` to inspect the agent's `.md` file, verify the model against `settings.json`, and fix both before retrying.
+
 ## Finally
 
 - In your response always add the following line: "AGENT-AGENT - /home/pmpmt/.pi/agent/AGENTS.md"

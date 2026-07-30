@@ -1,9 +1,9 @@
 {
-  "lastChangelogVersion": "0.82.1",
+  "lastChangelogVersion": "0.83.0",
   "theme": "dark",
   "defaultProvider": "deepseek",
   "defaultModel": "deepseek-v4-pro",
-  "defaultThinkingLevel": "off",
+  "defaultThinkingLevel": "high",
   "compaction": {
     "enabled": true
   },
