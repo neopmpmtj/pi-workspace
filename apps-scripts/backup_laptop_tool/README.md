@@ -42,13 +42,13 @@ the inline JS. It has been retired; see `~/.pi/html/backup/README.md`.
 | Path | Purpose |
 |------|---------|
 | `src/backup_PC_tool/main.py` | Snapshot + upload entry point (CLI / subprocess) |
-| `src/backup_PC_tool/snapshot.py` | `tar.gz` creation with blacklist pruning |
+| `src/backup_PC_tool/snapshot.py` | `tar.gz` creation with blacklist pruning + extra includes |
 | `src/backup_PC_tool/gdrive.py` | Drive upload + retention (retried, paginated) |
 | `src/backup_PC_tool/auth.py` | OAuth (token stored in package dir) |
 | `src/backup_PC_tool/config.py` | Loads `backup_config.json` + env |
 | `src/backup_PC_tool/db.py` | SQLite run history (`backup_history.db`) |
 | `src/backup_PC_tool/log.py` | Logging setup (stdout + `backup.log`) |
-| `src/backup_PC_tool/backup_config.json` | **`blacklist` only** |
+| `src/backup_PC_tool/backup_config.json` | `blacklist` + `extra_includes` |
 | `~/.pi/agent/.env` | Secrets + options (OAuth id/secret, folder, retention, …) |
 | `.backup_PC_cache/` | Local archive cache (only newest kept) |
 | `tests/test_gdrive.py` | gdrive unit tests (escape, pagination, retention, upload) |
@@ -70,6 +70,11 @@ The **blacklist** (directory names skipped anywhere in the tree) is edited via
 the dashboard or directly in `src/backup_PC_tool/backup_config.json`. It must
 include regenerable/heavy dirs: `.git`, `venv`, `.venv`, `node_modules`,
 `__pycache__`, `.mypy_cache`, `.pytest_cache`, `.backup_PC_cache`.
+
+The **extra_includes** list (paths outside `~/.pi` that should still be backed
+up, e.g. `~/.local/bin/yt-download`) is edited directly in
+`src/backup_PC_tool/backup_config.json`. Each entry is stored in the archive
+under `_external/<home-relative-path>`.
 
 ## systemd units
 

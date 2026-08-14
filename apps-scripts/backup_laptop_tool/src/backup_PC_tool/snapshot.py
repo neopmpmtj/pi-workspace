@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, List, Optional
 
-from .config import get_blacklist, get_token_file
+from .config import get_blacklist, get_token_file, get_extra_includes
 from .log import get_logger
 
 
@@ -91,10 +91,22 @@ def _pruned_walk(root: Path, blacklist: List[str]) -> Iterable[tuple[str, List[s
         yield dirpath, dirnames, filenames
 
 
+def _external_arcname(path: Path) -> str:
+    """Archive path for explicitly-included paths outside source_dir."""
+    home = Path.home().resolve()
+    p = path.resolve()
+    try:
+        rel = p.relative_to(home)
+        return f"_external/{rel.as_posix()}"
+    except ValueError:
+        return f"_external/{p.as_posix().lstrip('/')}"
+
+
 def create_snapshot_archive(
     source_dir: Path,
     cache_dir: Optional[Path] = None,
     blacklist: Optional[List[str]] = None,
+    extra_includes: Optional[List[str]] = None,
 ) -> SnapshotResult:
     """
     Create a .tar.gz snapshot of source_dir, excluding blacklisted dirs.
@@ -104,6 +116,8 @@ def create_snapshot_archive(
     source_dir = source_dir.resolve()
     if blacklist is None:
         blacklist = get_blacklist()
+    if extra_includes is None:
+        extra_includes = get_extra_includes()
 
     if cache_dir is None:
         cache_dir = source_dir / ".backup_PC_cache"
@@ -147,6 +161,19 @@ def create_snapshot_archive(
                     continue
 
                 tf.add(abs_file, arcname=str(rel_file), recursive=False)
+
+        # Add explicitly-included external paths (e.g. ~/.local/bin/yt-download)
+        for raw in extra_includes:
+            ext = Path(raw).expanduser()
+            if not ext.exists():
+                logger.warning(f"Extra include not found, skipping: {raw}")
+                continue
+            arc = _external_arcname(ext)
+            if ext.is_dir():
+                tf.add(ext, arcname=arc, recursive=True)
+            else:
+                tf.add(ext, arcname=arc)
+            logger.info(f"Added extra include: {ext} -> {arc}")
 
     return SnapshotResult(
         archive_path=archive_path,

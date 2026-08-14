@@ -40,6 +40,10 @@ def load_config() -> Dict[str, Any]:
     if not isinstance(data["blacklist"], list):
         raise ConfigError("'blacklist' must be a list.")
 
+    extra_includes = data.get("extra_includes", [])
+    if not isinstance(extra_includes, list):
+        raise ConfigError("'extra_includes' must be a list of paths.")
+
     client_id = (os.environ.get("GOOGLE_CLIENT_ID") or "").strip()
     client_secret = (os.environ.get("GOOGLE_CLIENT_SECRET") or "").strip()
     if not client_id or not client_secret:
@@ -58,6 +62,7 @@ def load_config() -> Dict[str, Any]:
 
     return {
         "blacklist": data["blacklist"],
+        "extra_includes": extra_includes,
         "GOOGLE_CLIENT_ID": client_id,
         "GOOGLE_CLIENT_SECRET": client_secret,
         "GDRIVE_BACKUPS_FOLDER": gdrive_folder,
@@ -69,6 +74,10 @@ def load_config() -> Dict[str, Any]:
 
 def get_blacklist() -> List[str]:
     return load_config()["blacklist"]
+
+
+def get_extra_includes() -> List[str]:
+    return load_config()["extra_includes"]
 
 
 def get_token_file() -> str:

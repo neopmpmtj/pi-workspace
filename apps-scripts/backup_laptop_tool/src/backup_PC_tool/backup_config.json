@@ -8,5 +8,8 @@
     ".mypy_cache",
     ".pytest_cache",
     ".backup_PC_cache"
+  ],
+  "extra_includes": [
+    "/home/pmpmt/.local/bin/yt-download"
   ]
 }

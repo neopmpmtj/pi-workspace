@@ -22,12 +22,13 @@
         "compat": {
           "supportsStore": false,
           "supportsDeveloperRole": false,
+          "maxTokensField": "max_tokens",
           "requiresReasoningContentOnAssistantMessages": true,
           "thinkingFormat": "deepseek"
         },
         "thinkingLevelMap": {
           "minimal": null,
-          "low": null,
+          "low": "low",
           "medium": null,
           "high": "high",
           "max": "max"
@@ -54,6 +55,7 @@
         "compat": {
           "supportsStore": false,
           "supportsDeveloperRole": false,
+          "maxTokensField": "max_tokens",
           "requiresReasoningContentOnAssistantMessages": true,
           "thinkingFormat": "deepseek"
         },
@@ -66,9 +68,9 @@
         }
       }
     ],
-    "checkedAt": 1786026178519,
-    "lastModified": 1785146165000,
-    "etag": "W/\"15596aeadbdb5757401fcd2de812dcda\""
+    "checkedAt": 1786698900338,
+    "lastModified": 1786694654000,
+    "etag": "W/\"c856e605b796f2df5d2cc4d7c20336f5\""
   },
   "gemini": {
     "models": [
@@ -6608,46 +6610,6 @@
         "maxTokens": 65536
       },
       {
-        "id": "gemini-2.0-flash",
-        "name": "Gemini 2.0 Flash",
-        "api": "google-generative-ai",
-        "provider": "google",
-        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
-        "reasoning": false,
-        "input": [
-          "text",
-          "image"
-        ],
-        "cost": {
-          "input": 0.1,
-          "output": 0.4,
-          "cacheRead": 0.025,
-          "cacheWrite": 0
-        },
-        "contextWindow": 1048576,
-        "maxTokens": 8192
-      },
-      {
-        "id": "gemini-2.0-flash-lite",
-        "name": "Gemini 2.0 Flash-Lite",
-        "api": "google-generative-ai",
-        "provider": "google",
-        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
-        "reasoning": false,
-        "input": [
-          "text",
-          "image"
-        ],
-        "cost": {
-          "input": 0.075,
-          "output": 0.3,
-          "cacheRead": 0,
-          "cacheWrite": 0
-        },
-        "contextWindow": 1048576,
-        "maxTokens": 8192
-      },
-      {
         "id": "gemini-2.5-computer-use-preview-10-2025",
         "name": "Gemini 2.5 Computer Use Preview 10-2025",
         "api": "google-generative-ai",
@@ -6748,33 +6710,6 @@
         "maxTokens": 65536,
         "thinkingLevelMap": {
           "off": null
-        }
-      },
-      {
-        "id": "gemini-3-pro-preview",
-        "name": "Gemini 3 Pro Preview",
-        "api": "google-generative-ai",
-        "provider": "google",
-        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
-        "reasoning": true,
-        "input": [
-          "text",
-          "image"
-        ],
-        "cost": {
-          "input": 2,
-          "output": 12,
-          "cacheRead": 0.2,
-          "cacheWrite": 0
-        },
-        "contextWindow": 1048576,
-        "maxTokens": 65536,
-        "thinkingLevelMap": {
-          "off": null,
-          "minimal": null,
-          "low": "LOW",
-          "medium": null,
-          "high": "HIGH"
         }
       },
       {
@@ -6993,6 +6928,29 @@
         }
       },
       {
+        "id": "gemini-3.7-flash",
+        "name": "Gemini 3.7 Flash",
+        "api": "google-generative-ai",
+        "provider": "google",
+        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+        "reasoning": true,
+        "input": [
+          "text",
+          "image"
+        ],
+        "cost": {
+          "input": 0.75,
+          "output": 3.75,
+          "cacheRead": 0.075,
+          "cacheWrite": 0
+        },
+        "contextWindow": 1048576,
+        "maxTokens": 65536,
+        "thinkingLevelMap": {
+          "off": null
+        }
+      },
+      {
         "id": "gemini-flash-latest",
         "name": "Gemini Flash Latest",
         "api": "google-generative-ai",
@@ -7113,9 +7071,9 @@
         }
       }
     ],
-    "checkedAt": 1786009865685,
-    "lastModified": 1785146168000,
-    "etag": "W/\"847689823a6d36ca4c630f82d83a7db1\""
+    "checkedAt": 1786698900333,
+    "lastModified": 1786694657000,
+    "etag": "W/\"d1d9116872d6ef142a1b7c92eb1d5379\""
   },
   "openai": {
     "models": [
@@ -7773,6 +7731,7 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
+          "supportsAdditionalTools": true,
           "supportsToolSearch": true
         }
       },
@@ -7807,6 +7766,7 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
+          "supportsAdditionalTools": true,
           "supportsToolSearch": true
         }
       },
@@ -7883,6 +7843,7 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
+          "supportsAdditionalTools": true,
           "supportsToolSearch": true
         }
       },
@@ -7926,6 +7887,7 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
+          "supportsAdditionalTools": true,
           "supportsToolSearch": true
         }
       },
@@ -8011,6 +7973,7 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
+          "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsExplicitPromptCacheMode": true
         }
@@ -8055,6 +8018,7 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
+          "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsExplicitPromptCacheMode": true
         }
@@ -8099,6 +8063,7 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
+          "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsExplicitPromptCacheMode": true
         }
@@ -8327,8 +8292,8 @@
         }
       }
     ],
-    "checkedAt": 1786009865695,
-    "lastModified": 1785502726000,
-    "etag": "W/\"f1f6f2e8493b001e6b8e24ca0e98ac6d\""
+    "checkedAt": 1786698900340,
+    "lastModified": 1786435934000,
+    "etag": "W/\"7ac97151d0d133dd97e299dd4cb1662c\""
   }
 }
