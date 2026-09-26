@@ -58,6 +58,16 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
 - Use one stable handle per conversation partner (e.g. `explore-dm` for the explore-discover agent) and keep reusing it for follow-ups.
 - Only start a **new** session (change the handle, or omit `--session`) when the user explicitly asks to start a new session, or when it is clearly a brand-new, unrelated conversation.
 
+### Terminology
+
+- **Partner agent / fellow agent** — a *separate workspace's* pi agent (e.g. the `explore-discover` agent) that I message via `pi --print --session <handle>` with `PI_CODING_AGENT_DIR` pointing at that workspace. It has its own config directory, its own identity, and a persistent conversation.
+- **Subagent** — a short-lived, isolated delegation worker spawned from *this* session via the `subagent` / `spawn_agent` tools (e.g. `frontend`, `researcher`, `explore`). A different thing: no separate workspace, no persistent identity, used for one-off delegated tasks.
+
+# Partner Agent Creation
+
+- Creating a new partner agent is the **main agent's** job (the user asks me, not a partner agent). Use the canonical script `~/.pi/agent/partner-agents/setup-pi-agent.sh` — drive it by piping answers to its prompts, or perform its steps directly: create `~/.pi/partner-agents/<name>/`, copy `gitignore.template`, symlink `auth.json`/`models-store.json`, `git init`, `gh repo create neopmpmtj/<name> --public --push`, add a `pi-<name>` alias, register the path in `partner-agents.list`.
+- Sync all partner agents with `~/.pi/agent/partner-agents/push-partner-agents.sh`.
+
 ## Finally
 
 - In your response always add the following line: "AGENT-AGENT - /home/pmpmt/.pi/agent/APPEND_SYSTEM.md"

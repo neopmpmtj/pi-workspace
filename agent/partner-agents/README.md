@@ -9,7 +9,7 @@ talks to over `pi --print --session <handle>`.
 | File | Purpose |
 |---|---|
 | `gitignore.template` | Canonical `.gitignore` copied into every new agent |
-| `setup-pi-agent.sh` *(lives in explore-discover)* | Interactive creator: workspace + alias + **git/GitHub backup** |
+| `setup-pi-agent.sh` | Interactive creator: workspace + alias + **git/GitHub backup** (lives here, in the central tooling) |
 | `push-partner-agents.sh` | Commits + pushes every agent in the registry (the "update all partners" command) |
 | `partner-agents.list` | Registry — one workspace path per line |
 
@@ -28,8 +28,10 @@ talks to over `pi --print --session <handle>`.
 
 ## Creating a new partner agent
 
+This is the **main agent's** job (ask the main agent, not a partner agent):
+
 ```bash
-~/.pi/explore-discover/setup-pi-agent.sh
+~/.pi/agent/partner-agents/setup-pi-agent.sh
 # → answers prompts → creates workspace + alias + public GitHub repo + push
 ```
 
