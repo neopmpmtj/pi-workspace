@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text-to-speech"
+version = "0.1.0"
+description = "Hotkey text-to-speech: clipboard text -> TTS (edge-tts / OpenAI / Cartesia / ElevenLabs) -> saved audio + playback"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]

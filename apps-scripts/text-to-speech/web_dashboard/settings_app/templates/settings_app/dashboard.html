@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Speech Settings Dashboard</title>
+
+    <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" rel="stylesheet">
+    <script crossorigin="anonymous"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px 0;
+        }
+        .dashboard-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 640px;
+            width: 100%;
+        }
+        .dashboard-header { text-align: center; margin-bottom: 30px; }
+        .dashboard-header h1 { color: #667eea; font-weight: 700; font-size: 2rem; margin-bottom: 10px; }
+        .dashboard-header p { color: #6c757d; font-size: 0.95rem; }
+        .section-title {
+            color: #667eea; font-weight: 600; font-size: 1rem;
+            margin: 24px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .form-label { font-weight: 500; margin-bottom: 2px; }
+        .form-text { font-size: 0.8rem; }
+        .provider-badge {
+            display: inline-block; font-size: 0.72rem; padding: 2px 8px;
+            border-radius: 20px; margin-left: 6px; vertical-align: middle;
+        }
+        .badge-free { background: #d1e7dd; color: #0f5132; }
+        .badge-mid  { background: #cfe2ff; color: #084298; }
+        .badge-top  { background: #f8d7da; color: #842029; }
+        .btn-speak { width: 100%; font-weight: 600; }
+        .voice-select { max-height: 220px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="dashboard-container mx-auto">
+
+        <div class="dashboard-header">
+            <h1>🔊 Text-to-Speech Settings</h1>
+            <p>Select text anywhere, press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>,
+               and this app reads your clipboard out loud.</p>
+        </div>
+
+        {% if success %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ✅ Settings saved! The next hotkey press uses them.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        <div id="errorBox" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="settingsForm" method="post" action="/">
+            {% csrf_token %}
+
+            <!-- ================= Provider ================= -->
+            <div class="section-title">Provider</div>
+            <select id="providerSelect" name="provider" class="form-select">
+                {% for prov in providers %}
+                <option value="{{ prov.id }}" {% if prov.id == current %}selected{% endif %}
+                        data-configured="{{ prov.configured|yesno:'true,false' }}"
+                        data-description="{{ prov.description }}">
+                    {{ prov.label }}
+                    {% if prov.id == 'edge' %}<span class="provider-badge badge-free">free</span>{% endif %}
+                    {% if prov.id == 'openai' or prov.id == 'cartesia' %}<span class="provider-badge badge-mid">mid</span>{% endif %}
+                    {% if prov.id == 'elevenlabs' %}<span class="provider-badge badge-top">top</span>{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <div id="providerDesc" class="form-text mt-1"></div>
+            <div id="providerWarn" class="form-text text-danger d-none"></div>
+
+            <!-- ================= Voice ================= -->
+            <div class="section-title">Voice</div>
+            <div class="input-group">
+                <input type="text" id="voiceFilter" class="form-control" placeholder="Filter voices…">
+                <button type="button" id="refreshVoices" class="btn btn-outline-secondary">↻ Refresh</button>
+            </div>
+            <select id="voiceSelect" name="voice" class="form-select voice-select mt-1"></select>
+
+            <!-- ================= Per-provider settings ================= -->
+            <div id="fields-edge" class="provider-fields">
+                <div class="section-title">Microsoft Edge options</div>
+                <div class="row g-2">
+                    <div class="col-4"><label class="form-label">Rate</label>
+                        <input type="text" class="form-control" name="rate" data-key="rate" placeholder="+0%"></div>
+                    <div class="col-4"><label class="form-label">Pitch</label>
+                        <input type="text" class="form-control" name="pitch" data-key="pitch" placeholder="+0Hz"></div>
+                    <div class="col-4"><label class="form-label">Volume</label>
+                        <input type="text" class="form-control" name="volume" data-key="volume" placeholder="+0%"></div>
+                </div>
+            </div>
+
+            <div id="fields-openai" class="provider-fields">
+                <div class="section-title">OpenAI options</div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Model</label>
+                        <select class="form-select" name="model" data-key="model">
+                            <option value="gpt-4o-mini-tts">gpt-4o-mini-tts</option>
+                            <option value="tts-1">tts-1</option>
+                            <option value="tts-1-hd">tts-1-hd</option>
+                        </select>
+                    </div>
+                </div>
+                <label class="form-label mt-2">Instructions (voice steering)</label>
+                <input type="text" class="form-control" name="instructions" data-key="instructions"
+                       placeholder="e.g. Speak in a calm British accent">
+            </div>
+
+            <div id="fields-cartesia" class="provider-fields">
+                <div class="section-title">Cartesia options</div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Model</label>
+                        <select class="form-select" name="model" data-key="model">
+                            <option value="sonic-3.6">sonic-3.6</option>
+                            <option value="sonic-3.5">sonic-3.5</option>
+                            <option value="sonic-3">sonic-3</option>
+                            <option value="sonic-latest">sonic-latest</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Emotion</label>
+                        <select class="form-select" name="emotion" data-key="emotion">
+                            <option value="">(auto)</option>
+                            <option value="neutral">neutral</option>
+                            <option value="calm">calm</option>
+                            <option value="content">content</option>
+                            <option value="happy">happy</option>
+                            <option value="excited">excited</option>
+                            <option value="curious">curious</option>
+                            <option value="confident">confident</option>
+                            <option value="sarcastic">sarcastic</option>
+                            <option value="wistful">wistful</option>
+                            <option value="sad">sad</option>
+                            <option value="angry">angry</option>
+                            <option value="scared">scared</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fields-elevenlabs" class="provider-fields">
+                <div class="section-title">ElevenLabs options</div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Model</label>
+                        <select class="form-select" name="model" data-key="model">
+                            <option value="eleven_flash_v2_5">Flash v2.5 (fast, cheap)</option>
+                            <option value="eleven_turbo_v2_5">Turbo v2.5</option>
+                            <option value="eleven_v3">v3 (conversational)</option>
+                            <option value="eleven_multilingual_v2">Multilingual v2 (best)</option>
+                        </select>
+                    </div>
+                    <div class="col-6 d-flex align-items-end">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="use_speaker_boost"
+                                   data-key="use_speaker_boost" id="speakerBoost" checked>
+                            <label class="form-check-label" for="speakerBoost">Speaker boost</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-4">
+                        <label class="form-label">Stability <span id="stabilityVal" class="text-muted"></span></label>
+                        <input type="range" class="form-range" min="0" max="1" step="0.05" value="0.5"
+                               name="stability" data-key="stability">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Similarity <span id="similarityVal" class="text-muted"></span></label>
+                        <input type="range" class="form-range" min="0" max="1" step="0.05" value="0.75"
+                               name="similarity" data-key="similarity">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Style <span id="styleVal" class="text-muted"></span></label>
+                        <input type="range" class="form-range" min="0" max="1" step="0.05" value="0"
+                               name="style" data-key="style">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= Global ================= -->
+            <div class="section-title">Global</div>
+            <label class="form-label">Speed <span id="speedVal" class="text-muted"></span></label>
+            <input type="range" class="form-range" min="0.5" max="2" step="0.05" value="1.0"
+                   name="speed" id="speedSlider">
+            <div class="row g-2">
+                <div class="col-8">
+                    <label class="form-label">Audio folder</label>
+                    <input type="text" class="form-control" name="output_dir" data-key="output_dir"
+                           placeholder="~/Voice">
+                    <div class="form-text">Files are saved as tts_&lt;provider&gt;_&lt;timestamp&gt;.mp3</div>
+                </div>
+                <div class="col-4">
+                    <label class="form-label">Keep audio (days)</label>
+                    <input type="number" class="form-control" name="retention_days" data-key="retention_days"
+                           min="1" max="365" value="14">
+                    <div class="form-text">Cron cleanup deletes older files</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg mt-4">💾 Save Settings</button>
+        </form>
+
+        <!-- ================= Preview ================= -->
+        <hr class="my-4">
+        <div class="section-title" style="margin-top:0">Preview</div>
+        <div class="row g-2">
+            <div class="col-9">
+                <textarea id="previewText" class="form-control" rows="2">This is a test of the selected voice.</textarea>
+            </div>
+            <div class="col-3 d-grid">
+                <button type="button" id="previewBtn" class="btn btn-success">▶ Play test</button>
+            </div>
+        </div>
+        <audio id="previewAudio" controls class="w-100 mt-3 d-none"></audio>
+        <div id="previewStatus" class="form-text mt-1"></div>
+
+        <p class="text-muted text-center mt-4 mb-0" style="font-size: 0.8rem">
+            Dashboard on port 8031 · shares .tts_state.json with the CLI and the Ctrl+Alt+S hotkey
+        </p>
+    </div>
+</div>
+
+{{ state|json_script:"stateData" }}
+
+<script>
+    const state = JSON.parse(document.getElementById('stateData').textContent);
+    const csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+
+    const providerSelect = document.getElementById('providerSelect');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const voiceFilter = document.getElementById('voiceFilter');
+    const providerDesc = document.getElementById('providerDesc');
+    const providerWarn = document.getElementById('providerWarn');
+    const errorBox = document.getElementById('errorBox');
+    const previewAudio = document.getElementById('previewAudio');
+    const previewStatus = document.getElementById('previewStatus');
+    const settingsForm = document.getElementById('settingsForm');
+
+    const PROVIDER_LABELS = {
+        edge: 'Microsoft Edge (free)',
+        openai: 'OpenAI TTS',
+        cartesia: 'Cartesia Sonic',
+        elevenlabs: 'ElevenLabs'
+    };
+
+    // ---------------- voice loading ----------------
+    async function loadVoices(pid, selectValue) {
+        voiceSelect.innerHTML = '<option value="">Loading voices…</option>';
+        try {
+            const resp = await fetch('/voices?provider=' + encodeURIComponent(pid));
+            const data = await resp.json();
+            if (!resp.ok) {
+                voiceSelect.innerHTML = '';
+                showError(data.error || 'Failed to load voices');
+                return;
+            }
+            hideError();
+            voiceSelect.innerHTML = '';
+            data.voices.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = v.name || v.id;
+                if (v.language) opt.dataset.lang = v.language;
+                if (v.gender) opt.dataset.gender = v.gender;
+                voiceSelect.appendChild(opt);
+            });
+            applyVoiceFilter();
+            if (selectValue) {
+                const match = [...voiceSelect.options].find(o => o.value === selectValue);
+                if (match) voiceSelect.value = selectValue;
+            }
+        } catch (err) {
+            voiceSelect.innerHTML = '';
+            showError('Network error loading voices: ' + err.message);
+        }
+    }
+
+    function applyVoiceFilter() {
+        const q = voiceFilter.value.toLowerCase();
+        [...voiceSelect.options].forEach(o => {
+            if (o.value === '') return;
+            const hay = (o.textContent + ' ' + (o.dataset.lang || '') + ' ' + (o.dataset.gender || '')).toLowerCase();
+            o.hidden = !hay.includes(q);
+        });
+    }
+
+    // ---------------- per-provider fields ----------------
+    function toggleFields(pid) {
+        document.querySelectorAll('.provider-fields').forEach(block => {
+            block.classList.toggle('d-none', block.id !== 'fields-' + pid);
+        });
+    }
+
+    function applyProviderSettings(pid) {
+        const cfg = state[pid] || {};
+        document.querySelectorAll('.provider-fields [data-key]').forEach(el => {
+            const key = el.dataset.key;
+            const val = cfg[key];
+            if (val === undefined || val === null || val === '') {
+                if (el.type === 'checkbox') el.checked = el.id === 'speakerBoost'; // default on
+                return;
+            }
+            if (el.type === 'checkbox') el.checked = !!val;
+            else if (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = val;
+        });
+        document.querySelectorAll('[data-key=output_dir]').forEach(el => el.value = (state.global && state.global.output_dir) || '~/Voice');
+        document.querySelectorAll('[data-key=retention_days]').forEach(el => el.value = (state.global && state.global.retention_days) || 14);
+        updateRangeLabels();
+    }
+
+    function updateRangeLabels() {
+        const speed = parseFloat(document.getElementById('speedSlider').value);
+        document.getElementById('speedVal').textContent = speed.toFixed(2) + '×';
+        document.querySelectorAll('.provider-fields input[type=range]').forEach(r => {
+            const label = document.getElementById(r.name + 'Val');
+            if (label) label.textContent = '(' + parseFloat(r.value).toFixed(2) + ')';
+        });
+    }
+
+    function onProviderChange() {
+        const pid = providerSelect.value;
+        const opt = providerSelect.selectedOptions[0];
+        providerDesc.textContent = opt.dataset.description || '';
+        providerWarn.classList.add('d-none');
+        if (opt.dataset.configured !== 'true') {
+            providerWarn.textContent = '⚠ No API key found for this provider. Add it to .env (see README).';
+            providerWarn.classList.remove('d-none');
+        }
+        toggleFields(pid);
+        applyProviderSettings(pid);
+        loadVoices(pid, state[pid] && state[pid].voice);
+    }
+
+    // ---------------- helpers ----------------
+    function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.classList.remove('d-none');
+    }
+    function hideError() { errorBox.classList.add('d-none'); }
+
+    // ---------------- preview ----------------
+    async function playPreview() {
+        hideError();
+        previewStatus.textContent = 'Synthesizing…';
+        previewAudio.classList.add('d-none');
+        try {
+            const formData = new FormData(settingsForm);
+            formData.set('text', document.getElementById('previewText').value);
+            const resp = await fetch('/preview', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            });
+            if (!resp.ok) {
+                const data = await resp.json().catch(() => ({}));
+                previewStatus.textContent = '';
+                showError(data.error || 'Preview failed (' + resp.status + ')');
+                return;
+            }
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            previewAudio.src = url;
+            previewAudio.classList.remove('d-none');
+            previewAudio.play();
+            previewStatus.textContent = '';
+        } catch (err) {
+            previewStatus.textContent = '';
+            showError('Preview failed: ' + err.message);
+        }
+    }
+
+    // ---------------- events ----------------
+    providerSelect.addEventListener('change', onProviderChange);
+    voiceFilter.addEventListener('input', applyVoiceFilter);
+    document.getElementById('refreshVoices').addEventListener('click', () => {
+        const pid = providerSelect.value;
+        loadVoices(pid, state[pid] && state[pid].voice);
+    });
+    document.getElementById('previewBtn').addEventListener('click', playPreview);
+    document.getElementById('speedSlider').addEventListener('input', updateRangeLabels);
+    document.querySelectorAll('.provider-fields input[type=range]').forEach(r => {
+        r.addEventListener('input', updateRangeLabels);
+    });
+
+    // ---------------- init ----------------
+    const current = "{{ current }}";
+    providerSelect.value = current;
+    toggleFields(current);
+    applyProviderSettings(current);
+    updateRangeLabels();
+    onProviderChange();
+</script>
+</body>
+</html>
