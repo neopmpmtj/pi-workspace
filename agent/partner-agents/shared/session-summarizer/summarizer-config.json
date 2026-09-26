@@ -1,0 +1,36 @@
+{
+  "_setup": "EXTENSION: To change where snapshots are saved, add PI_SESSION_SUMMARIES_PATH=/your/path to ~/.pi/agent/.env (permanent, no export needed). SUMMARIZER: Edit summariesPath and outputPath below.",
+  "provider": "deepseek",
+  "model": "deepseek-chat",
+  "apiKey": null,
+  "envPath": "/home/pmpmt/.pi/agent/.env",
+  "summariesPath": "/home/pmpmt/.pi/explore-discover/session-summaries",
+  "outputPath": "/home/pmpmt/.pi/explore-discover/sessions-memory",
+  "maxTokens": 1200,
+  "temperature": 0.3,
+
+  "providers": {
+    "deepseek": {
+      "endpoint": "https://api.deepseek.com/v1/chat/completions",
+      "apiKeyEnv": "DEEPSEEK_API_KEY"
+    },
+    "openai": {
+      "endpoint": "https://api.openai.com/v1/chat/completions",
+      "apiKeyEnv": "OPENAI_API_KEY"
+    },
+    "anthropic": {
+      "endpoint": "https://api.anthropic.com/v1/messages",
+      "apiKeyEnv": "ANTHROPIC_API_KEY"
+    },
+    "gemini": {
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}",
+      "apiKeyEnv": "GEMINI_API_KEY"
+    },
+    "local": {
+      "endpoint": "http://localhost:11434/v1/chat/completions",
+      "apiKeyEnv": null
+    }
+  },
+
+  "summaryPrompt": "You are a session memory archivist. Create a concise but thorough summary of this Pi coding session. Capture:\n\n1. **Topics discussed**: Main subjects and concepts explored\n2. **Key decisions**: What was decided and why\n3. **Problems solved**: Bugs fixed, challenges overcome\n4. **Nuances & insights**: \"Aha!\" moments, metaphors that clicked\n5. **Files created/modified**: Code written, files changed\n6. **Future intentions**: Things to do later, upcoming ideas\n7. **Teaching moments**: Important clarifications, confusions resolved\n\nUse clear, scannable markdown. Include a one-line TL;DR at the top."
+}

@@ -12,6 +12,7 @@ talks to over `pi --print --session <handle>`.
 | `setup-pi-agent.sh` | Interactive creator: workspace + alias + **git/GitHub backup** (lives here, in the central tooling) |
 | `push-partner-agents.sh` | Commits + pushes every agent in the registry (the "update all partners" command) |
 | `partner-agents.list` | Registry — one workspace path per line |
+| `shared/` | Canonical shared resources: `extensions/core/` (every agent), `extensions/optional/` (opt-in), `prompts/`, `session-summarizer/` |
 
 ## Conventions
 
@@ -25,6 +26,12 @@ talks to over `pi --print --session <handle>`.
 - **Backed up instead:** `AGENTS.md`, `APPEND_SYSTEM.md`, `prompts/`,
   `extensions/`, `.pi/` config, `documented_lessons/`, `session-summarizer/`
   code, `settings.json`, `trust.json`, `web-search.json`.
+- **Shared extensions are tiered:** `shared/extensions/core/` is copied to every
+  new agent; `shared/extensions/optional/` is copied only when the
+  "Copy optional extensions?" prompt is answered yes; `shared/prompts/` and
+  `shared/session-summarizer/` hold the shared prompt + memory-pipeline code.
+  This is the single source of truth — new agents do NOT depend on
+  explore-discover.
 
 ## Creating a new partner agent
 

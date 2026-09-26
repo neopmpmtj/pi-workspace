@@ -8,7 +8,7 @@
 # Uses everything from our curriculum:
 #   - PI_CODING_AGENT_DIR (agent identities)
 #   - System prompt composition (AGENTS.md generation)
-#   - Extension sharing (copy from explore-discover)
+#   - Extension sharing (copy from central tooling shared/)
 #   - Sub-agents (starter .md for delegation)
 #   - Memory pipeline (optional session-summarizer setup)
 
@@ -82,6 +82,9 @@ echo ""
 read -p "$(echo -e "${GREEN}Create sub-agent .md file?${NC} (for orchestrator delegation) [y/N]: ")" MAKE_SUBAGENT
 MAKE_SUBAGENT=${MAKE_SUBAGENT:-n}
 
+read -p "$(echo -e "${GREEN}Copy optional extensions?${NC} (specialized tools: calculator, git, etc.) [y/N]: ")" COPY_OPTIONAL
+COPY_OPTIONAL=${COPY_OPTIONAL:-n}
+
 # ── Step 2: Create directory structure ──
 echo ""
 echo -e "${BLUE}Creating $AGENT_DIR...${NC}"
@@ -127,33 +130,41 @@ When you complete a task, end with:
 3. **Next steps** — anything that needs follow-up
 AGENTEOF
 
-# ── Step 4: Copy shared extensions ──
+# ── Step 4: Copy shared extensions (core always, optional opt-in) ──
 echo -e "${BLUE}Copying shared extensions...${NC}"
 
-SHARED_EXTS=(
-  "safety-guard.ts"
-  "secret-scrubber.ts"
-  "rate-limiter.ts"
-  "response-logger.ts"
-  "custom-headers.ts"
-  "date-injector.ts"
-  "calculator-tool.ts"
-)
+SHARED_DIR="$HOME/.pi/agent/partner-agents/shared"
+CORE_EXTS="$SHARED_DIR/extensions/core"
+OPTIONAL_EXTS="$SHARED_DIR/extensions/optional"
 
-EXPLORE_EXT_DIR="$HOME/.pi/explore-discover/.pi/extensions"
 COPIED=0
-for ext in "${SHARED_EXTS[@]}"; do
-  SRC="$EXPLORE_EXT_DIR/$ext"
-  if [ -f "$SRC" ]; then
-    cp "$SRC" "$AGENT_DIR/extensions/$ext"
-    COPIED=$((COPIED + 1))
+if [ -d "$CORE_EXTS" ]; then
+  for ext in "$CORE_EXTS"/*; do
+    if [ -f "$ext" ]; then
+      cp "$ext" "$AGENT_DIR/extensions/"
+      COPIED=$((COPIED + 1))
+    fi
+  done
+fi
+echo -e "  ${GREEN}Copied $COPIED core extensions${NC}"
+
+if [ "$COPY_OPTIONAL" = "y" ] || [ "$COPY_OPTIONAL" = "Y" ]; then
+  OPT_COPIED=0
+  if [ -d "$OPTIONAL_EXTS" ]; then
+    for ext in "$OPTIONAL_EXTS"/*; do
+      if [ -f "$ext" ]; then
+        cp "$ext" "$AGENT_DIR/extensions/"
+        OPT_COPIED=$((OPT_COPIED + 1))
+      fi
+    done
   fi
-done
-echo -e "  ${GREEN}Copied $COPIED extensions${NC}"
+  echo -e "  ${GREEN}Copied $OPT_COPIED optional extensions${NC}"
+fi
 
 # ── Step 5: Copy prompt template ──
-if [ -f "$EXPLORE_EXT_DIR/../prompts/document.md" ]; then
-  cp "$EXPLORE_EXT_DIR/../prompts/document.md" "$AGENT_DIR/prompts/document.md"
+PROMPT_SRC="$SHARED_DIR/prompts/document.md"
+if [ -f "$PROMPT_SRC" ]; then
+  cp "$PROMPT_SRC" "$AGENT_DIR/prompts/document.md"
   echo -e "  ${GREEN}Copied /document prompt template${NC}"
 fi
 
@@ -194,8 +205,9 @@ if [ "$SETUP_MEMORY" = "y" ] || [ "$SETUP_MEMORY" = "Y" ]; then
   echo -e "${BLUE}Setting up memory pipeline...${NC}"
   
   # Copy session-memory.ts
-  if [ -f "$EXPLORE_EXT_DIR/session-memory.ts" ]; then
-    cp "$EXPLORE_EXT_DIR/session-memory.ts" "$AGENT_DIR/extensions/session-memory.ts"
+  SESSION_MEMORY_SRC="$SHARED_DIR/extensions/optional/session-memory.ts"
+  if [ -f "$SESSION_MEMORY_SRC" ]; then
+    cp "$SESSION_MEMORY_SRC" "$AGENT_DIR/extensions/session-memory.ts"
     
     # Update the SUMMARIES_DIR to point to the new agent's session-summaries
     sed -i "s|explore-discover|$AGENT_NAME|g" "$AGENT_DIR/extensions/session-memory.ts"
@@ -206,7 +218,7 @@ if [ "$SETUP_MEMORY" = "y" ] || [ "$SETUP_MEMORY" = "Y" ]; then
   mkdir -p "$AGENT_DIR/../session-summaries"
   
   # Copy summarizer
-  SUMMARIZER_SRC="$HOME/.pi/explore-discover/session-summarizer"
+  SUMMARIZER_SRC="$SHARED_DIR/session-summarizer"
   SUMMARIZER_DST="$AGENT_DIR/../session-summarizer-$AGENT_NAME"
   if [ -d "$SUMMARIZER_SRC" ] && [ ! -d "$SUMMARIZER_DST" ]; then
     cp -r "$SUMMARIZER_SRC" "$SUMMARIZER_DST"
