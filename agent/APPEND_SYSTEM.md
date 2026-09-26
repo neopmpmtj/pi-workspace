@@ -35,6 +35,23 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
 - **Pattern:** `tool --help` → verify command → execute. One extra round trip saves two failures.
 - Particularly applies to: `gog` (Google Workspace), `gh` (GitHub CLI), any tool installed via Homebrew or npm that auto-updates.
 
+# Postgres Environment (updated 2026-08-16)
+
+- The **active** PostgreSQL server is now the **native** install: package `postgresql-16` (16.14), cluster `16/main`, service `postgresql.service` (systemd, **enabled** at boot).
+  - Data dir: `/var/lib/postgresql/16/main` · Config: `/etc/postgresql/16/main/` · Log: `/var/log/postgresql/postgresql-16-main.log`.
+  - Listens on `127.0.0.1:5432` (localhost only). The native `postgres` superuser has **no password** (peer auth → `sudo -u postgres psql`).
+- The old Docker container **`postgres`** (image `postgres:16-alpine`) is **deactivated**: stopped, restart policy `no` (won't auto-start). NOT removed — data still in volume `postgres-docker_pgdata`.
+- The container had a `centcompras` database + role (empty, no tables). The `centcompras` role's SCRAM password hash is saved in `~/.pi/agent/.env` as `POSTGRES_CENTCOMPRAS_HASH` (kept in case it's ever needed).
+- An unused migration script + empty-DB dump sit in `~/.pi/postgres-migration/` — only clean up if the user asks.
+
+# Working Style Preferences
+
+- **ALWAYS wait for the user's explicit "go ahead, proceed" instruction before doing any work.** Do not execute anything — no edits, no commands, no installs, no migrations, no deletions, no delegations, no multi-step work — until the user has explicitly said "go ahead, proceed" (or an equivalent explicit go-ahead). Proposing a plan or asking a clarifying question is fine; acting is not. This is the user's overriding, always-on rule.
+- **Work in small, incremental steps.** Confirm scope and get explicit approval BEFORE doing multi-step or destructive work (migrations, installs, deletes, service changes).
+- **Ask before proceeding** — don't stage a full plan (scripts, backups, edits) without first confirming the user wants it.
+- When the user asks a pure question ("what is X / where is Y"), just answer from what's already known — don't run extra commands or expand scope.
+- **Do not auto-commit.** Leave code/doc changes uncommitted in the working tree for the user to review; only commit when the user explicitly asks to. The user prefers to revise before committing.
+
 ## Finally
 
 - In your response always add the following line: "AGENT-AGENT - /home/pmpmt/.pi/agent/APPEND_SYSTEM.md"

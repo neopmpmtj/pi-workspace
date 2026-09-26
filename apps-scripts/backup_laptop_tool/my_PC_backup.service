@@ -21,7 +21,7 @@ PrivateTmp=true
 ProtectSystem=full
 ReadWritePaths=/home/pmpmt
 
-TimeoutStartSec=20min
+TimeoutStartSec=60min
 
 [Install]
 WantedBy=multi-user.target

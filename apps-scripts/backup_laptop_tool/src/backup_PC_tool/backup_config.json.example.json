@@ -7,7 +7,22 @@
     "node_modules",
     ".mypy_cache",
     ".pytest_cache",
-    ".backup_PC_cache"
+    ".backup_PC_cache",
+    "Cache",
+    "Code Cache",
+    "GPUCache",
+    "DawnWebGPUCache",
+    "DawnGraphiteCache",
+    "CachedData",
+    "CachedProfilesData",
+    "CachedExtensionVSIXs",
+    "CachedConfigurations",
+    "Crashpad",
+    "blob_storage",
+    "WebStorage",
+    "Service Worker",
+    "Partitions",
+    "IndexedDB"
   ],
   "extra_includes": [
     "/home/pmpmt/.local/bin/yt-download"

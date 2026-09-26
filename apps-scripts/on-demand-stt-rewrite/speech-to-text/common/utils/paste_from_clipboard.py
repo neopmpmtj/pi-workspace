@@ -36,6 +36,75 @@ def _parse_paste_hotkey(hotkey_value):
     }
     return mapping.get(normalized, _default_hotkey_for_platform())
 
+
+def _paste_on_wayland(content, paste_hotkey, logger):
+    """Paste text into the focused window on a native Wayland session.
+
+    pyautogui and xdotool can only inject X11 (XTest) events, which native
+    Wayland windows ignore.  On Wayland we instead:
+
+      1. put the text on the Wayland-native clipboard with wl-copy, and
+      2. simulate the paste keystroke with ydotool, which injects input at the
+         kernel (uinput) level and therefore works under GNOME/Wayland.
+
+    The X11 clipboard (set earlier via pyperclip/xclip) is left intact as a
+    fallback for manual Ctrl+Shift+V.
+    """
+    import shutil
+    import subprocess
+
+    ydotool = shutil.which("ydotool")
+    if not ydotool:
+        logger.error("ydotool not found on PATH; cannot auto-paste on Wayland")
+        return False
+
+    # 1) Wayland-native clipboard (pyperclip/xclip only writes the X11 selection).
+    wl_copy = shutil.which("wl-copy")
+    if wl_copy:
+        try:
+            subprocess.run(
+                [wl_copy],
+                input=content,
+                text=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+                check=True,
+            )
+        except Exception as e:
+            logger.warning("wl-copy failed (%s); falling back to X11 clipboard", e)
+
+    # 2) Simulate the paste keystroke. ydotool uses case-insensitive named keys,
+    #    e.g. "ctrl+shift+v".
+    key_seq = "+".join(paste_hotkey)
+    try:
+        subprocess.run(
+            [ydotool, "key", key_seq],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            check=True,
+        )
+    except Exception as e:
+        logger.error("ydotool key %s failed: %s", key_seq, e)
+        return False
+
+    # 3) Trailing space, matching the pyautogui.write(' ') behaviour on X11.
+    #    ("space" is not a valid `ydotool key` name, so use `type`.)
+    try:
+        subprocess.run(
+            [ydotool, "type", " "],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            check=True,
+        )
+    except Exception as e:
+        logger.warning("ydotool trailing space failed: %s", e)
+
+    return True
+
+
 def paste_clipboard():
     """
     Paste content from clipboard using pyautogui and add a trailing space.
@@ -50,9 +119,11 @@ def paste_clipboard():
     Returns:
         bool: True if paste was successful, False otherwise
     """
-    # Import here to avoid circular import issues
+    # Import here to avoid circular import issues.
+    # NOTE: pyautogui is imported lazily on the X11 path only — importing it at
+    # module/function level fails under Wayland (mouseinfo connects to DISPLAY
+    # at import time and raises DisplayConnectionError).
     import pyperclip
-    import pyautogui
     from datetime import datetime
     from common.logging_utils import get_logger
     from common.config.config_app import config
@@ -65,12 +136,14 @@ def paste_clipboard():
             session_type = os.environ.get("XDG_SESSION_TYPE", "unknown").lower()
             display = os.environ.get("DISPLAY")
             wayland_display = os.environ.get("WAYLAND_DISPLAY")
+            is_wayland = session_type == "wayland"
 
             logger.debug(
-                "Paste environment - session_type=%s, DISPLAY=%s, WAYLAND_DISPLAY=%s",
+                "Paste environment - session_type=%s, DISPLAY=%s, WAYLAND_DISPLAY=%s, is_wayland=%s",
                 session_type,
                 bool(display),
-                bool(wayland_display)
+                bool(wayland_display),
+                is_wayland
             )
 
             if os.name != 'nt':
@@ -78,14 +151,6 @@ def paste_clipboard():
                     logger.error(
                         "No graphical display detected (DISPLAY/WAYLAND_DISPLAY missing); "
                         "cannot auto-paste. Text remains in clipboard."
-                    )
-                    return False
-
-                # PyAutoGUI relies on X11; pure Wayland sessions usually block synthetic key events
-                if session_type == "wayland" and not display:
-                    logger.error(
-                        "Wayland session without X11 DISPLAY detected; automatic Ctrl+V is not supported here. "
-                        "Text remains in clipboard."
                     )
                     return False
 
@@ -121,18 +186,24 @@ def paste_clipboard():
             
             # Use runtime-configurable hotkey (with platform default fallback)
             paste_hotkey = _parse_paste_hotkey(paste_hotkey_config)
-
-            pyautogui.hotkey(*paste_hotkey)
             logger.debug(
                 "Attempting to paste clipboard content using hotkey: %s (config=%s)",
                 "+".join(paste_hotkey),
                 paste_hotkey_config,
             )
-            
-            # Add a space after the pasted content for proper separation
-            pyautogui.write(' ')
-            logger.debug("Added trailing space after pasted content")
-            
+
+            if is_wayland:
+                # pyautogui/xdotool are X11-only; use ydotool (kernel/uinput) on Wayland.
+                if not _paste_on_wayland(content, paste_hotkey, logger):
+                    return False
+            else:
+                import pyautogui  # lazy: fails to import under Wayland, hence here
+                pyautogui.hotkey(*paste_hotkey)
+
+                # Add a space after the pasted content for proper separation
+                pyautogui.write(' ')
+                logger.debug("Added trailing space after pasted content")
+
             logger.info("Clipboard content pasted successfully with trailing space")
             return True
         else:

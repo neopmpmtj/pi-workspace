@@ -11,7 +11,6 @@ import subprocess
 from typing import Optional
 
 import pyperclip
-import pyautogui
 
 from common.logging_utils.logging_config import get_logger
 
@@ -47,6 +46,53 @@ def _send_notification(title: str, message: str, urgency: str = "normal") -> Non
         )
     except Exception as e:
         logger.debug(f"Failed to send notification: {e}")
+
+
+def _paste_on_wayland(text: str) -> bool:
+    """Paste text into the focused window on a native Wayland session.
+
+    pyautogui is X11-only and cannot even be imported under Wayland, so we set
+    the Wayland-native clipboard with wl-copy and inject the paste keystroke
+    with ydotool (kernel/uinput level). The X11 clipboard (set by pyperclip)
+    remains as a fallback for manual paste.
+    """
+    import shutil
+
+    ydotool = shutil.which("ydotool")
+    if not ydotool:
+        logger.error("ydotool not found on PATH; cannot auto-paste on Wayland")
+        return False
+
+    # 1) Wayland-native clipboard (pyperclip/xclip only writes the X11 selection).
+    wl_copy = shutil.which("wl-copy")
+    if wl_copy:
+        try:
+            subprocess.run(
+                [wl_copy],
+                input=text,
+                text=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+                check=True,
+            )
+        except Exception as e:
+            logger.warning("wl-copy failed (%s); falling back to X11 clipboard", e)
+
+    # 2) Simulate Ctrl+Shift+V (case-insensitive named keys for ydotool).
+    try:
+        subprocess.run(
+            [ydotool, "key", "ctrl+shift+v"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            check=True,
+        )
+    except Exception as e:
+        logger.error("ydotool key ctrl+shift+v failed: %s", e)
+        return False
+
+    return True
 
 
 def read_clipboard() -> Optional[str]:
@@ -87,12 +133,14 @@ def write_and_paste(text: str) -> bool:
     try:
         # Detect display environment
         session_type, has_display = _detect_display()
+        is_wayland = session_type == "wayland"
         
         logger.debug(
-            "Paste environment - session=%s, DISPLAY=%s, WAYLAND_DISPLAY=%s",
+            "Paste environment - session=%s, DISPLAY=%s, WAYLAND_DISPLAY=%s, is_wayland=%s",
             session_type,
             bool(os.environ.get("DISPLAY")),
-            bool(os.environ.get("WAYLAND_DISPLAY"))
+            bool(os.environ.get("WAYLAND_DISPLAY")),
+            is_wayland
         )
         
         if not has_display:
@@ -107,28 +155,23 @@ def write_and_paste(text: str) -> bool:
             )
             return False
         
-        # Pure Wayland blocks synthetic key events from pyautogui/Xlib
-        if session_type == "wayland" and not os.environ.get("DISPLAY"):
-            logger.error(
-                "Wayland without X11 DISPLAY — auto-paste not supported. "
-                "Text remains in clipboard."
-            )
-            _send_notification(
-                "Text Rewrite",
-                "Done! Text is in clipboard (Wayland: auto-paste blocked). Press Ctrl+V to paste.",
-                "normal"
-            )
-            return False
-        
-        # Copy text to clipboard
+        # Copy text to clipboard (X11 selection; also kept as a manual-paste fallback)
         pyperclip.copy(text)
         logger.debug("Copied rewritten text to clipboard")
         
         # Small delay to ensure clipboard is ready
         time.sleep(0.15)
         
-        # Simulate paste (same hotkey as speech-to-text script)
-        pyautogui.hotkey('ctrl', 'shift', 'v')
+        if is_wayland:
+            # pyautogui is X11-only (and cannot even be imported on Wayland);
+            # use wl-copy + ydotool instead.
+            if not _paste_on_wayland(text):
+                return False
+        else:
+            import pyautogui  # lazy import: fails at import time under Wayland
+            # Simulate paste (same hotkey as speech-to-text script)
+            pyautogui.hotkey('ctrl', 'shift', 'v')
+        
         logger.info("Successfully pasted rewritten text at cursor position")
         
         _send_notification(

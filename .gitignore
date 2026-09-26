@@ -54,6 +54,7 @@ explore-discover/
 *.log
 *.tmp
 .cache/
+web-search-cache/
 
 # ── Sessions & Summaries ───────────────────────────────────────────────
 sessions-summaries/**

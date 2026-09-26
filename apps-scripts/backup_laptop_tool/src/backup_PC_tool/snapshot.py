@@ -102,6 +102,27 @@ def _external_arcname(path: Path) -> str:
         return f"_external/{p.as_posix().lstrip('/')}"
 
 
+def _add_external_dir(
+    tf: tarfile.TarFile, ext_dir: Path, arc_root: str, blacklist: List[str]
+) -> None:
+    """Add an external directory to the archive, pruning blacklisted entries.
+
+    Reuses the same pruned walk as source_dir so blacklisted names
+    (.venv, __pycache__, .git, node_modules, ...) are skipped here too.
+    """
+    ext_dir = ext_dir.resolve()
+    for dirpath, _, filenames in _pruned_walk(ext_dir, blacklist):
+        dp = Path(dirpath)
+        rel = dp.relative_to(ext_dir)
+        arc_dir = Path(arc_root)
+        if rel != Path("."):
+            arc_dir = arc_dir / rel
+        # Add the directory entry itself (preserves empty directories)
+        tf.add(dp, arcname=str(arc_dir), recursive=False)
+        for fn in filenames:
+            tf.add(dp / fn, arcname=str(arc_dir / fn), recursive=False)
+
+
 def create_snapshot_archive(
     source_dir: Path,
     cache_dir: Optional[Path] = None,
@@ -162,7 +183,9 @@ def create_snapshot_archive(
 
                 tf.add(abs_file, arcname=str(rel_file), recursive=False)
 
-        # Add explicitly-included external paths (e.g. ~/.local/bin/yt-download)
+        # Add explicitly-included external paths (e.g. ~/.local/bin/yt-download).
+        # Directories are walked with the same blacklist pruning as source_dir so
+        # .venv/__pycache__/.git etc. are not snapshotted from them either.
         for raw in extra_includes:
             ext = Path(raw).expanduser()
             if not ext.exists():
@@ -170,7 +193,7 @@ def create_snapshot_archive(
                 continue
             arc = _external_arcname(ext)
             if ext.is_dir():
-                tf.add(ext, arcname=arc, recursive=True)
+                _add_external_dir(tf, ext, arc, blacklist)
             else:
                 tf.add(ext, arcname=arc)
             logger.info(f"Added extra include: {ext} -> {arc}")

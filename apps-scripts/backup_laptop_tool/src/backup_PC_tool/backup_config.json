@@ -7,9 +7,36 @@
     "__pycache__",
     ".mypy_cache",
     ".pytest_cache",
-    ".backup_PC_cache"
+    ".backup_PC_cache",
+    "Cache",
+    "Code Cache",
+    "GPUCache",
+    "DawnWebGPUCache",
+    "DawnGraphiteCache",
+    "CachedData",
+    "CachedProfilesData",
+    "CachedExtensionVSIXs",
+    "CachedConfigurations",
+    "Crashpad",
+    "blob_storage",
+    "WebStorage",
+    "Service Worker",
+    "Partitions",
+    "IndexedDB"
   ],
   "extra_includes": [
-    "/home/pmpmt/.local/bin/yt-download"
+    "/home/pmpmt/.bashrc",
+    "/home/pmpmt/.local",
+    "/home/pmpmt/.config",
+    "/home/pmpmt/.ssh",
+    "/home/pmpmt/Documents",
+    "/home/pmpmt/Desktop",
+    "/home/pmpmt/Downloads",
+    "/home/pmpmt/Pictures",
+    "/home/pmpmt/Music",
+    "/home/pmpmt/Templates",
+    "/home/pmpmt/Public",
+    "/home/pmpmt/projects",
+    "/home/pmpmt/python"
   ]
 }
