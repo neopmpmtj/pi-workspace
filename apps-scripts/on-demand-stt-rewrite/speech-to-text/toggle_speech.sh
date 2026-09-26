@@ -3,13 +3,21 @@
 LOGFILE="/tmp/toggle_speech.log"
 echo "[$(date)] toggle_speech called" >> "$LOGFILE"
 
-# Load OpenAI key into this non-interactive environment
+# Load API keys into this non-interactive environment.
+# The app's own .env is the PRIMARY source (sourced last so it wins);
+# ~/.config/openai.env is only a fallback.
+set -a
 if [ -f "$HOME/.config/openai.env" ]; then
     # shellcheck source=/dev/null
     . "$HOME/.config/openai.env"
-else
-    echo "[$(date)] WARNING: ~/.config/openai.env not found; OPENAI_API_KEY not set" >> "$LOGFILE"
 fi
+if [ -f "$APP_DIR/.env" ]; then
+    # shellcheck source=/dev/null
+    . "$APP_DIR/.env"
+else
+    echo "[$(date)] WARNING: $APP_DIR/.env not found; using fallback only" >> "$LOGFILE"
+fi
+set +a
 
 PIDFILE="/tmp/speech_record.pid"
 APP_DIR="$HOME/.pi/apps-scripts/on-demand-stt-rewrite/speech-to-text"

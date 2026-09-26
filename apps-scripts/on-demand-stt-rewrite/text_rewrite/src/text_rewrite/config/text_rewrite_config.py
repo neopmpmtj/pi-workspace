@@ -117,7 +117,9 @@ class RewriteConfig:
         
         if env_file.exists():
             logger.info(f"Loading .env file from: {env_file}")
-            load_dotenv(env_file)
+            # override=True: the app's own .env is the PRIMARY key source and
+            # wins over anything already exported (e.g. ~/.config/openai.env).
+            load_dotenv(env_file, override=True)
         else:
             logger.info("No .env file found in project root")
         

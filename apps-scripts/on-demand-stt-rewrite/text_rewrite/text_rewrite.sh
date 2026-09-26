@@ -8,6 +8,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Change to the script directory
 cd "$SCRIPT_DIR"
 
+# Load API keys into this non-interactive environment.
+# The app's own .env is the PRIMARY source (sourced last so it wins);
+# ~/.config/openai.env is only a fallback.
+set -a
+if [ -f "$HOME/.config/openai.env" ]; then
+    # shellcheck source=/dev/null
+    . "$HOME/.config/openai.env"
+fi
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    # shellcheck source=/dev/null
+    . "$SCRIPT_DIR/.env"
+else
+    echo "[$(date)] WARNING: $SCRIPT_DIR/.env not found; using fallback only" >&2
+fi
+set +a
+
 # Set PYTHONPATH to include the project root
 export PYTHONPATH="$SCRIPT_DIR:$PYTHONPATH"
 
