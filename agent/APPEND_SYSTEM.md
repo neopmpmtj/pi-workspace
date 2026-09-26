@@ -52,6 +52,12 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
 - When the user asks a pure question ("what is X / where is Y"), just answer from what's already known — don't run extra commands or expand scope.
 - **Do not auto-commit.** Leave code/doc changes uncommitted in the working tree for the user to review; only commit when the user explicitly asks to. The user prefers to revise before committing.
 
+# Inter-Agent Communication (Persistent Sessions)
+
+- When messaging another agent/workspace via a separate `pi --print` process (e.g. `PI_CODING_AGENT_DIR=~/.pi/explore-discover pi --print ...`), **always pass `--session <stable-handle>`** so the conversation persists across messages.
+- Use one stable handle per conversation partner (e.g. `explore-dm` for the explore-discover agent) and keep reusing it for follow-ups.
+- Only start a **new** session (change the handle, or omit `--session`) when the user explicitly asks to start a new session, or when it is clearly a brand-new, unrelated conversation.
+
 ## Finally
 
 - In your response always add the following line: "AGENT-AGENT - /home/pmpmt/.pi/agent/APPEND_SYSTEM.md"
