@@ -19,6 +19,14 @@ function ensureDir() {
   }
 }
 
+function slugify(name: string): string {
+  const s = (name || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return s || "unnamed";
+}
+
 function captureSession(manager: any, reason: string) {
   ensureDir();
 
@@ -28,6 +36,12 @@ function captureSession(manager: any, reason: string) {
       content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
     }));
 
+  // Skip empty sessions (e.g. a fresh session captured during shutdown) —
+  // they produce valueless 0-message snapshots.
+  if (messages.length === 0) {
+    return;
+  }
+
   const sessionFile = manager.getSessionFile() ?? "unknown";
   const sessionName = manager.getSessionName() ?? "unnamed";
   const now = new Date();
@@ -36,7 +50,11 @@ function captureSession(manager: any, reason: string) {
     ? basename(sessionFile, ".jsonl")
     : `unknown_${now.toISOString().replace(/T/, "_").replace(/\..+/, "").replace(/:/g, "-")}`;
 
-  const filepath = join(SUMMARIES_DIR, `${sessionId}_${reason}.json`);
+  // Name the file by display name (slugified) for findability, keeping the
+  // session id for uniqueness. Unnamed sessions keep the legacy id-only name.
+  const namePart = slugify(sessionName);
+  const fileBase = namePart === "unnamed" ? sessionId : `${namePart}__${sessionId}`;
+  const filepath = join(SUMMARIES_DIR, `${fileBase}_${reason}.json`);
 
   const data = {
     sessionName,

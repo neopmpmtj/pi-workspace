@@ -20,6 +20,9 @@ service_account*.json
 *.session.jsonl
 *.db
 *.sqlite3
+sessions-summarizer/summarizer-state.json
+sessions-summaries/
+sessions-memory/
 
 # ── Node modules & packages ────────────────────────────────────────
 node_modules/

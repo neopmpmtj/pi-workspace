@@ -1,7 +1,7 @@
 {
   "_setup": "EXTENSION: To change where snapshots are saved, add PI_SESSION_SUMMARIES_PATH=/your/path to ~/.pi/agent/.env (permanent, no export needed). SUMMARIZER: Edit summariesPath and outputPath below.",
   "provider": "deepseek",
-  "model": "deepseek-chat",
+  "model": "deepseek-flash",
   "apiKey": null,
   "envPath": "/home/pmpmt/.pi/agent/.env",
   "summariesPath": "/home/pmpmt/.pi/sessions-summaries",
