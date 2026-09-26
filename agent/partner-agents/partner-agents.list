@@ -1,0 +1,4 @@
+# Partner agent registry — one absolute workspace path per line.
+# push-partner-agents.sh iterates this list; setup-pi-agent.sh appends
+# newly created agents here automatically.
+/home/pmpmt/.pi/explore-discover

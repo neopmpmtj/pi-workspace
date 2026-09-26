@@ -1,0 +1,30 @@
+# Canonical .gitignore for Pi partner agents.
+# Copied into each new partner-agent workspace by setup-pi-agent.sh.
+# Every agent is its own git repo; this file keeps machine-local and
+# reinstallable state OUT of that repo while backing up the agent's
+# identity/config (AGENTS.md, APPEND_SYSTEM.md, prompts, extensions, etc.).
+
+# Session data & summaries (full conversations — may contain secrets)
+sessions/
+session-summaries/
+sessions-memory/
+
+# Secrets & credentials
+.env
+*.key
+*.pem
+
+# Runtime / reinstallable dependencies (recreated by pi on demand)
+npm/
+bin/
+node_modules/
+
+# Logs & caches
+*.log
+__pycache__/
+*.pyc
+.cache/
+
+# Summarizer runtime state (the summarizer code itself stays tracked)
+session-summarizer/summarizer-state.json
+session-summarizer/summarizer.log
