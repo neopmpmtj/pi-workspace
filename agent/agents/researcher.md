@@ -2,7 +2,7 @@
 name: researcher
 description: Web research specialist for information gathering, fact-checking, and news. Use web_search to find information from the internet. Returns concise, sourced summaries.
 tools: read, grep, find, ls, web_search
-model: deepseek-v4-flash
+model: deepseek-flash
 thinking: low
 ---
 

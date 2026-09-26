@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.84.4",
+  "lastChangelogVersion": "0.87.1",
   "theme": "dark",
   "defaultProvider": "deepseek",
   "defaultModel": "deepseek-v4-pro",
@@ -31,6 +31,6 @@
   },
   "enabledModels": [
     "deepseek-v4-pro",
-    "deepseek-v4-flash"
+    "deepseek-flash"
   ]
 }
