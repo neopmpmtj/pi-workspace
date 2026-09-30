@@ -81,7 +81,7 @@ The installer:
    (`PI_CODING_AGENT_DIR=$TARGET`)
 6. registers the path in `~/.pi/agent/partner-agents/partner-agents.list`
 7. adds a `pi-<name>` alias to `~/.bashrc`
-8. runs a smoke test (`pi --print --session <name>-smoke …`)
+8. runs a smoke test (`pi --print --session-id <name>-smoke …`)
 
 After it finishes, verify and report to the user:
 - `pi list` inside the new workspace shows the packages
@@ -92,7 +92,7 @@ After it finishes, verify and report to the user:
 
 Persistent inter-agent messaging:
 ```bash
-PI_CODING_AGENT_DIR=~/.pi/partner-agents/<name> pi --print --session <stable-handle> "..."
+PI_CODING_AGENT_DIR=~/.pi/partner-agents/<name> pi --print --session-id <stable-handle> "..."
 ```
 Use ONE stable handle per conversation partner and keep reusing it.
 
@@ -107,6 +107,8 @@ Use ONE stable handle per conversation partner and keep reusing it.
 
 ## Notes / gotchas
 
+- Exported partners default to model `deepseek-flash`; override per export with
+  `MODEL=<name> bash export-partner-agent.sh <name>`.
 - `pi install` inside the installer uses the network; targets are assumed online.
 - The generated installer is bash-only and self-contained (base64 tarball inside).
 - If an agent's `settings.json` later grows fields beyond provider/model/thinking/

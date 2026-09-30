@@ -32,14 +32,15 @@ command -v jq >/dev/null 2>&1 || { echo "ERROR: 'jq' is required by the exporter
 
 # ---- extract settings (these become the installer's canonical settings.json) ----
 DEF_PROVIDER="$(jq -r '.defaultProvider // empty' "$SRC/settings.json")"
-DEF_MODEL="$(jq -r '.defaultModel // empty' "$SRC/settings.json")"
+SRC_MODEL="$(jq -r '.defaultModel // empty' "$SRC/settings.json")"
 THINKING="$(jq -r '.defaultThinkingLevel // empty' "$SRC/settings.json")"
 THEME="$(jq -r '.theme // empty' "$SRC/settings.json")"
 PKGS_JSON="$(jq -c '.packages // []' "$SRC/settings.json")"
 PKGS_LIST="$(jq -r '.packages[]? // empty' "$SRC/settings.json")"
 
 [ -n "$DEF_PROVIDER" ] || DEF_PROVIDER="deepseek"
-[ -n "$DEF_MODEL" ]    || DEF_MODEL="deepseek-flash"
+# Exported partners default to deepseek-flash; override with MODEL=<name>.
+DEF_MODEL="${MODEL:-deepseek-flash}"
 
 SETTINGS_JSON="$(jq -n --arg p "$DEF_PROVIDER" --arg m "$DEF_MODEL" --arg t "$THINKING" \
   --arg th "$THEME" --argjson pk "$PKGS_JSON" \
@@ -152,7 +153,7 @@ fi
 echo "==> Smoke test"
 if [ "${SKIP_SMOKE:-0}" = "1" ]; then
   echo "    (skipped via SKIP_SMOKE=1)"
-elif PI_CODING_AGENT_DIR="$TARGET" pi --print --session "$NAME-smoke" \
+elif PI_CODING_AGENT_DIR="$TARGET" pi --print --session-id "$NAME-smoke" \
      "Reply with one line: your agent name and your role."; then
   echo "    Smoke test OK"
 else
@@ -162,7 +163,7 @@ fi
 echo
 echo "Done. Agent '$NAME' installed at $TARGET"
 echo "  - talk to it:  pi-$NAME     (after: source ~/.bashrc)"
-echo "  - or:          PI_CODING_AGENT_DIR=$TARGET pi --print --session <handle> \"...\""
+echo "  - or:          PI_CODING_AGENT_DIR=$TARGET pi --print --session-id <handle> \"...\""
 echo "  - model: $DEF_MODEL | packages: ${PKGS:-<none>}"
 EOF
 } > "$OUT"
@@ -172,7 +173,7 @@ bash -n "$OUT" && echo "    installer syntax OK" || { echo "ERROR: generated ins
 
 echo
 echo "Exported: $OUT ($(du -h "$OUT" | cut -f1))"
-echo "Settings: provider=$DEF_PROVIDER model=$DEF_MODEL thinking=${THINKING:-<unset>} theme=${THEME:-<unset>} packages=${PKGS_LIST:-<none>}"
+echo "Settings: provider=$DEF_PROVIDER model=$DEF_MODEL (source: ${SRC_MODEL:-<unset>}) thinking=${THINKING:-<unset>} theme=${THEME:-<unset>} packages=${PKGS_LIST:-<none>}"
 echo
 echo "Recipe manifest (files that ship):"
 ( cd "$STAGE" && find . -type f | sort )
