@@ -161,11 +161,12 @@ if [ "$COPY_OPTIONAL" = "y" ] || [ "$COPY_OPTIONAL" = "Y" ]; then
   echo -e "  ${GREEN}Copied $OPT_COPIED optional extensions${NC}"
 fi
 
-# ── Step 5: Copy prompt template ──
+# ── Step 5: Copy prompt template (template __AGENT_DIR__ → this agent) ──
 PROMPT_SRC="$SHARED_DIR/prompts/document.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$AGENT_DIR/prompts/document.md"
-  echo -e "  ${GREEN}Copied /document prompt template${NC}"
+  sed -i "s|__AGENT_DIR__|$AGENT_DIR|g" "$AGENT_DIR/prompts/document.md"
+  echo -e "  ${GREEN}Copied /document prompt template (paths templated)${NC}"
 fi
 
 # ── Step 6: Create sub-agent .md ──
@@ -203,28 +204,36 @@ ENVEOF
 # ── Step 8: Set up memory pipeline ──
 if [ "$SETUP_MEMORY" = "y" ] || [ "$SETUP_MEMORY" = "Y" ]; then
   echo -e "${BLUE}Setting up memory pipeline...${NC}"
-  
-  # Copy session-memory.ts
+
+  # Per-agent snapshot inbox + curated memory (both git-ignored, see template)
+  mkdir -p "$AGENT_DIR/session-summaries"
+  mkdir -p "$AGENT_DIR/sessions-memory"
+
+  # Copy session-memory.ts and pin its snapshot dir to THIS agent.
+  # The shared default is <agent>/extensions/../../session-summaries — the
+  # parent of a grouped agent (shared by every partner agent). Replace that
+  # fallback with an absolute per-agent path so the inbox is unambiguous.
   SESSION_MEMORY_SRC="$SHARED_DIR/extensions/optional/session-memory.ts"
   if [ -f "$SESSION_MEMORY_SRC" ]; then
     cp "$SESSION_MEMORY_SRC" "$AGENT_DIR/extensions/session-memory.ts"
-    
-    # Update the SUMMARIES_DIR to point to the new agent's session-summaries
-    sed -i "s|explore-discover|$AGENT_NAME|g" "$AGENT_DIR/extensions/session-memory.ts"
-    echo -e "  ${GREEN}Copied and configured session-memory.ts${NC}"
+    SM_OLD='join(import.meta.dirname, "..", "..", "session-summaries")'
+    if grep -qF "$SM_OLD" "$AGENT_DIR/extensions/session-memory.ts"; then
+      sed -i "s|$SM_OLD|\"$AGENT_DIR/session-summaries\"|" "$AGENT_DIR/extensions/session-memory.ts"
+      echo -e "  ${GREEN}Copied and configured session-memory.ts${NC}"
+    else
+      echo -e "  ${YELLOW}Warning: session-memory.ts fallback pattern changed — snapshot dir NOT pinned to $AGENT_DIR${NC}"
+      echo -e "  ${YELLOW}Set PI_SESSION_SUMMARIES_PATH manually in the agent environment.${NC}"
+    fi
   fi
-  
-  # Create session-summaries directory
-  mkdir -p "$AGENT_DIR/../session-summaries"
-  
-  # Copy summarizer
+
+  # Copy the summarizer INTO the agent workspace (tracked by its repo; state
+  # and logs are git-ignored) and point it at this agent's inbox/output.
   SUMMARIZER_SRC="$SHARED_DIR/session-summarizer"
-  SUMMARIZER_DST="$AGENT_DIR/../session-summarizer-$AGENT_NAME"
+  SUMMARIZER_DST="$AGENT_DIR/session-summarizer"
   if [ -d "$SUMMARIZER_SRC" ] && [ ! -d "$SUMMARIZER_DST" ]; then
     cp -r "$SUMMARIZER_SRC" "$SUMMARIZER_DST"
-    # Update config paths
-    sed -i "s|explore-discover|$AGENT_NAME|g" "$SUMMARIZER_DST/summarizer-config.json"
-    echo -e "  ${GREEN}Copied summarizer to $SUMMARIZER_DST${NC}"
+    sed -i "s|__AGENT_DIR__|$AGENT_DIR|g" "$SUMMARIZER_DST/summarizer-config.json"
+    echo -e "  ${GREEN}Copied summarizer to $SUMMARIZER_DST (paths templated)${NC}"
   fi
 fi
 

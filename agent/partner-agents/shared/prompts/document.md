@@ -1,11 +1,11 @@
 ---
 description: Auto-document the most recent fix, implementation, or setup from this session as a detailed report
 ---
-Review the conversation history of this session. Identify the most recent significant fix, implementation, or system setup that was completed. Generate a detailed documentation report and save it to `/home/pmpmt/.pi/explore-discover/documented_lessons/`.
+Review the conversation history of this session. Identify the most recent significant fix, implementation, or system setup that was completed. Generate a detailed documentation report and save it to `__AGENT_DIR__/documented_lessons/`.
 
 ## Report Structure
 
-Read the existing documentation in `/home/pmpmt/.pi/explore-discover/documented_lessons/` to understand the format before writing.
+Read the existing documentation in `__AGENT_DIR__/documented_lessons/` to understand the format before writing.
 
 ### Required sections
 
@@ -25,7 +25,7 @@ Read the existing documentation in `/home/pmpmt/.pi/explore-discover/documented_
 
 ### Naming and location
 
-- Create a directory: `/home/pmpmt/.pi/explore-discover/documented_lessons/<kebab-case-topic>/`
+- Create a directory: `__AGENT_DIR__/documented_lessons/<kebab-case-topic>/`
 - Create the report file: `<kebab-case-topic>.md` inside that directory
 
 ## Auto-detection
@@ -38,3 +38,6 @@ Review the session's conversation history. Identify the triggering problem, inve
 - Use tables for comparisons and file inventories.
 - Use code blocks for commands, code, and file trees.
 - Technical and precise — written for a future you or another developer.
+
+<!-- TEMPLATE: `__AGENT_DIR__` is replaced by setup-pi-agent.sh with this agent's
+     workspace path (e.g. ~/.pi/partner-agents/<name>) when the prompt is copied. -->

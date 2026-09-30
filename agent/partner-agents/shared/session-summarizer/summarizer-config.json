@@ -1,11 +1,11 @@
 {
-  "_setup": "EXTENSION: To change where snapshots are saved, add PI_SESSION_SUMMARIES_PATH=/your/path to ~/.pi/agent/.env (permanent, no export needed). SUMMARIZER: Edit summariesPath and outputPath below.",
+  "_setup": "EXTENSION: To change where snapshots are saved, add PI_SESSION_SUMMARIES_PATH=/your/path to the environment (permanent, no export needed). SUMMARIZER: Edit summariesPath and outputPath below. TEMPLATE: this file is a template — setup-pi-agent.sh replaces the literal AGENT_DIR placeholder in the two paths below with the new agent's workspace, so the shared copy is not runnable in place.",
   "provider": "deepseek",
   "model": "deepseek-chat",
   "apiKey": null,
   "envPath": "/home/pmpmt/.pi/agent/.env",
-  "summariesPath": "/home/pmpmt/.pi/explore-discover/session-summaries",
-  "outputPath": "/home/pmpmt/.pi/explore-discover/sessions-memory",
+  "summariesPath": "__AGENT_DIR__/session-summaries",
+  "outputPath": "__AGENT_DIR__/sessions-memory",
   "maxTokens": 1200,
   "temperature": 0.3,
 

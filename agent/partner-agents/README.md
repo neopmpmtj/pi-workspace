@@ -42,6 +42,25 @@ This is the **main agent's** job (ask the main agent, not a partner agent):
 # → answers prompts → creates workspace + alias + public GitHub repo + push
 ```
 
+### Path templating
+
+Shared assets are templates, never runnable in place. `setup-pi-agent.sh`
+substitutes `__AGENT_DIR__` with the new agent's absolute workspace path when it
+copies:
+
+| Template | Placeholder |
+|---|---|
+| `prompts/document.md` | `__AGENT_DIR__/documented_lessons/` |
+| `session-summarizer/summarizer-config.json` | `summariesPath`, `outputPath` |
+
+It also pins `extensions/session-memory.ts` to the agent's own snapshot inbox
+(the shared default would resolve to the parent of a grouped agent), and copies
+the summarizer to `<agent>/session-summarizer/` so it is tracked by the agent's
+repo while its `summarizer-state.json` / `summarizer.log` stay ignored.
+
+Per-agent memory layout: `<agent>/session-summaries/` (raw snapshots) →
+`<agent>/sessions-memory/` (curated summaries). Both are git-ignored.
+
 ## Syncing all partner agents
 
 ```bash
