@@ -68,6 +68,25 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
 - Creating a new partner agent is the **main agent's** job (the user asks me, not a partner agent). Use the canonical script `~/.pi/agent/partner-agents/setup-pi-agent.sh` — drive it by piping answers to its prompts, or perform its steps directly: create `~/.pi/partner-agents/<name>/`, copy `gitignore.template`, symlink `auth.json`/`models-store.json`, `git init`, `gh repo create neopmpmtj/<name> --public --push`, add a `pi-<name>` alias, register the path in `partner-agents.list`.
 - Sync all partner agents with `~/.pi/agent/partner-agents/push-partner-agents.sh`.
 
+## Current status & next steps (2026-09-30)
+
+- This dev machine now runs pi 0.99.1 on node v24.21.0 with agent-browser 0.38.1.
+  Rollback: `~/pi-update-rollback.sh`. Config backup: `~/pi-update-backup-20260930-165420.tar.gz`.
+- The target VPS has the `explore-discover` partner agent installed (signpost + shared tooling + leader memory record already written there).
+- NEXT with the user: (1) create a brand-new partner agent, then (2) export it via the
+  `partner-agent-export` skill (`~/.pi/agent/partner-agents/export-partner-agent.sh`).
+  Wait for the user's explicit go-ahead before starting; do not begin until they confirm the restart went fine.
+
+# VPS Target (neopmpmtj)
+
+- The remote VPS is **`neopmpmtj`** = `100.85.79.17` (Tailscale `neopmpmtj.tailbb6905.ts.net`), SSH user `pmpmt`. An SSH alias `neopmpmtj` is configured in `~/.ssh/config` (HostName `100.85.79.17`, User `pmpmt`). Use `pmpmt@neopmpmtj` or just `neopmpmtj`.
+- **Default target for VPS work: `~/.pi/agent/`** (the VPS main agent). Standing rule unless the user says otherwise.
+- VPS install facts (differs from this dev machine):
+  - pi is a **self-contained launcher** `~/bin/pi` + its own node runtime `~/pi/node` (v24.21.0), deliberately isolated from nvm + OpenClaw.
+  - `~/.pi` on the VPS is **not a git repo**.
+  - Secrets live in `~/.pi/agent/.env` (bare `KEY=value`; the launcher sources it under `set -a`). The former `~/.pi/env` is retired.
+  - Partner agent `explore-discover` lives at `~/.pi/partner-agents/explore-discover/`.
+
 ## Finally
 
 - In your response always add the following line: "AGENT-AGENT - /home/pmpmt/.pi/agent/APPEND_SYSTEM.md"

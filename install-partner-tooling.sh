@@ -9,9 +9,10 @@ WORKSPACES="$HOME/.pi/partner-agents"
 REPO="neopmpmtj/pi-workspace"
 
 echo "==> Checking prerequisites"
-for c in pi gh git; do
+for c in pi git; do
   command -v "$c" >/dev/null 2>&1 || { echo "ERROR: '$c' not found on PATH" >&2; exit 1; }
 done
+command -v gh >/dev/null 2>&1 || echo "    WARN: 'gh' not found — only needed later to create/push new partner agents."
 
 echo "==> 1/6 Install subagent packages (generic capability; NO frontend/researcher definitions)"
 pi install npm:pi-agents-pool
@@ -25,7 +26,7 @@ if [ -d "$AGENT_DIR/partner-agents" ] && [ -n "$(ls -A "$AGENT_DIR/partner-agent
 fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-gh repo clone "$REPO" "$TMP/repo" -- --depth 1
+git clone --depth 1 "https://github.com/$REPO.git" "$TMP/repo"
 cp -R "$TMP/repo/agent/partner-agents" "$AGENT_DIR/partner-agents"
 chmod +x "$AGENT_DIR/partner-agents/"*.sh 2>/dev/null || true
 rm -rf "$TMP"
@@ -34,8 +35,12 @@ echo "==> 3/6 Create partner-agent workspaces folder"
 mkdir -p "$WORKSPACES"
 [ -f "$AGENT_DIR/partner-agents/partner-agents.list" ] || : > "$AGENT_DIR/partner-agents/partner-agents.list"
 
-echo "==> 4/6 Verify GitHub auth (expect account: neopmpmtj)"
-gh auth status
+echo "==> 4/6 GitHub auth check (optional for install; needed later to create/push partners)"
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  gh auth status
+else
+  echo "    WARN: gh not authenticated — installs fine, but 'gh repo create' in setup-pi-agent.sh will fail until you run 'gh auth login'."
+fi
 
 echo "==> 5/6 Write standing rules"
 cat > "$AGENT_DIR/partner-agents/REMEMBER.md" <<'EOF'
@@ -64,4 +69,4 @@ echo "Done. Restart Pi, then confirm:"
 echo "  - pi list shows npm:pi-agents-pool and npm:@mjakl/pi-subagent"
 echo "  - ~/.pi/agent/partner-agents/ contains setup-pi-agent.sh, push-partner-agents.sh, shared/"
 echo "  - ~/.pi/partner-agents/ exists (empty)"
-echo "  - gh auth status shows neopmpmtj"
+echo "  - gh auth status shows neopmpmtj (optional — needed only to create/push new partners)"
