@@ -1,0 +1,1 @@
+/home/pmpmt/.pi/agent/skills/pi-prompt-dump/extensions/pi-prompt-capture.ts
