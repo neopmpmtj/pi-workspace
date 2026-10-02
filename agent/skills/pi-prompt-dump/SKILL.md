@@ -59,12 +59,21 @@ node $S --save <path>      # write the annotated dump to a file
 node $S --baseline save    # snapshot the current prompt
 node $S --check            # diff vs baseline; exit 1 on drift
 node $S --triage           # one LLM call explaining the drift
+node $S --verify           # compare a live capture vs the reconstruction
+                           # exit 0 agree · 1 mismatch · 3 no capture
 
 node $S --parts=addendum,project_context    # only these sections
 node $S --session <file.jsonl>              # explicit session
+node $S --capture <file.json>               # explicit capture JSON
 node $S --no-reconstruct                    # transcript sections only
+node $S --no-capture                        # ignore capture files
 node $S --no-redact                         # disable redaction
 ```
+
+`--exact` prefers a complete capture when one exists (falling back to the
+transcript plus reconstruction), and reports which source it used on **stderr**
+so stdout stays byte-clean for hashing or diffing. `--parts` always disables the
+capture, because a capture is the whole prompt and cannot stand in for a subset.
 
 Prefer running it directly in a terminal: that costs zero tokens. Routing it
 through the agent (`/dump`) puts the whole prompt into the conversation and
@@ -95,13 +104,33 @@ bash ~/.pi/agent/skills/pi-prompt-dump/scripts/install-capture-extension.sh
 ```
 
 Symlinks `extensions/pi-prompt-capture.ts` into `~/.pi/agent/extensions/`. It
-observes `before_agent_start`, writes the final prompt to
-`~/.pi/agent/state/prompt-capture/<session-id>.json`, and never mutates the
-prompt. Remove with `rm ~/.pi/agent/extensions/pi-prompt-capture.ts`.
+never mutates the prompt. Remove with
+`rm ~/.pi/agent/extensions/pi-prompt-capture.ts`.
 
-Caveat: extensions run in load order. If the capture handler runs before another
-extension appends, the capture is partial — the record includes a `markers` map
-and a `complete` flag so this is detectable rather than silently trusted.
+It writes two hooks into one record at
+`~/.pi/agent/state/prompt-capture/<session-id>.json` (and `latest.json`):
+
+| Hook | What it sees | Used for |
+|---|---|---|
+| `before_agent_start` | the **base** prompt — extensions have not appended yet | prefix verification |
+| `before_provider_request` | the **authoritative final** prompt from the request payload | exact verification |
+
+Why both: pi's load order is the project dir, then the **global** extensions
+dir, then configured package paths. A global-dir extension therefore always runs
+before `pi-agent-browser-native` and `pi-subagent` in `before_agent_start`, so a
+single-hook capture can never see their appends. `before_provider_request` fires
+after the payload is assembled, so it can. Payload shape is provider-specific, so
+extraction is defensive: on failure the record stores the payload's top-level
+keys for diagnosis instead of writing a plausible-looking wrong value.
+
+`--verify` understands both:
+
+- authoritative capture → exact byte comparison
+- base capture → **prefix** comparison: proves the core sections match
+  byte-for-byte and reports how many chars are extension-injected
+
+The session id comes from `ctx.sessionManager.getSessionId()`, not the
+environment — extensions do not inherit `PI_SESSION_ID`.
 
 ## Files
 

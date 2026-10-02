@@ -40,7 +40,9 @@ Usage: dump.mjs [options]
 
 Output modes (pick one; --print is the default)
   --print              Annotated markdown dump to stdout
-  --exact              Raw concatenated prompt only (byte-faithful, no headers)
+  --exact              Raw concatenated prompt only (byte-faithful, no headers).
+                       Prefers a complete capture when one exists and reports
+                       the source used on stderr, so stdout stays byte-clean.
   --json               Machine-readable JSON, including attribution
   --list               Section inventory: name, size, origin, source
   --hash               Per-section and overall sha256
@@ -50,13 +52,17 @@ Comparison
   --baseline save      Snapshot the current prompt into baseline/
   --check              Diff current vs baseline; exit 1 when drifted
   --triage             Explain a --check diff using one LLM call (pi --print)
+  --verify             Compare a live capture against the reconstruction.
+                       exit 0 = agree · 1 = mismatch · 3 = no capture available
 
 Input
   --session <path>     Explicit session .jsonl (default: $PI_SESSION_FILE, else newest)
+  --capture <path>     Explicit capture JSON, bypassing session-id lookup
   --cwd <path>         Override cwd used for agent discovery and the <cwd> section
 
 Behaviour
   --no-reconstruct     Do not rebuild request-time injected blocks
+  --no-capture         Ignore capture files and use the transcript only
   --no-redact          Disable secret redaction for display output
   --quiet              Suppress the header block
   --help               Show this help
@@ -66,8 +72,10 @@ function parseArgs(argv) {
   const opts = {
     mode: "print",
     session: null,
+    capturePath: null,
     cwd: process.cwd(),
     reconstruct: true,
+    useCapture: true,
     redact: true,
     quiet: false,
     savePath: null,
@@ -87,6 +95,7 @@ function parseArgs(argv) {
     else if (arg === "--hash") opts.mode = "hash";
     else if (arg === "--check") opts.mode = "check";
     else if (arg === "--triage") opts.mode = "triage";
+    else if (arg === "--verify") opts.mode = "verify";
     else if (arg === "--baseline") {
       const value = next();
       if (value !== "save") fail(`--baseline expects "save", got ${value ?? "(nothing)"}`);
@@ -97,6 +106,10 @@ function parseArgs(argv) {
     } else if (arg === "--session") {
       opts.session = next();
       if (!opts.session) fail("--session requires a path");
+    } else if (arg === "--capture") {
+      opts.capturePath = next();
+      if (!opts.capturePath) fail("--capture requires a path");
+      opts.useCapture = true;
     } else if (arg === "--cwd") {
       opts.cwd = next();
       if (!opts.cwd) fail("--cwd requires a path");
@@ -104,6 +117,7 @@ function parseArgs(argv) {
       opts.parts = next();
       if (!opts.parts) fail("--parts requires a comma-separated list");
     } else if (arg === "--no-reconstruct") opts.reconstruct = false;
+    else if (arg === "--no-capture") opts.useCapture = false;
     else if (arg === "--no-redact") opts.redact = false;
     else if (arg === "--quiet") opts.quiet = true;
     else if (arg.startsWith("--parts=")) opts.parts = arg.slice("--parts=".length);
@@ -118,12 +132,70 @@ function fail(message) {
   process.exit(2);
 }
 
+// Behave like a normal Unix filter when stdout closes early, e.g. `dump.mjs | head`.
+process.stdout.on("error", (error) => {
+  if (error?.code === "EPIPE") process.exit(0);
+  throw error;
+});
+
 // ---------------------------------------------------------------------------
 // Session discovery + transcript replay
 // ---------------------------------------------------------------------------
 
 function configDir() {
   return process.env.PI_CODING_AGENT_DIR?.trim() || path.join(os.homedir(), ".pi", "agent");
+}
+
+/**
+ * Capture files are written by the optional pi-prompt-capture extension, which
+ * observes `before_agent_start` and persists the FINAL rendered prompt. That is
+ * the only way to obtain byte-exact text for request-time injected blocks, which
+ * pi does not write to the transcript.
+ */
+function captureDir() {
+  const explicit = process.env.PI_PROMPT_CAPTURE_DIR?.trim();
+  if (explicit) return explicit;
+  return path.join(configDir(), "state", "prompt-capture");
+}
+
+function loadCapture(sessionId, explicitPath) {
+  const candidates = [];
+  if (explicitPath) {
+    candidates.push({ file: path.resolve(explicitPath), explicit: true });
+  } else {
+    if (sessionId) candidates.push({ file: path.join(captureDir(), `${sessionId}.json`) });
+    // `latest.json` is written alongside every per-session capture, so it still
+    // works when the session id cannot be resolved.
+    candidates.push({ file: path.join(captureDir(), "latest.json"), viaLatest: true });
+  }
+
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate.file)) {
+      if (candidate.explicit) return { file: candidate.file, error: `capture file not found: ${candidate.file}` };
+      continue;
+    }
+    try {
+      const data = JSON.parse(fs.readFileSync(candidate.file, "utf8"));
+      return { file: candidate.file, viaLatest: Boolean(candidate.viaLatest), ...data };
+    } catch (error) {
+      return { file: candidate.file, error: error.message };
+    }
+  }
+  return null;
+}
+
+function firstDivergence(a, b) {
+  const limit = Math.min(a.length, b.length);
+  for (let i = 0; i < limit; i += 1) if (a[i] !== b[i]) return i;
+  return a.length === b.length ? -1 : limit;
+}
+
+function divergenceContext(text, offset) {
+  const start = Math.max(0, offset - 80);
+  const end = Math.min(text.length, offset + 120);
+  const prefix = start > 0 ? "..." : "";
+  const suffix = end < text.length ? "..." : "";
+  return `${prefix}${text.slice(start, end).replace(/\n/g, "\\n")}${suffix}`;
 }
 
 function findNewestSession() {
@@ -313,7 +385,85 @@ function buildParts(opts) {
       })()
     : parts;
 
-  return { parts: filtered, allParts: parts, replay, manifest, warnings };
+  const capture = opts.useCapture ? loadCapture(replay.sessionId, opts.capturePath) : null;
+
+  return { parts: filtered, allParts: parts, replay, manifest, warnings, capture };
+}
+
+/**
+ * A capture is only trustworthy when it is complete: extension handlers run in
+ * load order, so a capture taken before another extension appended its block is
+ * a valid but PARTIAL prompt. `complete` is set by the capture extension itself.
+ */
+function usableCapture(built, opts) {
+  const capture = built.capture;
+  if (!opts.useCapture || !capture) return null;
+  if (capture.error) return null;
+  if (typeof capture.systemPrompt !== "string" || capture.systemPrompt.length === 0) return null;
+  // A capture is the whole prompt, so it cannot stand in for a section subset.
+  if (opts.parts) return null;
+  return capture;
+}
+
+/**
+ * Compare a live capture against the reconstruction. Prefix relationships are
+ * reported explicitly because they localise the cause: capture-shorter usually
+ * means the capture handler ran before another extension appended, and
+ * capture-longer means an unmodelled request-time injection exists.
+ */
+function verifyCapture(built, opts) {
+  const capture = built.capture;
+  if (!capture) {
+    return {
+      status: "unavailable",
+      message: `No capture found for session ${built.replay.sessionId ?? "(unknown)"} in ${captureDir()}`,
+    };
+  }
+  if (capture.error) return { status: "error", message: `Unreadable capture: ${capture.error}`, capture };
+
+  if (capture.captures?.before_provider_request?.extractionFailed) {
+    return {
+      status: "error",
+      capture,
+      message:
+        "Provider-request capture exists but the system prompt could not be extracted from the payload. " +
+        `payload type: ${capture.captures.before_provider_request.payloadType}; ` +
+        `top-level keys: ${(capture.captures.before_provider_request.payloadKeys ?? []).join(", ") || "(none)"}`,
+    };
+  }
+
+  const theirs = capture.systemPrompt;
+  if (typeof theirs !== "string" || theirs.length === 0) {
+    return { status: "error", message: "Capture has no systemPrompt field", capture };
+  }
+
+  const ours = renderPrompt(built.allParts);
+  const offset = firstDivergence(ours, theirs);
+
+  // A capture taken in `before_agent_start` from the global extensions dir is the
+  // BASE prompt: package extensions have not appended yet. It is verified as a
+  // PREFIX rather than by equality, which still proves the core sections match
+  // byte-for-byte and localises any divergence inside them.
+  const source = capture.captureSource ?? (capture.complete === true ? "before_provider_request" : "before_agent_start");
+  const isBase = source !== "before_provider_request" && capture.complete !== true;
+
+  if (isBase) {
+    if (ours.startsWith(theirs)) {
+      return { status: "agree", mode: "prefix", source, offset, ours, theirs, capture };
+    }
+    let relation = "divergent";
+    if (theirs.startsWith(ours)) relation = "capture-longer";
+    else if (ours.includes(theirs)) relation = "capture-embedded";
+    return { status: "mismatch", mode: "prefix", relation, source, offset, ours, theirs, capture };
+  }
+
+  if (offset === -1) return { status: "agree", mode: "exact", source, offset, ours, theirs, capture };
+
+  let relation = "divergent";
+  if (theirs.startsWith(ours)) relation = "capture-longer";
+  else if (ours.startsWith(theirs)) relation = "capture-shorter";
+
+  return { status: "mismatch", mode: "exact", relation, source, offset, ours, theirs, capture };
 }
 
 /** Mirror of pi-ai getSystemMessageText(). */
@@ -476,6 +626,13 @@ function header(built, prompt, redaction) {
   lines.push(`- Transcript system messages: ${built.replay.systemMessageCount}`);
   lines.push(`- Parts: ${built.parts.length} (${built.parts.filter((p) => p.runtime).length} reconstructed)`);
   lines.push(`- Total prompt: ${prompt.length} chars · sha256 ${sha256(prompt)}`);
+  if (built.capture && !built.capture.error) {
+    lines.push(
+      `- Capture: ${built.capture.file} (source: ${built.capture.captureSource ?? "unknown"}, complete: ${built.capture.complete === true}, captured ${built.capture.capturedAt ?? "(unknown)"})`,
+    );
+  } else if (built.capture?.error) {
+    lines.push(`- Capture: unreadable (${built.capture.error})`);
+  }
   if (redaction && redaction.total > 0) {
     lines.push(`- Redaction: ${redaction.total} replacement(s) — ${Object.entries(redaction.counts).map(([k, v]) => `${k}:${v}`).join(", ")}`);
   } else if (redaction) {
@@ -580,10 +737,79 @@ function main() {
   const redaction = opts.redact ? redact(prompt) : null;
 
   switch (opts.mode) {
+    case "verify": {
+      const result = verifyCapture(built, opts);
+
+      if (result.status === "unavailable") {
+        process.stdout.write(`${result.message}\n`);
+        process.stdout.write("Install the capture extension, run /reload, then start a turn:\n");
+        process.stdout.write("  bash ~/.pi/agent/skills/pi-prompt-dump/scripts/install-capture-extension.sh\n");
+        process.exit(3);
+      }
+      if (result.status === "error") {
+        process.stdout.write(`${result.message}\n`);
+        process.exit(3);
+      }
+
+      const { capture } = result;
+      process.stdout.write(`Capture: ${capture.file}${capture.viaLatest ? "  (via latest.json fallback)" : ""}\n`);
+      process.stdout.write(`  capturedAt: ${capture.capturedAt ?? capture.captures?.before_provider_request?.capturedAt ?? "(unknown)"}\n`);
+      process.stdout.write(`  sessionId: ${capture.sessionId ?? "(unknown)"}\n`);
+      process.stdout.write(`  source: ${result.source}   complete: ${capture.complete === true}\n`);
+      const extracted = capture.captures?.before_provider_request?.extractedFrom;
+      if (extracted) process.stdout.write(`  extracted from payload: ${extracted}\n`);
+      if (capture.markers) {
+        const missing = Object.entries(capture.markers).filter(([, v]) => v !== true).map(([k]) => k);
+        process.stdout.write(`  markers: ${missing.length === 0 ? "all present" : `missing ${missing.join(", ")}`}\n`);
+      }
+      if (capture.sessionId && built.replay.sessionId && capture.sessionId !== built.replay.sessionId) {
+        process.stdout.write(`  WARNING: capture session id does not match the transcript being replayed\n`);
+      }
+      process.stdout.write(`  capture length:        ${result.theirs.length}\n`);
+      process.stdout.write(`  reconstruction length: ${result.ours.length}\n`);
+      process.stdout.write(`  reconstruction sha256: ${sha256(result.ours)}\n`);
+      process.stdout.write(`  capture sha256:        ${sha256(result.theirs)}\n`);
+
+      if (result.status === "agree" && result.mode === "exact") {
+        process.stdout.write("\nRESULT: agree — capture and reconstruction are byte-identical.\n");
+        return;
+      }
+
+      if (result.status === "agree" && result.mode === "prefix") {
+        process.stdout.write(
+          `\nRESULT: agree (prefix) — the base capture matches the reconstruction byte-for-byte\n` +
+            `for its full ${result.theirs.length} chars, covering every core section.\n` +
+            `Extension-injected blocks account for the remaining ${result.ours.length - result.theirs.length} chars.\n` +
+            `A prefix check cannot verify those blocks; a before_provider_request capture can.\n`,
+        );
+        return;
+      }
+
+      process.stdout.write(`\nRESULT: mismatch (${result.mode}/${result.relation}) at offset ${result.offset}\n`);
+      process.stdout.write(`  reconstruction: ${divergenceContext(result.ours, result.offset)}\n`);
+      process.stdout.write(`  capture:        ${divergenceContext(result.theirs, result.offset)}\n`);
+      if (result.relation === "capture-shorter") {
+        process.stdout.write("\nLikely cause: the capture handler ran BEFORE another extension appended its block.\n");
+        process.stdout.write("Fix: ensure pi-prompt-capture loads last, or rely on the reconstruction.\n");
+      } else if (result.relation === "capture-longer") {
+        process.stdout.write("\nLikely cause: an unmodelled request-time injection exists that the reconstruction does not build.\n");
+        process.stdout.write("Fix: add a builder under scripts/lib/ and list it in parts.json runtimeInjections.\n");
+      }
+      process.exit(1);
+      break;
+    }
     case "exact": {
-      process.stdout.write(opts.redact ? redaction.text : prompt);
-      if (!opts.redact ? prompt.endsWith("\n") : redaction.text.endsWith("\n")) break;
-      process.stdout.write("\n");
+      const capture = usableCapture(built, opts);
+      const text = capture ? capture.systemPrompt : prompt;
+      const source = capture
+        ? `capture (complete) ${capture.file}`
+        : opts.reconstruct
+          ? "transcript + reconstruction"
+          : "transcript only";
+      process.stderr.write(`# pi-prompt-dump --exact source: ${source}; ${text.length} chars\n`);
+      const out = opts.redact ? redact(text).text : text;
+      process.stdout.write(out);
+      if (!out.endsWith("\n")) process.stdout.write("\n");
       break;
     }
     case "json": {

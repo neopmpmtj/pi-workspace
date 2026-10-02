@@ -14,8 +14,9 @@
  *
  * This module ports the wording from the package's own `contract.ts` so the
  * block can be rebuilt deterministically, with no LLM call. The ported string
- * literals are pinned to the package version below; `dump.mjs --check` will
- * surface drift, and `--verify` compares against a live capture when one exists.
+ * literals are pinned to the package version below; `dump.mjs --check` surfaces
+ * drift against the baseline, and `dump.mjs --verify` compares the reconstruction
+ * against a live capture when the optional capture extension is installed.
  *
  * Source of truth (pinned):
  *   @mjakl/pi-subagent@3.0.1 -> contract.ts, agents.ts

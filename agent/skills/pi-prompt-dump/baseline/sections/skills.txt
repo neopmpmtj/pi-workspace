@@ -10,6 +10,11 @@ When a skill file references a relative path, resolve it against the skill direc
     <location>/home/pmpmt/.pi/agent/skills/gog-workspace/SKILL.md</location>
   </skill>
   <skill>
+    <name>pi-prompt-dump</name>
+    <description>Deterministically reproduce the live pi system prompt and every instruction file the agent receives — harness sections, AGENTS.md, APPEND_SYSTEM.md, skill list, subagent list, and extension-injected blocks. Use when asked to print, dump, show, or archive the agent&apos;s system prompt or instructions; when asked what the agent was told; when asked where a given instruction comes from; or when detecting and explaining what changed in the agent&apos;s instructions after an edit, upgrade, or config change. Zero LLM calls except the opt-in --triage diff explainer.</description>
+    <location>/home/pmpmt/.pi/agent/skills/pi-prompt-dump/SKILL.md</location>
+  </skill>
+  <skill>
     <name>skill-creator</name>
     <description>Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill&apos;s description for better triggering accuracy.</description>
     <location>/home/pmpmt/.pi/agent/skills/skill-creator/SKILL.md</location>

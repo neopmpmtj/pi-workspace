@@ -1,11 +1,11 @@
 {
-  "savedAt": "2026-10-02T10:33:18.231Z",
+  "savedAt": "2026-10-02T11:00:02.947Z",
   "sessionFile": "/home/pmpmt/.pi/agent/sessions/--home-pmpmt-.pi--/2026-10-02T05-32-19-256Z_01a0fb19-5fb7-736f-8238-382aa52c036e.jsonl",
   "sessionId": "01a0fb19-5fb7-736f-8238-382aa52c036e",
   "sessionVersion": 3,
   "cwd": "/home/pmpmt/.pi",
-  "promptHash": "62ba5f4ae34c9f48aaf10ab85dea16c55397ce924f2a72e033d62c1dda74f1a1",
-  "promptLength": 58936,
+  "promptHash": "aa71c6c39360964fa9c78fcf8cbd38dd296bc1afe6a91b65cc7de0ef44a05646",
+  "promptLength": 59665,
   "sectionOrder": [
     "preamble",
     "tools",
@@ -25,7 +25,7 @@
     "docs": "58faa3f162b314e296300cf89b1105f6f1f513331350d99ece561dcd063b241a",
     "addendum": "595b6394ba9a4d138222cf847c12f58b5bbeb98866791102e4b221624814ef09",
     "project_context": "be44bb5377f59f4305ed705c9b29694362a9f54fbbacb528b8455fa11046d370",
-    "skills": "7d43bda91dadf5e48d00b192dd384cdcb37dcdcf23b009f590857b1d562469ed",
+    "skills": "3b13167c551dbfb9e1aa282b6d906d3e1dd950c7af68a9577363b87a2f4a18d0",
     "cwd": "a5411e8fe4138dc9732b72f2ad2435ccc8ebc15d0b4bf3d1dd1bf695ae8978db",
     "agent_browser": "43c3acfdc8c00b930fb5eea211668067623cf316d5c46183ed472b51e46f5ea2",
     "available_subagents": "b732c1ca1319eb391277b7b5953cbcc417c5f95d2f8f7e4d3b876a5d286e7d34"
@@ -85,7 +85,7 @@
       "origin": "skill discovery",
       "source": "~/.pi/agent/skills/*/SKILL.md",
       "runtime": false,
-      "length": 2512
+      "length": 3241
     },
     {
       "name": "cwd",
