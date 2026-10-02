@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "description": "Declarative map of system-prompt sections to their origin. Edit this file (not code) when pi's layout changes.",
+  "note": "Section names and their order come from the live session transcript. A transcript patch with a null value means the section was removed.",
+  "sections": {
+    "preamble": {
+      "kind": "generated",
+      "origin": "pi core",
+      "source": "pi-coding-agent/dist/core/system-prompt.js",
+      "detail": "Role sentence. Overridden entirely when customPrompt/forceSystemPrompt is set."
+    },
+    "tools": {
+      "kind": "generated",
+      "origin": "pi core",
+      "source": "pi-coding-agent/dist/core/system-prompt.js",
+      "detail": "Visible tools = selectedTools filtered to those with a non-empty toolSnippets entry."
+    },
+    "rules": {
+      "kind": "generated",
+      "origin": "pi core",
+      "source": "pi-coding-agent/dist/core/system-prompt.js",
+      "detail": "toolGuidelines + promptGuidelines + two fixed rules; de-duplicated, order = selectedTools order."
+    },
+    "docs": {
+      "kind": "generated",
+      "origin": "pi core",
+      "source": "pi-coding-agent/dist/core/system-prompt.js",
+      "detail": "Paths resolved at runtime via getReadmePath()/getDocsPath()/getExamplesPath()."
+    },
+    "addendum": {
+      "kind": "file",
+      "origin": "user config",
+      "source": "~/.pi/agent/APPEND_SYSTEM.md",
+      "detail": "Injected verbatim as appendSystemPrompt."
+    },
+    "project_context": {
+      "kind": "files",
+      "origin": "project instructions",
+      "source": "AGENTS.md discovery",
+      "detail": "Each contributing file is listed inside the section as <project_instructions path=\"...\">."
+    },
+    "skills": {
+      "kind": "generated",
+      "origin": "skill discovery",
+      "source": "~/.pi/agent/skills/*/SKILL.md",
+      "detail": "Built by formatSkillsForPrompt(); only name/description/location reach the prompt, not the body."
+    },
+    "cwd": {
+      "kind": "generated",
+      "origin": "runtime",
+      "source": "session working directory",
+      "detail": "Rendered with backslashes normalised to forward slashes."
+    },
+    "agent_browser": {
+      "kind": "extension",
+      "origin": "extension",
+      "source": "pi-agent-browser-native/dist/extensions/agent-browser/index.js:1429",
+      "detail": "Set as event.systemPromptOptions.sections.agent_browser = fullInstructions(ctx)."
+    }
+  },
+  "runtimeInjections": [
+    {
+      "id": "available_subagents",
+      "kind": "extension-request-time",
+      "origin": "extension",
+      "source": "@mjakl/pi-subagent/index.ts:783 (before_agent_start)",
+      "detail": "Appended to the rendered prompt string, NOT persisted as a transcript section. Rebuilt by scripts/lib/subagent-block.mjs, pinned to contract v3.0.1.",
+      "reconstructable": true
+    }
+  ]
+}

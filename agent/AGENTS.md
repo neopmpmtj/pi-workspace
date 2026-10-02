@@ -53,6 +53,42 @@ Skill docs in `~/.pi/agent/skills/` can have stale or incorrect command names be
 
 **Pattern:** `tool --help` → verify → execute. One extra round trip saves failures and confusion.
 
+## Authoring Skills
+
+Use the **`skill-creator`** skill for any skill creation or editing work — from scratch, or when improving an existing skill. Trigger it with `/skill:skill-creator`, or `pi -p "use the skill-creator skill to ..."`.
+
+- **Location:** `~/.pi/agent/skills/skill-creator/`
+- **Provenance:** unmodified Apache 2.0 vendored copy of `anthropics/skills` → `skills/skill-creator/`. See `ATTRIBUTION.md` in that directory for source commits and verifiable content hashes.
+
+### Validate before declaring a skill done
+
+```bash
+python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
+```
+
+Needs only Python + `pyyaml` (installed). It requires `SKILL.md` plus valid YAML frontmatter and hard-fails on violations. Pi itself only *warns* on invalid fields, so pi loading a skill does **not** mean it is spec-valid — always run the validator.
+
+### Spec constraints (agentskills.io/specification)
+
+- `name` *(required)* — ≤64 chars, `[a-z0-9-]` only, no leading/trailing/consecutive hyphens, and **must match the parent directory name**
+- `description` *(required)* — 1–1024 chars, no `<` or `>`
+- `compatibility` *(optional)* — ≤500 chars
+- `license`, `metadata`, `allowed-tools` *(optional)*; `allowed-tools` is experimental
+- Keep `SKILL.md` under 500 lines; keep file references one level deep
+
+### Portability traps
+
+- Pi tolerates `name` differing from the directory name; the spec **requires** a match. Always match them.
+- `disable-model-invocation` is a pi-only extension absent from the spec — Anthropic's validator rejects it as an unexpected key. Avoid it on skills intended to be portable.
+
+### Write descriptions that actually trigger
+
+Models **undertrigger** skills. A description must state both what the skill does *and* the concrete contexts/keywords for when to use it. "Helps with PDFs" is inadequate; route on specifics.
+
+### Evals are not yet available
+
+`run_eval.py`, `run_loop.py`, and `improve_description.py` require the **`claude` CLI (Claude Code)** — *not* an `ANTHROPIC_API_KEY`. They authenticate via Claude Code's subscription session. Dormant here until Claude Code is installed, or until they are re-pointed at `pi --print`.
+
 ## APPEND_SYSTEM.md Location
 
 When directed or asked to add, edit, or append to the APPEND_SYSTEM.md file, always use `~/.pi/agent/APPEND_SYSTEM.md`. Do **not** create a new `APPEND_SYSTEM.md` at the project level (`~/.pi/APPEND_SYSTEM.md`).

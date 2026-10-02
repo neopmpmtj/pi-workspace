@@ -1,0 +1,115 @@
+{
+  "savedAt": "2026-10-02T10:33:18.231Z",
+  "sessionFile": "/home/pmpmt/.pi/agent/sessions/--home-pmpmt-.pi--/2026-10-02T05-32-19-256Z_01a0fb19-5fb7-736f-8238-382aa52c036e.jsonl",
+  "sessionId": "01a0fb19-5fb7-736f-8238-382aa52c036e",
+  "sessionVersion": 3,
+  "cwd": "/home/pmpmt/.pi",
+  "promptHash": "62ba5f4ae34c9f48aaf10ab85dea16c55397ce924f2a72e033d62c1dda74f1a1",
+  "promptLength": 58936,
+  "sectionOrder": [
+    "preamble",
+    "tools",
+    "rules",
+    "docs",
+    "addendum",
+    "project_context",
+    "skills",
+    "cwd",
+    "agent_browser",
+    "available_subagents"
+  ],
+  "hashes": {
+    "preamble": "00aa6d13d16562265135a7c704d8a33be5d9f647e98a36ea3efa25662e40fc97",
+    "tools": "b53b2df19cb2b16c531d121abedf87990f9eabedffeff6ba7aaec8df65377c1d",
+    "rules": "683fba61d42f36dcad8738b570a94ceff2b815e5e4471246516f5ac9e25ec709",
+    "docs": "58faa3f162b314e296300cf89b1105f6f1f513331350d99ece561dcd063b241a",
+    "addendum": "595b6394ba9a4d138222cf847c12f58b5bbeb98866791102e4b221624814ef09",
+    "project_context": "be44bb5377f59f4305ed705c9b29694362a9f54fbbacb528b8455fa11046d370",
+    "skills": "7d43bda91dadf5e48d00b192dd384cdcb37dcdcf23b009f590857b1d562469ed",
+    "cwd": "a5411e8fe4138dc9732b72f2ad2435ccc8ebc15d0b4bf3d1dd1bf695ae8978db",
+    "agent_browser": "43c3acfdc8c00b930fb5eea211668067623cf316d5c46183ed472b51e46f5ea2",
+    "available_subagents": "b732c1ca1319eb391277b7b5953cbcc417c5f95d2f8f7e4d3b876a5d286e7d34"
+  },
+  "parts": [
+    {
+      "name": "preamble",
+      "kind": "generated",
+      "origin": "pi core",
+      "source": "pi-coding-agent/dist/core/system-prompt.js",
+      "runtime": false,
+      "length": 169
+    },
+    {
+      "name": "tools",
+      "kind": "generated",
+      "origin": "pi core",
+      "source": "pi-coding-agent/dist/core/system-prompt.js",
+      "runtime": false,
+      "length": 1370
+    },
+    {
+      "name": "rules",
+      "kind": "generated",
+      "origin": "pi core",
+      "source": "pi-coding-agent/dist/core/system-prompt.js",
+      "runtime": false,
+      "length": 1305
+    },
+    {
+      "name": "docs",
+      "kind": "generated",
+      "origin": "pi core",
+      "source": "pi-coding-agent/dist/core/system-prompt.js",
+      "runtime": false,
+      "length": 1406
+    },
+    {
+      "name": "addendum",
+      "kind": "file",
+      "origin": "user config",
+      "source": "~/.pi/agent/APPEND_SYSTEM.md",
+      "runtime": false,
+      "length": 7865
+    },
+    {
+      "name": "project_context",
+      "kind": "files",
+      "origin": "project instructions",
+      "source": "AGENTS.md discovery",
+      "runtime": false,
+      "length": 7020
+    },
+    {
+      "name": "skills",
+      "kind": "generated",
+      "origin": "skill discovery",
+      "source": "~/.pi/agent/skills/*/SKILL.md",
+      "runtime": false,
+      "length": 2512
+    },
+    {
+      "name": "cwd",
+      "kind": "generated",
+      "origin": "runtime",
+      "source": "session working directory",
+      "runtime": false,
+      "length": 28
+    },
+    {
+      "name": "agent_browser",
+      "kind": "extension",
+      "origin": "extension",
+      "source": "pi-agent-browser-native/dist/extensions/agent-browser/index.js:1429",
+      "runtime": false,
+      "length": 33859
+    },
+    {
+      "name": "available_subagents",
+      "kind": "extension-request-time",
+      "origin": "extension",
+      "source": "@mjakl/pi-subagent/index.ts:783 (before_agent_start)",
+      "runtime": true,
+      "length": 3384
+    }
+  ]
+}

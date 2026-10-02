@@ -1,18 +1,18 @@
 # Pi State Summary
 
-> *Last updated: 2026-07-25*
+> *Last updated: 2026-10-02*
 > *Living document — reflects current state, not history.*
 
 ---
 
 ## Quick Facts
 
-- **Pi version**: 0.81.1, Node v24.18.0 via nvm
+- **Pi version**: 1.0.0, Node v24.21.0 via nvm
 - **Config dir**: `/home/pmpmt/.pi/agent/`
 - **Provider**: DeepSeek (direct API key)
-- **Default model**: `deepseek-v4-pro`
-- **Flash model**: `deepseek-v4-flash`
-- **Thinking**: off (default)
+- **Default model**: `deepseek-flash`
+- **Enabled models**: `deepseek-v4-pro`, `deepseek-flash`
+- **Thinking**: high (default)
 - **Location**: Vila Real, Portugal (Europe/Lisbon)
 
 ---
@@ -46,9 +46,10 @@
 - **Package**: `@mjakl/pi-subagent`
 - **Tool**: `subagent` — delegates to specialized sub-agents in isolated Pi RPC processes
 - **Agent definitions**: `~/.pi/agent/agents/*.md` (YAML frontmatter + Markdown body)
-- **Active agents**:
-  - `frontend` — HTML/CSS/JS/UI (`deepseek-v4-flash`, low thinking, tools: read,write,edit,bash)
-  - `explore` — Codebase exploration (auto-created, read-only tools)
+- **Active agents** (`~/.pi/agent/agents/`):
+  - `frontend` — HTML/CSS/JS/UI (low thinking, tools: read,write,edit,bash). ⚠️ Sets `model: deepseek-v4-flash`, which is **not** in `enabledModels` — risks an OpenRouter fallback failure.
+  - `researcher` — Web research returning sourced summaries (low thinking, tools: read, grep, find, ls, web_search). Model `deepseek-flash`.
+  - Removed: `explore`
 - Each agent gets its own clean system prompt. No orchestrator context pollution.
 
 ### 6. Pi Web Access
@@ -84,9 +85,23 @@
 - `~/.pi/agent/prompts/short.md` — Summarize last response
 
 ### 12. Skills
-- `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs)
+
+Discovered recursively from `~/.pi/agent/skills/<name>/SKILL.md`. Only `name` + `description` load at startup; the body loads on trigger (`/skill:<name>` forces it). Validate any skill with:
+
+```bash
+python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
+```
+
+**Loading correctly (4):**
+- `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs). Note: carries a non-spec `version:` key; pi tolerates it, the spec validator flags it.
+- `skill-creator` — Create, edit, and evaluate skills (vendored Apache 2.0 copy of `anthropics/skills`; see its `ATTRIBUTION.md`)
 - `video-finder` — Find YouTube videos by topic or reference
-- `librarian` — Research open-source libraries (via pi-web-access)
+- `yt-download` — Download YouTube videos offline via yt-dlp
+
+**On disk but NOT loading (1):**
+- `partner-agent-export` — Export/import a partner agent as a self-contained installer. **Broken frontmatter:** the description contains an unquoted `model: ships` (col 367), so YAML parsing fails and pi silently skips the skill.
+
+Removed since last revision: `librarian`.
 
 ### 13. Apps-Scripts
 - `/home/pmpmt/.pi/apps-scripts/on-demand-stt-rewrite/` — Speech-to-text + text rewrite
@@ -120,7 +135,11 @@
 | `~/.pi/agent/.env` | API keys and secrets (sourced by wrapper) |
 | `~/.pi/agent/auth.json` | Provider auth (DeepSeek, Gemini) |
 | `~/.pi/agent/agents/frontend.md` | Front-end sub-agent definition |
+| `~/.pi/agent/agents/researcher.md` | Web research sub-agent definition |
 | `~/.pi/agent/prompts/document.md` | Auto-documentation prompt |
+| `~/.pi/agent/skills/skill-creator/SKILL.md` | Skill authoring methodology (create/edit/evaluate) |
+| `~/.pi/agent/skills/skill-creator/scripts/quick_validate.py` | Skill frontmatter/spec validator |
+| `~/.pi/agent/skills/skill-creator/ATTRIBUTION.md` | Vendored-source provenance + content hashes |
 | `~/.pi/agent/extensions/cron.ts` | Cron job extension |
 | `~/.pi/agent/extensions/git-commit.ts` | Git commit extension |
 | `~/.pi/agent/extensions/observability/index.ts` | Run observability |
