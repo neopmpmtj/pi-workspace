@@ -52,7 +52,7 @@
 - **Tool**: `subagent` — delegates to specialized sub-agents in isolated Pi RPC processes
 - **Agent definitions**: `~/.pi/agent/agents/*.md` (YAML frontmatter + Markdown body)
 - **Active agents**:
-  - `frontend` — HTML/CSS/JS/UI (thinking low; tools: read, write, edit, bash). ⚠️ Sets `model: deepseek-v4-flash`, which is **not** in `enabledModels` — risks an OpenRouter fallback failure.
+  - `frontend` — HTML/CSS/JS/UI (thinking low; tools: read, write, edit, bash). Model `deepseek-flash`.
   - `researcher` — web research returning sourced summaries (thinking low; tools: read, grep, find, ls, web_search). Model `deepseek-flash`.
 - Each agent gets its own clean system prompt; no orchestrator context pollution.
 
@@ -103,7 +103,7 @@ Discovered recursively from `~/.pi/agent/skills/<name>/SKILL.md`. Only `name` + 
 | `video-finder` | `neopmpmtj/skill-video-finder` |
 | `yt-download` | `neopmpmtj/skill-yt-download` |
 
-- `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs). Carries a non-spec `version:` key; pi tolerates it, the spec validator flags it.
+- `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs). Carries a non-spec `version:` key; pi tolerates it, the spec validator flags it. Ships `INSTALL.md` + `scripts/install.sh` for from-scratch installs on any server.
 - `partner-agent-export` — package/ship a partner agent as a self-contained installer, and import it on another Pi.
 - `pi-prompt-dump` — reproduce the live Pi system prompt and instruction files; owns the `pi-prompt-capture` extension.
 - `skill-creator` — create, edit, and evaluate skills (vendored Apache 2.0 copy of `anthropics/skills`; see its `ATTRIBUTION.md`).
@@ -226,4 +226,5 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `skill-stale-commands-fix/` | Skill command fix |
 | `speech-to-text-keyboard-shortcut-fix/` | STT keyboard fix |
 | `text-to-speech-app-setup/` | Text-to-speech app |
+| `gog-workspace-portable-install/` | Portable gog-workspace install (Google Console → pinned binary → keyring transplant → VPS rollout) |
 | `yt-download-user-manual.md` | yt-download skill usage |

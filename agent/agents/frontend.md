@@ -2,7 +2,7 @@
 name: frontend
 description: Front-end specialist for HTML, CSS, JavaScript, visual design, and UI work on the project website. Use for any web page changes, new features, styling, or visual polish.
 tools: read,write,edit,bash
-model: deepseek-v4-flash
+model: deepseek-flash
 thinking: low
 ---
 

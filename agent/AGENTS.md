@@ -41,7 +41,11 @@ This gives me the opportunity to decide whether to make it permanent or keep it 
 
 ## Updating pi-state-summary.md
 
-When the user says "update pi-state-summary" (or similar): audit the entire `~/.pi/` directory — installed packages, agents, extensions, skills, cron jobs, dashboard, apps-scripts — and rewrite `/home/pmpmt/.pi/docs/pi-state-summary.md` to reflect current reality only. No history, no stale references. This document is a living inventory, not a changelog. Session-level changes are captured separately via the `/document` prompt.
+The living inventory is `/home/pmpmt/.pi/docs/pi-state-summary.md`. **It must always be current — never ask whether to update it, just do it.**
+
+- **Continuous duty (unprompted):** whenever session work changes anything this document inventories — a skill, agent, extension, package, cron job, dashboard page, apps-script, partner agent, **docs directory or file**, key path, or machine — add/update the affected row or section in the same session, as part of finishing the work. Do not leave it for a later prompt, and do not ask permission.
+- **On "update pi-state-summary" (or similar):** audit the entire `~/.pi/` directory — installed packages, agents, extensions, skills, cron jobs, dashboard, apps-scripts, docs — and rewrite the file to reflect current reality only.
+- **Rules:** current reality only — no history, no changelog, no stale references. A thing that no longer exists gets deleted, not annotated as "removed". Session-level narratives belong in `/document` reports under `~/.pi/docs/`, not here.
 
 ## CLI Tool Hygiene
 

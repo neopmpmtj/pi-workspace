@@ -72,7 +72,6 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
 
 - This dev machine now runs pi 0.99.1 on node v24.21.0 with agent-browser 0.38.1.
   Rollback: `~/pi-update-rollback.sh`. Config backup: `~/pi-update-backup-20260930-165420.tar.gz`.
-- The target VPS has the `explore-discover` partner agent installed (signpost + shared tooling + leader memory record already written there).
 - NEXT with the user: (1) create a brand-new partner agent, then (2) export it via the
   `partner-agent-export` skill (`~/.pi/agent/partner-agents/export-partner-agent.sh`).
   Wait for the user's explicit go-ahead before starting; do not begin until they confirm the restart went fine.
@@ -85,7 +84,6 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
   - pi is a **self-contained launcher** `~/bin/pi` + its own node runtime `~/pi/node` (v24.21.0), deliberately isolated from nvm + OpenClaw.
   - `~/.pi` on the VPS is **not a git repo**.
   - Secrets live in `~/.pi/agent/.env` (bare `KEY=value`; the launcher sources it under `set -a`). The former `~/.pi/env` is retired.
-  - Partner agent `explore-discover` lives at `~/.pi/partner-agents/explore-discover/`.
 
 ## Finally
 

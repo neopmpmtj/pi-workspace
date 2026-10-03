@@ -22,12 +22,11 @@
       "createdAtMs": 1784271998255,
       "updatedAtMs": 1784272366981,
       "state": {
-        "nextRunAtMs": 1791012000000,
-        "lastRunAtMs": 1790925900177,
-        "lastRunStatus": "error",
-        "lastDurationMs": 300126,
-        "consecutiveErrors": 1,
-        "lastError": "[AGENT-DUMMY] Tracing to: /tmp/pi-event-trace-2026-10-02T07-20-00.log\nExtension error (/home/pmpmt/.pi/agent/extensions/observability/index.ts): Cannot read properties of undefined (reading 'slice')"
+        "nextRunAtMs": 1791098400000,
+        "lastRunAtMs": 1791012012185,
+        "lastRunStatus": "ok",
+        "lastDurationMs": 12184,
+        "consecutiveErrors": 0
       }
     },
     {
@@ -52,10 +51,10 @@
       "createdAtMs": 1784713890079,
       "updatedAtMs": 1784713890079,
       "state": {
-        "nextRunAtMs": 1791010800000,
-        "lastRunAtMs": 1790924407365,
+        "nextRunAtMs": 1791097200000,
+        "lastRunAtMs": 1791010806411,
         "lastRunStatus": "ok",
-        "lastDurationMs": 7328,
+        "lastDurationMs": 6409,
         "consecutiveErrors": 0
       }
     }
