@@ -19,6 +19,8 @@ service_account*.json
 **/sessions/
 *.session.jsonl
 *.db
+*.db-shm
+*.db-wal
 *.sqlite3
 sessions-summarizer/summarizer-state.json
 sessions-summaries/
