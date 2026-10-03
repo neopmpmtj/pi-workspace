@@ -54,7 +54,7 @@ Thumbs.db
 
 # ── Nested repos ───────────────────────────────────────────────────
 explore-discover/
-/partner-agents/
+genesis-tester/
 
 # ── Misc ───────────────────────────────────────────────────────────
 *.log

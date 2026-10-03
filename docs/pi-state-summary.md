@@ -135,6 +135,14 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 ### 15. Vendored Binaries
 - `~/.pi/agent/bin/fd`, `~/.pi/agent/bin/rg` — pinned copies used by tools that expect `fd`/`rg`
 
+### 16. Standalone Agent — genesis-tester
+- **Workspace**: `~/.pi/genesis-tester/` — deliberately **outside** the partner-agent framework (no registry entry, no git repo, no `packages` array)
+- **Launcher**: `pi-genesis-tester()` in `~/.bashrc` — `set -a` + sources the agent's **own** `.env`, then exports `PI_CODING_AGENT_DIR`
+- **Config**: `settings.json` (deepseek / deepseek-flash / high), `auth.json` (copy of main agent, `chmod 600`), `trust.json`, `.gitignore`
+- **Stock prompt only**: no `AGENTS.md`, no `APPEND_SYSTEM.md`, no prompts/skills/extensions → available tools are just `read`, `bash`, `edit`, `write` (no web_search, no agent_browser, no subagent)
+- **Sessions**: `~/.pi/genesis-tester/sessions/<cwd-slug>/` — inherited from `PI_CODING_AGENT_DIR`; override with `PI_CODING_AGENT_SESSION_DIR` or `--session-dir`
+- **Secrets**: `.env` and `auth.json` are live-key copies (not symlinks), both gitignored in case a repo is ever initialized
+
 ---
 
 ## Key Configuration
@@ -167,6 +175,7 @@ All settings live in `~/.pi/agent/settings.json`.
 | Main workspace | `/home/pmpmt/.pi` → `neopmpmtj/pi-workspace` (private) | local `main` is **ahead of origin** (unpushed commits); only session/model state files are dirty |
 | Each skill | `/home/pmpmt/.pi/agent/skills/<name>/` → `neopmpmtj/skill-<name>` (private) | clean on `main`, tracking origin; ignored by `pi-workspace` |
 | Partner agent | `/home/pmpmt/.pi/explore-discover` → `neopmpmtj/explore-discover` (public) | clean on `main` |
+| genesis-tester (standalone) | `/home/pmpmt/.pi/genesis-tester` | **not versioned** — no git repo by design |
 
 Clone/update a skill directly at its path:
 
@@ -202,6 +211,8 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/.pi/cron/jobs.json` / `~/.pi/cron/runs/` | Cron job store / run history |
 | `~/.pi/agent/partner-agents/partner-agents.list` | Partner agent registry |
 | `~/.pi/agent/partner-agents/export-partner-agent.sh` | Build a partner-agent installer |
+| `~/.pi/genesis-tester/settings.json` | Standalone `genesis-tester` agent config (no packages, no extensions) |
+| `~/.pi/genesis-tester/.env` | Standalone agent's own credentials (sourced by `pi-genesis-tester()`) |
 | `~/.pi/html/server.mjs` | Dashboard server entry point |
 | `~/.pi/html/token-tracker/db/token_usage_tracker.db` | Token analytics DB |
 | `/etc/systemd/system/my_PC_backup.{timer,service}` | Backup schedule |
