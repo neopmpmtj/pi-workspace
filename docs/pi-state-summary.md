@@ -103,7 +103,7 @@ Discovered recursively from `~/.pi/agent/skills/<name>/SKILL.md`. Only `name` + 
 | `video-finder` | `neopmpmtj/skill-video-finder` |
 | `yt-download` | `neopmpmtj/skill-yt-download` |
 
-- `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs). Carries a non-spec `version:` key; pi tolerates it, the spec validator flags it. Ships `INSTALL.md` + `scripts/install.sh` for from-scratch installs on any server.
+- `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs). Carries a non-spec `version:` key — **kept deliberately** (upstream skill-packaging metadata; pi tolerates it, the spec validator flags it). Ships `INSTALL.md` + `scripts/install.sh` for from-scratch installs on any server.
 - `partner-agent-export` — package/ship a partner agent as a self-contained installer, and import it on another Pi.
 - `pi-prompt-dump` — reproduce the live Pi system prompt and instruction files; owns the `pi-prompt-capture` extension.
 - `skill-creator` — create, edit, and evaluate skills (vendored Apache 2.0 copy of `anthropics/skills`; see its `ATTRIBUTION.md`).
