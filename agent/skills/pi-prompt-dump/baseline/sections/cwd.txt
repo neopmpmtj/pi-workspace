@@ -1,3 +1,0 @@
-<cwd>
-/home/pmpmt/.pi
-</cwd>

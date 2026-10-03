@@ -64,3 +64,11 @@ web-search-cache/
 sessions-summaries/**
 
 postgres-migration/**
+
+# ── Skills are standalone repos (cloned individually from GitHub) ─────
+agent/skills/partner-agent-export/
+agent/skills/gog-workspace/
+agent/skills/skill-creator/
+agent/skills/video-finder/
+agent/skills/yt-download/
+agent/skills/pi-prompt-dump/
