@@ -181,7 +181,7 @@ permissions and labels, list shared drives, track revisions and changes.
 
 **File:** `~/.pi/agent/prompts/document.md`
 
-A reusable prompt that auto-documents any session's fix/implementation following the pattern established by existing reports in `miscelaneous_documentation/`. Invoked as `/document` in the Pi TUI.
+A reusable prompt that auto-documents any session's fix/implementation following the pattern established by existing reports in `docs/`. Invoked as `/document` in the Pi TUI.
 
 ---
 

@@ -27,7 +27,7 @@ A Python-based speech-to-text application that records audio via hotkey press, t
    session — `pyautogui` is X11-only and cannot inject keys into native Wayland windows)
    - `sudo apt install -y ydotool ydotoold wl-clipboard`
    - Run `ydotoold` as a root service and chown its socket to your user (see
-     `~/.pi/miscelaneous_documentation/speech-to-text-keyboard-shortcut-fix/speech-to-text-wayland-autopaste-fix.md`)
+     `~/.pi/docs/speech-to-text-keyboard-shortcut-fix/speech-to-text-wayland-autopaste-fix.md`)
    - On X11, auto-paste uses `pyautogui` and needs `xclip` + `python3-tk` instead.
 
 ### Python Dependencies

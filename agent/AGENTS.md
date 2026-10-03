@@ -41,7 +41,7 @@ This gives me the opportunity to decide whether to make it permanent or keep it 
 
 ## Updating pi-state-summary.md
 
-When the user says "update pi-state-summary" (or similar): audit the entire `~/.pi/` directory — installed packages, agents, extensions, skills, cron jobs, dashboard, apps-scripts — and rewrite `/home/pmpmt/.pi/miscelaneous_documentation/pi-state-summary.md` to reflect current reality only. No history, no stale references. This document is a living inventory, not a changelog. Session-level changes are captured separately via the `/document` prompt.
+When the user says "update pi-state-summary" (or similar): audit the entire `~/.pi/` directory — installed packages, agents, extensions, skills, cron jobs, dashboard, apps-scripts — and rewrite `/home/pmpmt/.pi/docs/pi-state-summary.md` to reflect current reality only. No history, no stale references. This document is a living inventory, not a changelog. Session-level changes are captured separately via the `/document` prompt.
 
 ## CLI Tool Hygiene
 

@@ -40,7 +40,7 @@ This curriculum mirrors what was discovered in previous sessions. Follow this or
 
 ## Documentation Rule
 
-Every time you cover a topic, write your findings to a Markdown file under `/home/pmpmt/.pi/miscelaneous_documentation/explore-discover/`. Use descriptive filenames (e.g., `01-extension-discovery.md`, `02-event-lifecycle.md`). Each document should:
+Every time you cover a topic, write your findings to a Markdown file under `/home/pmpmt/.pi/docs/explore-discover/`. Use descriptive filenames (e.g., `01-extension-discovery.md`, `02-event-lifecycle.md`). Each document should:
 
 - Start with date, system info, and source references
 - Explain the concept clearly with code references (file paths + line numbers)
@@ -63,4 +63,4 @@ You have full tools: `read`, `grep`, `find`, `ls`, `write`, `edit`, `web_search`
 
 ## Startup Check
 
-When invoked, first check `/home/pmpmt/.pi/miscelaneous_documentation/explore-discover/` for existing documents to understand what's already been covered. Resume from where you left off unless the user redirects.
+When invoked, first check `/home/pmpmt/.pi/docs/explore-discover/` for existing documents to understand what's already been covered. Resume from where you left off unless the user redirects.

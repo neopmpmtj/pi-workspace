@@ -1,11 +1,11 @@
 ---
 description: Auto-document the most recent fix, implementation, or setup from this session as a detailed report
 ---
-Review the conversation history of this session. Identify the most recent significant fix, implementation, or system setup that was completed. Generate a detailed documentation report and save it to `/home/pmpmt/.pi/miscelaneous_documentation/`.
+Review the conversation history of this session. Identify the most recent significant fix, implementation, or system setup that was completed. Generate a detailed documentation report and save it to `/home/pmpmt/.pi/docs/`.
 
 ## Report Structure
 
-Follow the exact patterns found in the existing documentation in `/home/pmpmt/.pi/miscelaneous_documentation/`. Read at least one existing report (e.g., `cron-job-system-setup/cron-job-system-setup.md`) to understand the format before writing. The format is:
+Follow the exact patterns found in the existing documentation in `/home/pmpmt/.pi/docs/`. Read at least one existing report (e.g., `cron-job-system-setup/cron-job-system-setup.md`) to understand the format before writing. The format is:
 
 ### Required sections
 
@@ -34,7 +34,7 @@ Not every report needs every section. If there was no research phase, skip it. I
 
 ### Naming and location
 
-- Create a directory: `/home/pmpmt/.pi/miscelaneous_documentation/<kebab-case-topic>/`
+- Create a directory: `/home/pmpmt/.pi/docs/<kebab-case-topic>/`
 - Create the report file: `<kebab-case-topic>.md` inside that directory
 - The directory name should match the report filename (minus .md)
 

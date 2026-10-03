@@ -212,7 +212,7 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 
 ## Reference Docs
 
-`/home/pmpmt/.pi/miscelaneous_documentation/`:
+`/home/pmpmt/.pi/docs/`:
 
 | Directory / file | Topic |
 |-----------|-------|
