@@ -1,15 +1,16 @@
 # Pi State Summary
 
-> *Last updated: 2026-10-02*
+> *Last updated: 2026-10-03*
 > *Living document — reflects current state, not history.*
 
 ---
 
 ## Quick Facts
 
-- **Pi version**: 1.0.0, Node v24.21.0 via nvm
+- **Pi version**: 1.0.0 · **Node**: v24.21.0 (via nvm)
+- **Launcher**: `/home/pmpmt/.local/bin/pi` — wrapper that sources `~/.pi/agent/.env`, pins node v24.21.0 on `PATH`, then execs the real pi binary
 - **Config dir**: `/home/pmpmt/.pi/agent/`
-- **Provider**: DeepSeek (direct API key)
+- **Providers**: `deepseek` (default), `gemini` — `models-store.json` additionally carries `openrouter`, `google`, `openai` entries
 - **Default model**: `deepseek-flash`
 - **Enabled models**: `deepseek-v4-pro`, `deepseek-flash`
 - **Thinking**: high (default)
@@ -20,92 +21,119 @@
 ## What's Running
 
 ### 1. Pi Dashboard
-- **Entry**: `node /home/pmpmt/.pi/html/server.mjs` (port 3000)
-- **Landing page**: Cards for Token Tracker, Backup Tool, Cron Jobs, Skills, Agent Map, Video Finder
-- **Sub-pages**: `/token-tracker` (usage analytics), `/backup` (backup tool), `/skills`, `/agentmap`, `/video-finder`, `/codebase-summary`
+- **Entry**: `node /home/pmpmt/.pi/html/server.mjs`, listening on port **3000**
+- **Landing cards**: Token Usage Tracker, Backup Tool, Skills, Agent Map, Codebase Summary, Documents, Cron Jobs
+- **Sub-apps**: `/token-tracker`, `/backup`, `/agentmap`, `/video-finder`, `/codebase-summary`, `/skills` (placeholder page)
 
 ### 2. Token Tracker
 - **Location**: `/home/pmpmt/.pi/html/token-tracker/`
 - SQLite backend: `db/token_usage_tracker.db`
-- Auto-syncs from Pi sessions every 30s via `sync_sessions.mjs`
-- REST API at `/api/summary`, `/api/conversations`, `/api/daily`, `/api/models`
+- The dashboard server spawns `sync_sessions.mjs` to import Pi sessions into the DB
+- REST API: `/api/summary`, `/api/conversations`, `/api/daily`, `/api/models`, `/api/turns`
 
 ### 3. Laptop Backup Tool
 - **Location**: `/home/pmpmt/.pi/apps-scripts/backup_laptop_tool/`
-- systemd timer: runs 5 min after boot, creates `.tar.gz` of `~/.pi` → Google Drive (`neopmpmtj@gmail.com`)
+- systemd `my_PC_backup.timer` → `my_PC_backup.service` (system units, `OnBootSec=5min`, `Persistent=true`), runs the `.venv` python module
+- Creates a `.tar.gz` snapshot of `~/.pi` → Google Drive (`neopmpmtj@gmail.com`)
 - Web UI at `http://localhost:3000/backup` (settings, manual backup, OAuth, logs)
-- Credentials in `~/.pi/agent/.env`
+- Credentials in `~/.pi/agent/.env` and `~/.pi/agent/secrets/`
 
 ### 4. Cron Job System
-- **Location**: `~/.pi/cron/` (engine) + `~/.pi/agent/extensions/cron.ts` (extension)
+- **Location**: `~/.pi/cron/` (engine: `store.ts`, `schedule.ts`, `types.ts`, `normalize.ts`) + `~/.pi/agent/extensions/cron.ts` (extension)
 - Schedule types: `at` (one-shot), `every` (interval), `cron` (5-field expressions)
 - Persistence: `~/.pi/cron/jobs.json` + per-job JSONL run history in `~/.pi/cron/runs/`
-- Tools: `cron` (agent) + `/cron` (TUI command)
+- Interfaces: `cron` tool (agent) + `/cron` (TUI command)
+- **Active jobs**:
+  - `Daily Laptop Backup` — `20 8 * * *`, agentTurn — last run: **error**
+  - `gog-token-keepalive` — `0 8 * * *`, agentTurn — last run: ok
 
 ### 5. Multi-Agent Orchestrator (pi-subagent)
-- **Package**: `@mjakl/pi-subagent`
+- **Package**: `@mjakl/pi-subagent` v3.1.0
 - **Tool**: `subagent` — delegates to specialized sub-agents in isolated Pi RPC processes
 - **Agent definitions**: `~/.pi/agent/agents/*.md` (YAML frontmatter + Markdown body)
-- **Active agents** (`~/.pi/agent/agents/`):
-  - `frontend` — HTML/CSS/JS/UI (low thinking, tools: read,write,edit,bash). ⚠️ Sets `model: deepseek-v4-flash`, which is **not** in `enabledModels` — risks an OpenRouter fallback failure.
-  - `researcher` — Web research returning sourced summaries (low thinking, tools: read, grep, find, ls, web_search). Model `deepseek-flash`.
-  - Removed: `explore`
-- Each agent gets its own clean system prompt. No orchestrator context pollution.
+- **Active agents**:
+  - `frontend` — HTML/CSS/JS/UI (thinking low; tools: read, write, edit, bash). ⚠️ Sets `model: deepseek-v4-flash`, which is **not** in `enabledModels` — risks an OpenRouter fallback failure.
+  - `researcher` — web research returning sourced summaries (thinking low; tools: read, grep, find, ls, web_search). Model `deepseek-flash`.
+- Each agent gets its own clean system prompt; no orchestrator context pollution.
 
 ### 6. Pi Web Access
-- **Package**: `pi-web-access`
+- **Package**: `pi-web-access` v0.35.0
 - Tools: `web_search`, `fetch_content`, `get_search_content`
-- Multi-provider search (OpenAI, Brave, Exa, Tavily, Perplexity, Gemini)
-- Fetches web pages, YouTube transcripts, GitHub repos, local video frames
+- Multi-provider search (OpenAI, Brave, Exa, Tavily, Perplexity, Gemini) and page/YouTube/GitHub fetching
 
 ### 7. Pi Agent Browser Native
-- **Package**: `pi-agent-browser-native`
-- Tool: `agent_browser` — full browser automation
-- Snapshots, clicks, fills, screenshots, eval, Electron support
+- **Package**: `pi-agent-browser-native` v0.9.1
+- Tool: `agent_browser` — snapshots, clicks, fills, screenshots, eval, Electron automation
 
 ### 8. Sub-Agent Pool (legacy, co-exists)
-- **Package**: `pi-agents-pool` (v0.2.0)
+- **Package**: `pi-agents-pool` v0.2.0
 - Tools: `spawn_agent`, `send_input`, `wait_agent`, `close_agent`, `resume_agent`
-- Still installed but superseded by `pi-subagent` for new work
+- Superseded by `pi-subagent` for new work
 
-### 9. Custom Extensions
-- `~/.pi/agent/extensions/cron.ts` — Cron job system (/cron command + cron tool)
-- `~/.pi/agent/extensions/git-commit.ts` — `/commit [message]`
-- `~/.pi/agent/extensions/observability/index.ts` — Run recording to `~/.pi/agent/observability/runs.jsonl`
+### 9. Custom Extensions (`~/.pi/agent/extensions/`)
+- `cron.ts` — cron job system (`/cron` command + `cron` tool)
+- `git-commit.ts` — `/commit [message]`
+- `observability/index.ts` — run recording to `~/.pi/agent/observability/runs.jsonl`
+- `secret-scrubber.ts` — redacts secrets from tool outputs before they reach the model (writes `agent/events.log`)
+- `pi-prompt-capture.ts` — symlink → `~/.pi/agent/skills/pi-prompt-dump/extensions/pi-prompt-capture.ts`; captures prompts to `~/.pi/agent/state/prompt-capture/`
 
-### 10. Event Tracer (project-local, toggleable)
-- **Location**: `~/.pi/.pi/extensions/pi-event-tracer/index.ts`
-- Logs all 32 Pi events to `/tmp/pi-event-trace-<timestamp>.log`
-- Captures full system prompt to `/tmp/pi-system-prompt.txt` on every prompt
-- Only loads when cwd = `~/.pi/` (project-local). Rename to `index.ts.disabled` to disable.
+### 10. Project-Local Extensions (load only when cwd = `~/.pi/`)
+- `.pi/extensions/pi-event-tracer/index.ts` — logs Pi events; can capture the full system prompt to `/tmp/`
+- `.pi/extensions/session-memory/index.ts` — captures raw session data on exit (`/new`, `/fork`, quit) into `~/.pi/sessions-summaries/`
 
-### 11. Custom Prompts
-- `~/.pi/agent/prompts/document.md` — Auto-document the most recent change
-- `~/.pi/agent/prompts/readocs.md` — Read all Pi documentation files
-- `~/.pi/agent/prompts/short.md` — Summarize last response
+### 11. Custom Prompts (`~/.pi/agent/prompts/`)
+- `document.md` — auto-document the most recent change
+- `dump.md` — dump the live system prompt/instruction files
+- `explore-pi.md` — explore the Pi installation
+- `readocs.md` — read all Pi documentation files
+- `short.md` — summarize the last response
 
 ### 12. Skills
 
-Discovered recursively from `~/.pi/agent/skills/<name>/SKILL.md`. Only `name` + `description` load at startup; the body loads on trigger (`/skill:<name>` forces it). Validate any skill with:
+Discovered recursively from `~/.pi/agent/skills/<name>/SKILL.md`. Only `name` + `description` load at startup; the body loads on trigger (`/skill:<name>` forces it).
+
+**Each skill is now its own private GitHub repo** (cloned in place, so `git pull` / `git push` work inside the skill folder). The parent `pi-workspace` repo no longer tracks them and ignores them via `.gitignore`.
+
+| Skill | Repo (private) |
+|---|---|
+| `gog-workspace` | `neopmpmtj/skill-gog-workspace` |
+| `partner-agent-export` | `neopmpmtj/skill-partner-agent-export` |
+| `pi-prompt-dump` | `neopmpmtj/skill-pi-prompt-dump` |
+| `skill-creator` | `neopmpmtj/skill-skill-creator` |
+| `video-finder` | `neopmpmtj/skill-video-finder` |
+| `yt-download` | `neopmpmtj/skill-yt-download` |
+
+- `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs). Carries a non-spec `version:` key; pi tolerates it, the spec validator flags it.
+- `partner-agent-export` — package/ship a partner agent as a self-contained installer, and import it on another Pi.
+- `pi-prompt-dump` — reproduce the live Pi system prompt and instruction files; owns the `pi-prompt-capture` extension.
+- `skill-creator` — create, edit, and evaluate skills (vendored Apache 2.0 copy of `anthropics/skills`; see its `ATTRIBUTION.md`).
+- `video-finder` — find YouTube videos by topic or reference.
+- `yt-download` — download YouTube videos offline via yt-dlp.
+
+Validate any skill with:
 
 ```bash
 python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 ```
 
-**Loading correctly (4):**
-- `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs). Note: carries a non-spec `version:` key; pi tolerates it, the spec validator flags it.
-- `skill-creator` — Create, edit, and evaluate skills (vendored Apache 2.0 copy of `anthropics/skills`; see its `ATTRIBUTION.md`)
-- `video-finder` — Find YouTube videos by topic or reference
-- `yt-download` — Download YouTube videos offline via yt-dlp
+**Private but not installed** (GitHub only, no local copy yet): `neopmpmtj/skill-authoring-skills`, `neopmpmtj/skill-eliciting-project-model`.
 
-**On disk but NOT loading (1):**
-- `partner-agent-export` — Export/import a partner agent as a self-contained installer. **Broken frontmatter:** the description contains an unquoted `model: ships` (col 367), so YAML parsing fails and pi silently skips the skill.
+### 13. Partner Agents
+- **Registry**: `~/.pi/agent/partner-agents/partner-agents.list` (one absolute workspace path per line)
+- **Tooling**: `setup-pi-agent.sh` (create), `push-partner-agents.sh` (sync all), `export-partner-agent.sh` (build an installer), plus `shared/` and `gitignore.template`
+- **Installed**: `explore-discover` at `~/.pi/explore-discover` — its own repo (`neopmpmtj/explore-discover`), clean on `main`
+- **Exports**: `~/.pi/agent/partner-agents/exports/<name>/install-<name>.sh`
+- Workflow documented by the `partner-agent-export` skill
 
-Removed since last revision: `librarian`.
+### 14. Apps-Scripts
+- `/home/pmpmt/.pi/apps-scripts/backup_laptop_tool/` — Google Drive backup tool
+- `/home/pmpmt/.pi/apps-scripts/ExplainLike12/` — explain-like-I'm-12 tool
+- `/home/pmpmt/.pi/apps-scripts/on-demand-stt-rewrite/` — speech-to-text + text rewrite
+- `/home/pmpmt/.pi/apps-scripts/text-to-speech/` — text-to-speech app
+- `/home/pmpmt/.pi/apps-scripts/temp_holding_folder/` — temp storage for installs
 
-### 13. Apps-Scripts
-- `/home/pmpmt/.pi/apps-scripts/on-demand-stt-rewrite/` — Speech-to-text + text rewrite
-- `/home/pmpmt/.pi/apps-scripts/temp_holding_folder/` — Temp storage for installs
+### 15. Vendored Binaries
+- `~/.pi/agent/bin/fd`, `~/.pi/agent/bin/rg` — pinned copies used by tools that expect `fd`/`rg`
 
 ---
 
@@ -114,14 +142,40 @@ Removed since last revision: `librarian`.
 | Config | Value |
 |---|---|
 | Theme | dark |
+| Default provider / model | deepseek / deepseek-flash |
+| Thinking level | high |
 | Compaction | enabled |
 | Steering mode | one-at-a-time |
 | Follow-up mode | one-at-a-time |
-| Tree filter | all |
+| Tree filter mode | all |
 | Double-escape action | tree |
 | HTTP idle timeout | 120s |
-| Installed packages | pi-web-access, pi-agent-browser-native, pi-agents-pool, @mjakl/pi-subagent |
-| Enabled models | deepseek-v4-pro, deepseek-v4-flash |
+| Image auto-resize | true |
+| Terminal progress | shown |
+| Installed packages | pi-web-access 0.35.0, pi-agent-browser-native 0.9.1, pi-agents-pool 0.2.0, @mjakl/pi-subagent 3.1.0 |
+| Enabled models | deepseek-v4-pro, deepseek-flash |
+| MCP servers | none |
+
+All settings live in `~/.pi/agent/settings.json`.
+
+---
+
+## Version Control
+
+| What | Where | State |
+|---|---|---|
+| Main workspace | `/home/pmpmt/.pi` → `neopmpmtj/pi-workspace` (private) | local `main` is **ahead of origin** (unpushed commits); only session/model state files are dirty |
+| Each skill | `/home/pmpmt/.pi/agent/skills/<name>/` → `neopmpmtj/skill-<name>` (private) | clean on `main`, tracking origin; ignored by `pi-workspace` |
+| Partner agent | `/home/pmpmt/.pi/explore-discover` → `neopmpmtj/explore-discover` (public) | clean on `main` |
+
+Clone/update a skill directly at its path:
+
+```bash
+git -C ~/.pi/agent/skills/<name> pull     # update
+git -C ~/.pi/agent/skills/<name> push     # publish changes
+```
+
+Private repos require GitHub auth on any machine you clone them from (SSH key or `gh auth login`).
 
 ---
 
@@ -129,25 +183,28 @@ Removed since last revision: `librarian`.
 
 | File | Purpose |
 |---|---|
+| `~/.local/bin/pi` | Pi launcher wrapper (loads `.env`, pins node) |
 | `~/.pi/agent/settings.json` | All Pi settings |
+| `~/.pi/agent/.env` | API keys and secrets (sourced by the wrapper) |
+| `~/.pi/agent/auth.json` | Provider auth (`deepseek`, `gemini`) |
+| `~/.pi/agent/models-store.json` | Extra provider/model definitions |
+| `~/.pi/agent/trust.json` | Project trust decisions |
 | `~/.pi/agent/AGENTS.md` | Orchestrator instructions (delegation protocol, specialists) |
 | `~/.pi/agent/APPEND_SYSTEM.md` | Location context, secrets rule, CLI hygiene |
-| `~/.pi/agent/.env` | API keys and secrets (sourced by wrapper) |
-| `~/.pi/agent/auth.json` | Provider auth (DeepSeek, Gemini) |
 | `~/.pi/agent/agents/frontend.md` | Front-end sub-agent definition |
 | `~/.pi/agent/agents/researcher.md` | Web research sub-agent definition |
-| `~/.pi/agent/prompts/document.md` | Auto-documentation prompt |
-| `~/.pi/agent/skills/skill-creator/SKILL.md` | Skill authoring methodology (create/edit/evaluate) |
+| `~/.pi/agent/prompts/*.md` | Custom prompts (`/document`, `/dump`, `/explore-pi`, `/readocs`, `/short`) |
+| `~/.pi/agent/skills/<name>/SKILL.md` | The six skills (each a standalone repo) |
 | `~/.pi/agent/skills/skill-creator/scripts/quick_validate.py` | Skill frontmatter/spec validator |
-| `~/.pi/agent/skills/skill-creator/ATTRIBUTION.md` | Vendored-source provenance + content hashes |
-| `~/.pi/agent/extensions/cron.ts` | Cron job extension |
-| `~/.pi/agent/extensions/git-commit.ts` | Git commit extension |
+| `~/.pi/agent/extensions/{cron,git-commit,secret-scrubber,pi-prompt-capture}.ts` | Custom extensions |
 | `~/.pi/agent/extensions/observability/index.ts` | Run observability |
-| `~/.pi/.pi/extensions/pi-event-tracer/index.ts` | Event tracer (project-local) |
-| `~/.pi/cron/jobs.json` | Cron job store |
-| `~/.pi/cron/runs/` | Per-job run history |
+| `~/.pi/.pi/extensions/{pi-event-tracer,session-memory}/index.ts` | Project-local extensions |
+| `~/.pi/cron/jobs.json` / `~/.pi/cron/runs/` | Cron job store / run history |
+| `~/.pi/agent/partner-agents/partner-agents.list` | Partner agent registry |
+| `~/.pi/agent/partner-agents/export-partner-agent.sh` | Build a partner-agent installer |
 | `~/.pi/html/server.mjs` | Dashboard server entry point |
 | `~/.pi/html/token-tracker/db/token_usage_tracker.db` | Token analytics DB |
+| `/etc/systemd/system/my_PC_backup.{timer,service}` | Backup schedule |
 | `~/.pi/agent/secrets/gdrive_token.json` | Google Drive OAuth token |
 | `~/.pi/agent/secrets/service_account_key.json` | Google service account key |
 
@@ -157,7 +214,7 @@ Removed since last revision: `librarian`.
 
 `/home/pmpmt/.pi/miscelaneous_documentation/`:
 
-| Directory | Topic |
+| Directory / file | Topic |
 |-----------|-------|
 | `understand-pi-agent-internals/` | Full Pi internals (extensions, events, loop, prompt, cheatsheet, startup options) |
 | `token-usage-dashboard-setup/` | Token tracker setup |
@@ -165,5 +222,8 @@ Removed since last revision: `librarian`.
 | `backup-service-account-oauth-fix/` | Backup OAuth fix |
 | `cron-job-system-setup/` | Cron job system |
 | `multi-agent-orchestrator-setup/` | Multi-agent orchestrator (current + historical) |
+| `separate-pi-instances/` | Running separate Pi instances / workspaces |
 | `skill-stale-commands-fix/` | Skill command fix |
 | `speech-to-text-keyboard-shortcut-fix/` | STT keyboard fix |
+| `text-to-speech-app-setup/` | Text-to-speech app |
+| `yt-download-user-manual.md` | yt-download skill usage |
