@@ -22,6 +22,10 @@ service_account*.json
 *.db-shm
 *.db-wal
 *.sqlite3
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
 sessions-summarizer/summarizer-state.json
 sessions-summaries/
 sessions-memory/
@@ -66,6 +70,11 @@ web-search-cache/
 sessions-summaries/**
 
 postgres-migration/**
+
+# ── Runtime observability state (session data, not source) ────────
+# Writes on every run; keeps the repo clean. To track again:
+#   git add -f agent/observability/
+agent/observability/
 
 # ── Skills are standalone repos (cloned individually from GitHub) ─────
 agent/skills/partner-agent-export/

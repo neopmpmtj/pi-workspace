@@ -66,14 +66,15 @@
 - Tool: `agent_browser` — snapshots, clicks, fills, screenshots, eval, Electron automation
 
 ### 8. Sub-Agent Pool (legacy, co-exists)
-- **Package**: `pi-agents-pool` v0.2.0
+- **Package**: `pi-agents-pool` v0.2.0 — **locally patched**
 - Tools: `spawn_agent`, `send_input`, `wait_agent`, `close_agent`, `resume_agent`
 - Superseded by `pi-subagent` for new work
+- Patch: `extension/agent-pool.ts` `launchProcess` now exports `PI_SUBAGENT_STACK` (ancestor chain + this child's `agentType`), mirroring `@mjakl/pi-subagent`'s convention, so observability can attribute the child's agent name. Upstream sets only `PI_SUBAGENT_DEPTH`. **Lost on any package upgrade — re-apply.** The `resume_agent` path (`launchProcess` at ~line 367) passes no `agentType`, so resumed agents remain nameless.
 
 ### 9. Custom Extensions (`~/.pi/agent/extensions/`)
 - `cron.ts` — cron job system (`/cron` command + `cron` tool)
 - `git-commit.ts` — `/commit [message]`
-- `observability/index.ts` — run recording to `~/.pi/agent/observability/runs.jsonl` and `runs.sqlite` (JSONL first, then SQLite insert)
+- `observability/index.ts` — run recording to `~/.pi/agent/observability/runs.jsonl` and `runs.sqlite` (JSONL first, then SQLite insert). Captures subagent lineage (`parent_session_id`, `agent_name`, `handle`, `depth`) from `PI_SUBAGENT_DELEGATION` / `PI_SUBAGENT_STACK` / `PI_SUBAGENT_DEPTH`, with a `<tmp>/pi-subagents/<parent>/<child>.jsonl` path fallback. Token views `session_parent`, `session_root`, `run_tokens`, `session_tokens`, `agent_tokens`. `/tokens` command reports a root session's totals (orchestrator + all descendants) plus all-time totals by agent. Token model: `prompt = input + cacheRead + cacheWrite`, `completion = output` (with `reasoning` a **subset** of output, never additive). Forward-only since 2026-10-04: the 825 legacy JSONL runs are not backfilled into SQLite.
 - `secret-scrubber.ts` — redacts secrets from tool outputs before they reach the model (writes `agent/events.log`)
 - `pi-prompt-capture.ts` — symlink → `~/.pi/agent/skills/pi-prompt-dump/extensions/pi-prompt-capture.ts`; captures prompts to `~/.pi/agent/state/prompt-capture/`
 
@@ -207,7 +208,7 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/.pi/agent/skills/<name>/SKILL.md` | The six skills (each a standalone repo) |
 | `~/.pi/agent/skills/skill-creator/scripts/quick_validate.py` | Skill frontmatter/spec validator |
 | `~/.pi/agent/extensions/{cron,git-commit,secret-scrubber,pi-prompt-capture}.ts` | Custom extensions |
-| `~/.pi/agent/extensions/observability/index.ts` | Run recording → `runs.jsonl` + `runs.sqlite` |
+| `~/.pi/agent/extensions/observability/index.ts` | Run recording → `runs.jsonl` + `runs.sqlite`; subagent lineage + token rollup views; `/tokens` |
 | `~/.pi/.pi/extensions/{pi-event-tracer,session-memory}/index.ts` | Project-local extensions |
 | `~/.pi/cron/jobs.json` / `~/.pi/cron/runs/` | Cron job store / run history |
 | `~/.pi/agent/partner-agents/partner-agents.list` | Partner agent registry |
