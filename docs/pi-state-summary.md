@@ -231,6 +231,7 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 |-----------|-------|
 | `understand-pi-agent-internals/` | Full Pi internals (extensions, events, loop, prompt, cheatsheet, startup options) |
 | `token-usage-dashboard-setup/` | Token tracker setup |
+| `observability-token-lineage-setup/` | Delegation-aware token accounting: subagent lineage (`parent_session_id`/`agent_name`/`handle`/`depth`), token views, `/tokens` command, VPS transplant |
 | `backup-laptop-tool-setup/` | Laptop backup tool |
 | `backup-service-account-oauth-fix/` | Backup OAuth fix |
 | `cron-job-system-setup/` | Cron job system |

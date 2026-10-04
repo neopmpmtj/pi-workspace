@@ -122,7 +122,15 @@ Supporting findings:
 
 `.gitignore` already had `*.db`, `*.db-shm`, `*.db-wal`, `*.sqlite3` — but **not `*.sqlite`**. Commit `0bb5156` ("chore: ignore sqlite WAL sidecars") had fixed the `.db` case and missed the `.sqlite` extension entirely, so the same class of bug recurred. Only `agent/observability/runs.sqlite*` were tracked; the `.sqlite3` files elsewhere were correctly ignored.
 
-Compounding factor: **another agent committed `3998c9b` mid-session** (not a cron job, not a git hook — a second `pi` process and Cursor agents were active in `~/.pi`), sweeping up the binaries plus `cron/jobs.json` and `pi-state-summary.md`.
+Compounding factor: **an unaccounted auto-committer is active in `~/.pi`**. Three commits landed mid-session, none initiated by this work:
+
+| commit | time | contents |
+|---|---|---|
+| `3998c9b` | 10-04 09:17 | the earlier extension changeset **plus the binaries** (`runs.sqlite`, `-shm`, a 144 KB `-wal`), `cron/jobs.json`, `pi-state-summary.md` |
+| `4c20dde` | 10-04 10:25 | the `git rm --cached` untracking of the 4 observability files |
+| `c1d5728` | 10-04 10:26 | the entire lineage/views/`/tokens` implementation (`.gitignore` +9, extension +382, `pi-state-summary.md` +7, prompt-capture files) |
+
+Not a cron job and not a git hook — a second `pi` process and Cursor agents were observed running shell commands inside `~/.pi`. It contradicts the operator's stated no-auto-commit preference, and it means staged-vs-committed state cannot be relied upon during a session.
 
 ### 7. Bugs found in the new code
 
@@ -335,7 +343,7 @@ The `VACUUM INTO` copy test was justified by the WAL investigation in §3 — it
 7. **`/tokens` requires `/reload`** in an already-running session.
 8. **History still contains the binary blobs** committed in `3998c9b`. `runs.jsonl` also exists as 62 historical blobs; the repo is ~31 MiB of loose objects with no packs, plus a stray `garbage: .git/objects/54/tmp_obj_fuj1qz`. Purging requires a history rewrite (force-push), not yet done.
 9. **The VPS's 23 legacy runs remain JSONL-only** (A1 by design). The VPS `~/.pi` is not a git repo, so the `.gitignore`/untracking work does not apply there.
-10. **An unaccounted auto-committer exists** in `~/.pi` — another agent committed mid-session. Worth identifying separately, since it contradicts the operator's stated no-auto-commit preference.
+10. **An unaccounted auto-committer is active** in `~/.pi` — three commits landed mid-session (see §6), the last sweeping up this entire implementation before it was reviewed. Not identified: no cron job, no git hook. Worth isolating separately, since it contradicts the operator's stated no-auto-commit preference and makes staged state unreliable.
 
 ---
 
@@ -347,11 +355,13 @@ The `VACUUM INTO` copy test was justified by the WAL investigation in §3 — it
 | `~/.pi/.gitignore` | +9 | modified | sqlite/WAL ignore rules + `agent/observability/` |
 | `~/.pi/agent/npm/node_modules/pi-agents-pool/extension/agent-pool.ts` | +18 | modified (local patch) | exports `PI_SUBAGENT_STACK` from `launchProcess` |
 | `~/.pi/docs/pi-state-summary.md` | +7 | modified | inventory: observability capability + patched package |
-| `~/.pi/agent/observability/runs.sqlite` | 45 KB | created | query surface (local: 12 runs / 89 turns / 77 tool_calls) |
+| `~/.pi/agent/observability/runs.sqlite` | 45 KB | created | query surface (local: 15 runs / 128 turns / 113 tool_calls at 2026-10-04 10:44) |
 | **VPS** `~/.pi/agent/extensions/observability/index.ts` | **1123** (from 471) | replaced | transplanted; sha256 `8f16e31f…` |
 | **VPS** `…/pi-agents-pool/extension/agent-pool.ts` | +18 | modified | same patch |
 | **VPS** `~/.pi/docs/pi-state-summary.md` | 164 (unchanged count) | modified | inventory rows |
 | **VPS** `~/.pi/agent/observability/runs.sqlite` | 45 KB | created | 1 real run |
+
+> **Local status:** every local change above was committed by the auto-committer in `4c20dde` and `c1d5728` (10-04 10:25–10:26) — *not* by this work, and without review.
 
 ### Rollback artifacts (VPS)
 
