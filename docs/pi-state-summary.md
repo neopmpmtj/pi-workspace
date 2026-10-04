@@ -1,6 +1,6 @@
 # Pi State Summary
 
-> *Last updated: 2026-10-03*
+> *Last updated: 2026-10-04*
 > *Living document — reflects current state, not history.*
 
 ---
@@ -73,7 +73,7 @@
 ### 9. Custom Extensions (`~/.pi/agent/extensions/`)
 - `cron.ts` — cron job system (`/cron` command + `cron` tool)
 - `git-commit.ts` — `/commit [message]`
-- `observability/index.ts` — run recording to `~/.pi/agent/observability/runs.jsonl`
+- `observability/index.ts` — run recording to `~/.pi/agent/observability/runs.jsonl` and `runs.sqlite` (JSONL first, then SQLite insert)
 - `secret-scrubber.ts` — redacts secrets from tool outputs before they reach the model (writes `agent/events.log`)
 - `pi-prompt-capture.ts` — symlink → `~/.pi/agent/skills/pi-prompt-dump/extensions/pi-prompt-capture.ts`; captures prompts to `~/.pi/agent/state/prompt-capture/`
 
@@ -207,7 +207,7 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/.pi/agent/skills/<name>/SKILL.md` | The six skills (each a standalone repo) |
 | `~/.pi/agent/skills/skill-creator/scripts/quick_validate.py` | Skill frontmatter/spec validator |
 | `~/.pi/agent/extensions/{cron,git-commit,secret-scrubber,pi-prompt-capture}.ts` | Custom extensions |
-| `~/.pi/agent/extensions/observability/index.ts` | Run observability |
+| `~/.pi/agent/extensions/observability/index.ts` | Run recording → `runs.jsonl` + `runs.sqlite` |
 | `~/.pi/.pi/extensions/{pi-event-tracer,session-memory}/index.ts` | Project-local extensions |
 | `~/.pi/cron/jobs.json` / `~/.pi/cron/runs/` | Cron job store / run history |
 | `~/.pi/agent/partner-agents/partner-agents.list` | Partner agent registry |
