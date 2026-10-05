@@ -17,10 +17,30 @@
   },
   "steeringMode": "one-at-a-time",
   "packages": [
-    "npm:pi-web-access",
-    "npm:pi-agent-browser-native",
-    "npm:pi-agents-pool",
-    "npm:@mjakl/pi-subagent"
+    {
+      "source": "npm:pi-web-access",
+      "extensions": [
+        "+dist/index.js"
+      ]
+    },
+    {
+      "source": "npm:pi-agent-browser-native",
+      "extensions": [
+        "-dist/extensions/agent-browser/index.js"
+      ]
+    },
+    {
+      "source": "npm:pi-agents-pool",
+      "extensions": [
+        "+extension/index.ts"
+      ]
+    },
+    {
+      "source": "npm:@mjakl/pi-subagent",
+      "extensions": [
+        "+index.ts"
+      ]
+    }
   ],
   "hideThinkingBlock": false,
   "followUpMode": "one-at-a-time",
@@ -32,5 +52,12 @@
   "enabledModels": [
     "deepseek-v4-pro",
     "deepseek-flash"
+  ],
+  "extensions": [
+    "+extensions/git-commit.ts",
+    "+extensions/observability/index.ts",
+    "+extensions/pi-prompt-capture.ts",
+    "+extensions/secret-scrubber.ts",
+    "+extensions/cron.ts"
   ]
 }
