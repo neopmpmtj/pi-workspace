@@ -54,10 +54,29 @@
     "deepseek-flash"
   ],
   "extensions": [
+    "+extensions/secret-scrubber.ts",
+    "+extensions/cron.ts",
     "+extensions/git-commit.ts",
     "+extensions/observability/index.ts",
     "+extensions/pi-prompt-capture.ts",
-    "+extensions/secret-scrubber.ts",
-    "+extensions/cron.ts"
+    "+builtin:codemode",
+    "+builtin:llama.cpp",
+    "+builtin:mcp",
+    "+builtin:tool-search"
+  ],
+  "skills": [
+    "+skills/gog-workspace/SKILL.md",
+    "+skills/partner-agent-export/SKILL.md",
+    "+skills/pi-prompt-dump/SKILL.md",
+    "+skills/skill-creator/SKILL.md",
+    "+skills/video-finder/SKILL.md",
+    "+skills/yt-download/SKILL.md"
+  ],
+  "prompts": [
+    "+prompts/document.md",
+    "+prompts/dump.md",
+    "+prompts/explore-pi.md",
+    "+prompts/readocs.md",
+    "+prompts/short.md"
   ]
 }
