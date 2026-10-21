@@ -84,7 +84,7 @@
         "type": "chat"
       }
     ],
-    "checkedAt": 1791182165664,
+    "checkedAt": 1792570072478,
     "lastModified": 1790772117000,
     "etag": "W/\"833a51b4211b57d882564ca5f56383e8\""
   },
@@ -6600,7 +6600,16 @@
           "input": 2,
           "output": 12,
           "cacheRead": 0.2,
-          "cacheWrite": 0
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 200000,
+              "input": 4,
+              "output": 18,
+              "cacheRead": 0.4,
+              "cacheWrite": 0
+            }
+          ]
         },
         "contextWindow": 131072,
         "maxTokens": 65536,
@@ -6633,7 +6642,16 @@
           "input": 2,
           "output": 12,
           "cacheRead": 0.2,
-          "cacheWrite": 0
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 200000,
+              "input": 4,
+              "output": 18,
+              "cacheRead": 0.4,
+              "cacheWrite": 0
+            }
+          ]
         },
         "contextWindow": 131072,
         "maxTokens": 65536,
@@ -6666,7 +6684,16 @@
           "input": 1.25,
           "output": 10,
           "cacheRead": 0,
-          "cacheWrite": 0
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 200000,
+              "input": 2.5,
+              "output": 15,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            }
+          ]
         },
         "contextWindow": 128000,
         "maxTokens": 64000,
@@ -6765,7 +6792,16 @@
           "input": 1.25,
           "output": 10,
           "cacheRead": 0.125,
-          "cacheWrite": 0
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 200000,
+              "input": 2.5,
+              "output": 15,
+              "cacheRead": 0.25,
+              "cacheWrite": 0
+            }
+          ]
         },
         "contextWindow": 1048576,
         "maxTokens": 65536,
@@ -7017,7 +7053,16 @@
           "input": 2,
           "output": 12,
           "cacheRead": 0.2,
-          "cacheWrite": 0
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 200000,
+              "input": 4,
+              "output": 18,
+              "cacheRead": 0.4,
+              "cacheWrite": 0
+            }
+          ]
         },
         "contextWindow": 1048576,
         "maxTokens": 65536,
@@ -7059,7 +7104,16 @@
           "input": 2,
           "output": 12,
           "cacheRead": 0.2,
-          "cacheWrite": 0
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 200000,
+              "input": 4,
+              "output": 18,
+              "cacheRead": 0.4,
+              "cacheWrite": 0
+            }
+          ]
         },
         "contextWindow": 1048576,
         "maxTokens": 65536,
@@ -7288,6 +7342,48 @@
         "type": "chat"
       },
       {
+        "id": "gemini-4-argon",
+        "name": "Gemini 4 Argon",
+        "api": "google-generative-ai",
+        "provider": "google",
+        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+        "reasoning": true,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
+        },
+        "input": [
+          "text",
+          "image"
+        ],
+        "cost": {
+          "input": 2,
+          "output": 10,
+          "cacheRead": 0.1,
+          "cacheWrite": 0
+        },
+        "contextWindow": 1048576,
+        "maxTokens": 32768,
+        "inputLimits": {
+          "maxRequestBytes": 20971520,
+          "images": {
+            "maxPerRequest": 3600,
+            "resize": {
+              "maxWidth": 2000,
+              "maxHeight": 2000,
+              "maxBytes": 4718592,
+              "jpegQuality": 80
+            }
+          }
+        },
+        "type": "chat"
+      },
+      {
         "id": "gemini-flash-latest",
         "name": "Gemini Flash Latest",
         "api": "google-generative-ai",
@@ -7452,9 +7548,9 @@
         "type": "chat"
       }
     ],
-    "checkedAt": 1791182165863,
-    "lastModified": 1790772125000,
-    "etag": "W/\"1cb2f49be25b1ba3b871e356aa249893\""
+    "checkedAt": 1792570072555,
+    "lastModified": 1792068033000,
+    "etag": "W/\"473f3844793bd9a7b67b89ed2e8277b3\""
   },
   "openai": {
     "models": [
@@ -8890,7 +8986,8 @@
           "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true,
-          "supportsExplicitPromptCacheMode": true
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
         },
         "inputLimits": {
           "maxRequestBytes": 536870912,
@@ -8949,7 +9046,8 @@
           "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true,
-          "supportsExplicitPromptCacheMode": true
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
         },
         "inputLimits": {
           "maxRequestBytes": 536870912,
@@ -9008,7 +9106,8 @@
           "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true,
-          "supportsExplicitPromptCacheMode": true
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
         },
         "inputLimits": {
           "maxRequestBytes": 536870912,
@@ -9067,7 +9166,8 @@
           "supportsAdditionalTools": true,
           "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true,
-          "supportsExplicitPromptCacheMode": true
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
         },
         "inputLimits": {
           "maxRequestBytes": 536870912,
@@ -9098,7 +9198,16 @@
           "input": 4,
           "output": 20,
           "cacheRead": 0.4,
-          "cacheWrite": 5
+          "cacheWrite": 5,
+          "tiers": [
+            {
+              "inputTokensAbove": 272000,
+              "input": 8,
+              "output": 30,
+              "cacheRead": 0.8,
+              "cacheWrite": 10
+            }
+          ]
         },
         "contextWindow": 1050000,
         "maxTokens": 128000,
@@ -9476,10 +9585,38 @@
           }
         },
         "type": "chat"
+      },
+      {
+        "type": "classifier",
+        "id": "gpt-6-luna",
+        "name": "GPT-6 Luna",
+        "api": "openai-decisions",
+        "provider": "openai",
+        "baseUrl": "https://api.openai.com/v1",
+        "input": [
+          "text",
+          "image"
+        ],
+        "cost": {
+          "input": 0.1,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 272000,
+              "input": 0.2,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            }
+          ]
+        },
+        "contextWindow": 922000
       }
     ],
-    "checkedAt": 1791182165630,
-    "lastModified": 1790772155000,
-    "etag": "W/\"fb0676507807715be1bee3a7b774db1b\""
+    "checkedAt": 1792570072502,
+    "lastModified": 1792068059000,
+    "etag": "W/\"66ade7f4bebf0ce0a7650e47031e58dd\""
   }
 }
