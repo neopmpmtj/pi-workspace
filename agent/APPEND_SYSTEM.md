@@ -52,6 +52,12 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
 - When the user asks a pure question ("what is X / where is Y"), just answer from what's already known — don't run extra commands or expand scope.
 - **Do not auto-commit.** Leave code/doc changes uncommitted in the working tree for the user to review; only commit when the user explicitly asks to. The user prefers to revise before committing.
 
+# Downloads — Always Ask for MP3 / Transcript
+
+- **Never** fetch extra artifacts (`.mp3`, `.srt`/transcript) unprompted when downloading a video. Default: just the video.
+- After **every successful download**, always **ask** the user whether they also want the MP3 or a transcript for that item. Ask — do not assume, and do not skip the question.
+- The artifacts share the same folder (`~/Videos/<title>/`), so a later request can be fulfilled without re-downloading the video.
+
 # Inter-Agent Communication (Persistent Sessions)
 
 - When messaging another agent/workspace via a separate `pi --print` process (e.g. `PI_CODING_AGENT_DIR=~/.pi/explore-discover pi --print ...`), **always pass `--session <stable-handle>`** so the conversation persists across messages.
