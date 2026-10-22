@@ -127,13 +127,16 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 - **Exports**: `~/.pi/agent/partner-agents/exports/<name>/install-<name>.sh`
 - Workflow documented by the `partner-agent-export` skill
 
-### 13a. image-describer (minimal read-only sibling)
-- **Workspace**: `~/.pi/image-describer/` — own git repo (1 commit, **no remote**, deliberately not in the registry)
+### 13a. image-describer
+- **Workspace**: `~/.pi/image-describer/` — isolated `PI_CODING_AGENT_DIR`, not in the partner registry
 - **Launcher**: `~/.local/bin/pi-image-describer` — sources **only** `~/.pi/image-describer/.env`, bypassing `~/.local/bin/pi` (which hardcodes `source ~/.pi/agent/.env`)
-- **Model/tools**: `deepseek-flash`, thinking `low` (the only DeepSeek model declaring image `input`); `defaultTools: read, grep, find, ls` — read-only
-- **Secrets**: own `.env` with only `DEEPSEEK_API_KEY` (copy, mode 600); `auth.json` deepseek-only — real files, no symlinks
-- **Absent by design**: extensions, npm packages, skills, subagents, cron, prompt templates, memory pipeline, registry entry
-- **Report**: `~/.pi/docs/image-describer-creation-report.md`
+- **Chat model**: `deepseek-flash`, thinking `low`
+- **Directory descriptions**: extension `extensions/describe-images` — `/describe-images` and the `describe_images` tool. One vision request per file, oldest first. Descriptions stay in the session. The only file it writes is a JSONL run ledger (default `./logs/image-runs.jsonl`)
+- **Vision models**: `deepseek-flash` (default), `gpt-5.4`, `gemini-3.8-flash`. Chat `enabledModels` stays `deepseek-flash`
+- **Tools**: `read`, `grep`, `find`, `ls`, `describe_images`
+- **Secrets**: own `.env` with `DEEPSEEK_API_KEY` (mode 600). `OPENAI_API_KEY` and `GEMINI_API_KEY` are optional and are not set. `auth.json` is deepseek-only
+- **Runtime**: Node v24.21.0, local `package.json` (`sharp`, `exifr`). No skills, subagents, cron, or registry entry
+- **Docs**: `~/.pi/image-describer/README.md`
 
 ### 14. Apps-Scripts
 - `/home/pmpmt/.pi/apps-scripts/backup_laptop_tool/` — Google Drive backup tool
@@ -224,8 +227,10 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/.pi/agent/partner-agents/export-partner-agent.sh` | Build a partner-agent installer |
 | `~/.pi/genesis-tester/settings.json` | Standalone `genesis-tester` agent config (no packages, no extensions) |
 | `~/.pi/genesis-tester/.env` | Standalone agent's own credentials (sourced by `pi-genesis-tester()`) |
-| `~/.pi/image-describer/settings.json` | Minimal sibling config (read-only tools, `deepseek-flash` only) |
-| `~/.pi/image-describer/.env` | image-describer's own credentials (`DEEPSEEK_API_KEY` only, mode 600) — sourced by its launcher |
+| `~/.pi/image-describer/settings.json` | image-describer config: `deepseek-flash`, `describe_images`, describe-images extension |
+| `~/.pi/image-describer/.env` | image-describer credentials (`DEEPSEEK_API_KEY`, mode 600) — sourced by its launcher |
+| `~/.pi/image-describer/extensions/describe-images/index.ts` | `/describe-images` command and `describe_images` tool |
+| `~/.pi/image-describer/README.md` | Setup, flags, model capability table, verification |
 | `~/.local/bin/pi-image-describer` | Isolated launcher for the image-describer agent |
 | `~/.pi/html/server.mjs` | Dashboard server entry point |
 | `~/.pi/html/token-tracker/db/token_usage_tracker.db` | Token analytics DB |

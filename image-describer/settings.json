@@ -6,7 +6,11 @@
     "read",
     "grep",
     "find",
-    "ls"
+    "ls",
+    "describe_images"
+  ],
+  "extensions": [
+    "+extensions/describe-images/index.ts"
   ],
   "enabledModels": [
     "deepseek-flash"
