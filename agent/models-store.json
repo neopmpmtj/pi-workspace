@@ -84,7 +84,7 @@
         "type": "chat"
       }
     ],
-    "checkedAt": 1792570072478,
+    "checkedAt": 1792680890574,
     "lastModified": 1790772117000,
     "etag": "W/\"833a51b4211b57d882564ca5f56383e8\""
   },
@@ -7468,6 +7468,57 @@
         "type": "chat"
       },
       {
+        "id": "gemini-pro-latest",
+        "name": "Gemini Pro Latest",
+        "api": "google-generative-ai",
+        "provider": "google",
+        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+        "reasoning": true,
+        "thinkingLevelMap": {
+          "off": null,
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": null,
+          "max": null
+        },
+        "input": [
+          "text",
+          "image"
+        ],
+        "cost": {
+          "input": 2,
+          "output": 12,
+          "cacheRead": 0.2,
+          "cacheWrite": 0,
+          "tiers": [
+            {
+              "inputTokensAbove": 200000,
+              "input": 4,
+              "output": 18,
+              "cacheRead": 0.4,
+              "cacheWrite": 0
+            }
+          ]
+        },
+        "contextWindow": 1048576,
+        "maxTokens": 65536,
+        "inputLimits": {
+          "maxRequestBytes": 20971520,
+          "images": {
+            "maxPerRequest": 3600,
+            "resize": {
+              "maxWidth": 2000,
+              "maxHeight": 2000,
+              "maxBytes": 4718592,
+              "jpegQuality": 80
+            }
+          }
+        },
+        "type": "chat"
+      },
+      {
         "id": "gemma-4-26b-a4b-it",
         "name": "Gemma 4 26B A4B IT",
         "api": "google-generative-ai",
@@ -7548,9 +7599,9 @@
         "type": "chat"
       }
     ],
-    "checkedAt": 1792570072555,
-    "lastModified": 1792068033000,
-    "etag": "W/\"473f3844793bd9a7b67b89ed2e8277b3\""
+    "lastModified": 1792673371000,
+    "etag": "W/\"a05c971c6366fb5f0764e317f0b30d13\"",
+    "checkedAt": 1792680890565
   },
   "openai": {
     "models": [
@@ -8218,52 +8269,6 @@
         "type": "chat"
       },
       {
-        "id": "gpt-5.2-chat-latest",
-        "name": "GPT-5.2 Chat",
-        "api": "openai-responses",
-        "provider": "openai",
-        "baseUrl": "https://api.openai.com/v1",
-        "reasoning": true,
-        "input": [
-          "text",
-          "image"
-        ],
-        "cost": {
-          "input": 1.75,
-          "output": 14,
-          "cacheRead": 0.175,
-          "cacheWrite": 0
-        },
-        "contextWindow": 128000,
-        "maxTokens": 16384,
-        "thinkingLevelMap": {
-          "off": null,
-          "minimal": null,
-          "low": null,
-          "medium": "medium",
-          "high": null,
-          "xhigh": "xhigh",
-          "max": null
-        },
-        "compat": {
-          "supportsStrictMode": true,
-          "supportsOpenAIGrammarTools": true
-        },
-        "inputLimits": {
-          "maxRequestBytes": 536870912,
-          "images": {
-            "maxPerRequest": 1500,
-            "resize": {
-              "maxWidth": 2000,
-              "maxHeight": 2000,
-              "maxBytes": 4718592,
-              "jpegQuality": 80
-            }
-          }
-        },
-        "type": "chat"
-      },
-      {
         "id": "gpt-5.2-pro",
         "name": "GPT-5.2 Pro",
         "api": "openai-responses",
@@ -8290,47 +8295,6 @@
           "high": "high",
           "xhigh": "xhigh",
           "max": null
-        },
-        "compat": {
-          "supportsStrictMode": true,
-          "supportsOpenAIGrammarTools": true
-        },
-        "inputLimits": {
-          "maxRequestBytes": 536870912,
-          "images": {
-            "maxPerRequest": 1500,
-            "resize": {
-              "maxWidth": 2000,
-              "maxHeight": 2000,
-              "maxBytes": 4718592,
-              "jpegQuality": 80
-            }
-          }
-        },
-        "type": "chat"
-      },
-      {
-        "id": "gpt-5.3-chat-latest",
-        "name": "GPT-5.3 Chat (latest)",
-        "api": "openai-responses",
-        "provider": "openai",
-        "baseUrl": "https://api.openai.com/v1",
-        "reasoning": false,
-        "input": [
-          "text",
-          "image"
-        ],
-        "cost": {
-          "input": 1.75,
-          "output": 14,
-          "cacheRead": 0.175,
-          "cacheWrite": 0
-        },
-        "contextWindow": 128000,
-        "maxTokens": 16384,
-        "thinkingLevelMap": {
-          "off": null,
-          "xhigh": "xhigh"
         },
         "compat": {
           "supportsStrictMode": true,
@@ -9615,8 +9579,8 @@
         "contextWindow": 922000
       }
     ],
-    "checkedAt": 1792570072502,
-    "lastModified": 1792068059000,
-    "etag": "W/\"66ade7f4bebf0ce0a7650e47031e58dd\""
+    "lastModified": 1792673402000,
+    "etag": "W/\"29918974afd6f0245e01383446ccae49\"",
+    "checkedAt": 1792680890515
   }
 }
