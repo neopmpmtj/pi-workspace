@@ -39,6 +39,7 @@ package-lock.json
 
 # ── Binaries & compiled assets ─────────────────────────────────────
 agent/bin/
+bin/
 *.pyc
 __pycache__/
 *.egg-info/
