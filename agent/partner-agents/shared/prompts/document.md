@@ -40,4 +40,4 @@ Review the session's conversation history. Identify the triggering problem, inve
 - Technical and precise — written for a future you or another developer.
 
 <!-- TEMPLATE: `__AGENT_DIR__` is replaced by setup-pi-agent.sh with this agent's
-     workspace path (e.g. ~/.pi/partner-agents/<name>) when the prompt is copied. -->
+     workspace path (e.g. ~/.pi/<name>) when the prompt is copied. -->

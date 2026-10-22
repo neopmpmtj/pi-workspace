@@ -16,8 +16,8 @@ talks to over `pi --print --session <handle>`.
 
 ## Conventions
 
-- **Agents live in** `~/.pi/partner-agents/<name>/` (grouped; the whole folder
-  is git-ignored by the parent `~/.pi` repo — each agent is its **own** repo).
+- **Agents live in** `~/.pi/<name>/` (one workspace per agent, next to Pi's
+  own home dirs — each agent is its **own** repo, git-ignored by the parent `~/.pi` repo).
 - **Repos are public** on GitHub: `neopmpmtj/<name>`.
 - **Secrets never enter the repo:** `auth.json` and `models-store.json` are
   symlinks → `~/.pi/agent/`, and `.env` is git-ignored.

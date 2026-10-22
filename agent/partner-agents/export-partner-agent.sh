@@ -7,7 +7,7 @@ set -euo pipefail
 # Output:  ~/.pi/agent/partner-agents/exports/<name>/install-<name>.sh
 #
 # The generated installer rebuilds the agent on any target Pi as a partner agent at
-# ~/.pi/partner-agents/<name>/, linking the target's own credentials, reinstalling its
+# ~/.pi/<name>/, linking the target's own credentials, reinstalling its
 # packages, registering it, adding a pi-<name> alias, and running a smoke test.
 
 NAME="${1:?usage: export-partner-agent.sh <name> [source-path]}"
@@ -16,12 +16,12 @@ NAME="${1:?usage: export-partner-agent.sh <name> [source-path]}"
 if [ -n "${2:-}" ]; then
   SRC="$(cd "$2" 2>/dev/null && pwd || true)"
   [ -n "$SRC" ] || { echo "ERROR: source path '$2' not found" >&2; exit 1; }
-elif [ -d "$HOME/.pi/partner-agents/$NAME" ]; then
-  SRC="$HOME/.pi/partner-agents/$NAME"
 elif [ -d "$HOME/.pi/$NAME" ]; then
   SRC="$HOME/.pi/$NAME"
+elif [ -d "$HOME/.pi/partner-agents/$NAME" ]; then
+  SRC="$HOME/.pi/partner-agents/$NAME"   # legacy pre-2026 layout
 else
-  echo "ERROR: cannot locate agent '$NAME' (tried ~/.pi/partner-agents/$NAME and ~/.pi/$NAME)" >&2
+  echo "ERROR: cannot locate agent '$NAME' (tried ~/.pi/$NAME and legacy ~/.pi/partner-agents/$NAME)" >&2
   exit 1
 fi
 SRC="$(cd "$SRC" && pwd)"
@@ -111,7 +111,7 @@ OUT="$OUTDIR/install-$NAME.sh"
   cat <<'EOF'
 
 AGENT_HOME="$HOME/.pi/agent"
-TARGET="$HOME/.pi/partner-agents/$NAME"
+TARGET="$HOME/.pi/$NAME"
 
 echo "==> Installing partner agent '$NAME' -> $TARGET"
 mkdir -p "$TARGET"
@@ -168,7 +168,7 @@ if [ -f "$MEM" ] && ! grep -q "partner-agents/signposts" "$MEM" 2>/dev/null; the
 
 ## Partner agents
 
-Partner agents live under ~/.pi/partner-agents/. To reach one, read its signpost
+Partner agents live under ~/.pi/<name>/. To reach one, read its signpost
 at ~/.pi/agent/partner-agents/signposts/<name>.md, then message it with
 PI_CODING_AGENT_DIR=<path> pi --print --session-id <handle> "..." (one stable handle).
 MEMEOF
@@ -179,7 +179,7 @@ if ! grep -q "pi-$NAME()" "$HOME/.bashrc" 2>/dev/null; then
   cat >> "$HOME/.bashrc" <<ALIAS
 pi-$NAME() {
     set -a; source ~/.pi/agent/.env; set +a
-    PI_CODING_AGENT_DIR=~/.pi/partner-agents/$NAME command pi "\$@"
+    PI_CODING_AGENT_DIR=~/.pi/$NAME command pi "\$@"
 }
 ALIAS
 fi

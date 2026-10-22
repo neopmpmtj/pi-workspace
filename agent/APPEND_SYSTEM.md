@@ -71,7 +71,7 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
 
 # Partner Agent Creation
 
-- Creating a new partner agent is the **main agent's** job (the user asks me, not a partner agent). Use the canonical script `~/.pi/agent/partner-agents/setup-pi-agent.sh` — drive it by piping answers to its prompts, or perform its steps directly: create `~/.pi/partner-agents/<name>/`, copy `gitignore.template`, symlink `auth.json`/`models-store.json`, `git init`, `gh repo create neopmpmtj/<name> --public --push`, add a `pi-<name>` alias, register the path in `partner-agents.list`.
+- Creating a new partner agent is the **main agent's** job (the user asks me, not a partner agent). Use the canonical script `~/.pi/agent/partner-agents/setup-pi-agent.sh` — drive it by piping answers to its prompts, or perform its steps directly: create `~/.pi/<name>/`, copy `gitignore.template`, symlink `auth.json`/`models-store.json`, `git init`, `gh repo create neopmpmtj/<name> --public --push`, add a `pi-<name>` alias, register the path in `partner-agents.list`.
 - Sync all partner agents with `~/.pi/agent/partner-agents/push-partner-agents.sh`.
 
 ## Current status & next steps (2026-09-30)

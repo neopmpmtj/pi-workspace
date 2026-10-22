@@ -2,7 +2,7 @@
 # setup-pi-agent.sh — Create a new Pi agent identity
 #
 # Usage: ./setup-pi-agent.sh
-# Creates a new agent directory under ~/.pi/partner-agents/ with AGENTS.md,
+# Creates a new agent directory under ~/.pi/<name> with AGENTS.md,
 # extensions, bash alias, and a git + GitHub (public) backup.
 #
 # Uses everything from our curriculum:
@@ -35,7 +35,14 @@ if [ -z "$AGENT_NAME" ]; then
   exit 1
 fi
 
-AGENT_DIR="$HOME/.pi/partner-agents/$AGENT_NAME"
+# ~/.pi is Pi's home directory, not a scratch dir — refuse names that collide.
+case "$AGENT_NAME" in
+  agent|docs|cron|apps-scripts|html|sessions-memory|sessions-summaries|sessions-summarizer|web-search-cache|postgres-migration|partner-agents|explore-discover|genesis-tester)
+    echo -e "${RED}Error: '$AGENT_NAME' is a reserved Pi directory name.${NC}"
+    exit 1 ;;
+esac
+
+AGENT_DIR="$HOME/.pi/$AGENT_NAME"
 
 if [ -d "$AGENT_DIR" ]; then
   echo -e "${YELLOW}Warning: $AGENT_DIR already exists.${NC}"
