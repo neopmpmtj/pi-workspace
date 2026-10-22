@@ -123,20 +123,20 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 - **Workspace convention**: each partner/sibling agent lives at `~/.pi/<name>` (own `PI_CODING_AGENT_DIR`, own git repo)
 - **Registry**: `~/.pi/agent/partner-agents/partner-agents.list` (one absolute workspace path per line)
 - **Tooling**: `setup-pi-agent.sh` (create — targets `~/.pi/<name>` and refuses reserved Pi directory names), `push-partner-agents.sh` (sync all), `export-partner-agent.sh` (build an installer — prefers `~/.pi/<name>`, falls back to the legacy `~/.pi/partner-agents/<name>`), plus `shared/` and `gitignore.template`
-- **Installed**: `explore-discover` at `~/.pi/explore-discover` — its own repo (`neopmpmtj/explore-discover`), clean on `main`; `image-describer` at `~/.pi/image-describer` (see 13a)
+- **Installed**: `explore-discover` at `~/.pi/explore-discover` — its own repo (`neopmpmtj/explore-discover`), clean on `main`; `image-describer` at `~/image-describer` (see 13a)
 - **Exports**: `~/.pi/agent/partner-agents/exports/<name>/install-<name>.sh`
 - Workflow documented by the `partner-agent-export` skill
 
 ### 13a. image-describer
-- **Workspace**: `~/.pi/image-describer/` — isolated `PI_CODING_AGENT_DIR`, not in the partner registry
-- **Launcher**: `~/.local/bin/pi-image-describer` — sources **only** `~/.pi/image-describer/.env`, bypassing `~/.local/bin/pi` (which hardcodes `source ~/.pi/agent/.env`)
+- **Workspace**: `~/image-describer/` — isolated `PI_CODING_AGENT_DIR`, own git repo, not in the partner registry
+- **Launcher**: `~/.local/bin/pi-image-describer` — sources **only** `~/image-describer/.env`, bypassing `~/.local/bin/pi` (which hardcodes `source ~/.pi/agent/.env`)
 - **Chat model**: `deepseek-flash`, thinking `low`
 - **Directory descriptions**: extension `extensions/describe-images` — `/describe-images` and the `describe_images` tool. One vision request per file, oldest first. Descriptions stay in the session. The only file it writes is a JSONL run ledger (default `./logs/image-runs.jsonl`)
 - **Vision models**: `deepseek-flash` (default), `gpt-5.4`, `gemini-3.8-flash`. Chat `enabledModels` stays `deepseek-flash`
 - **Tools**: `read`, `grep`, `find`, `ls`, `describe_images`
 - **Secrets**: own `.env` with `DEEPSEEK_API_KEY` (mode 600). `OPENAI_API_KEY` and `GEMINI_API_KEY` are optional and are not set. `auth.json` is deepseek-only
 - **Runtime**: Node v24.21.0, local `package.json` (`sharp`, `exifr`). No skills, subagents, cron, or registry entry
-- **Docs**: `~/.pi/image-describer/README.md`
+- **Docs**: `~/image-describer/README.md`
 
 ### 14. Apps-Scripts
 - `/home/pmpmt/.pi/apps-scripts/backup_laptop_tool/` — Google Drive backup tool
@@ -227,10 +227,10 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/.pi/agent/partner-agents/export-partner-agent.sh` | Build a partner-agent installer |
 | `~/.pi/genesis-tester/settings.json` | Standalone `genesis-tester` agent config (no packages, no extensions) |
 | `~/.pi/genesis-tester/.env` | Standalone agent's own credentials (sourced by `pi-genesis-tester()`) |
-| `~/.pi/image-describer/settings.json` | image-describer config: `deepseek-flash`, `describe_images`, describe-images extension |
-| `~/.pi/image-describer/.env` | image-describer credentials (`DEEPSEEK_API_KEY`, mode 600) — sourced by its launcher |
-| `~/.pi/image-describer/extensions/describe-images/index.ts` | `/describe-images` command and `describe_images` tool |
-| `~/.pi/image-describer/README.md` | Setup, flags, model capability table, verification |
+| `~/image-describer/settings.json` | image-describer config: `deepseek-flash`, `describe_images`, describe-images extension |
+| `~/image-describer/.env` | image-describer credentials (`DEEPSEEK_API_KEY`, mode 600) — sourced by its launcher |
+| `~/image-describer/extensions/describe-images/index.ts` | `/describe-images` command and `describe_images` tool |
+| `~/image-describer/README.md` | Setup, flags, model capability table, verification |
 | `~/.local/bin/pi-image-describer` | Isolated launcher for the image-describer agent |
 | `~/.pi/html/server.mjs` | Dashboard server entry point |
 | `~/.pi/html/token-tracker/db/token_usage_tracker.db` | Token analytics DB |
