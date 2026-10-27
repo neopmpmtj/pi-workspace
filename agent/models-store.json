@@ -84,7 +84,7 @@
         "type": "chat"
       }
     ],
-    "checkedAt": 1792680890574,
+    "checkedAt": 1793100969708,
     "lastModified": 1790772117000,
     "etag": "W/\"833a51b4211b57d882564ca5f56383e8\""
   },
@@ -7601,7 +7601,7 @@
     ],
     "lastModified": 1792673371000,
     "etag": "W/\"a05c971c6366fb5f0764e317f0b30d13\"",
-    "checkedAt": 1792680890565
+    "checkedAt": 1793100969862
   },
   "openai": {
     "models": [
@@ -9148,6 +9148,66 @@
         "type": "chat"
       },
       {
+        "id": "gpt-6.1-terra",
+        "name": "GPT-6.1 Terra",
+        "api": "openai-responses",
+        "provider": "openai",
+        "baseUrl": "https://api.openai.com/v1",
+        "reasoning": true,
+        "input": [
+          "text",
+          "image"
+        ],
+        "cost": {
+          "input": 1,
+          "output": 5,
+          "cacheRead": 0.05,
+          "cacheWrite": 1.25,
+          "tiers": [
+            {
+              "inputTokensAbove": 272000,
+              "input": 2,
+              "output": 7.5,
+              "cacheRead": 0.1,
+              "cacheWrite": 2.5
+            }
+          ]
+        },
+        "contextWindow": 272000,
+        "maxTokens": 128000,
+        "thinkingLevelMap": {
+          "off": "none",
+          "minimal": null,
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": "max"
+        },
+        "compat": {
+          "supportsStrictMode": true,
+          "supportsOpenAIGrammarTools": true,
+          "supportsAdditionalTools": true,
+          "supportsToolSearch": true,
+          "supportsMidConvoSystemMessages": true,
+          "supportsExplicitPromptCacheMode": true,
+          "supportsMidConvoEffort": true
+        },
+        "inputLimits": {
+          "maxRequestBytes": 536870912,
+          "images": {
+            "maxPerRequest": 1500,
+            "resize": {
+              "maxWidth": 2000,
+              "maxHeight": 2000,
+              "maxBytes": 4718592,
+              "jpegQuality": 80
+            }
+          }
+        },
+        "type": "chat"
+      },
+      {
         "id": "gpt-daybreak-blue-latest",
         "name": "Daybreak Blue",
         "api": "openai-responses",
@@ -9579,8 +9639,8 @@
         "contextWindow": 922000
       }
     ],
-    "lastModified": 1792673402000,
-    "etag": "W/\"29918974afd6f0245e01383446ccae49\"",
-    "checkedAt": 1792680890515
+    "lastModified": 1793046867000,
+    "etag": "W/\"fb27388143bf00b0c681cc7ab76c3ef8\"",
+    "checkedAt": 1793100969982
   }
 }

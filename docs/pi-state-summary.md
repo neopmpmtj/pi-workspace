@@ -1,6 +1,6 @@
 # Pi State Summary
 
-> *Last updated: 2026-10-04*
+> *Last updated: 2026-10-27*
 > *Living document — reflects current state, not history.*
 
 ---
@@ -57,7 +57,7 @@
 - Each agent gets its own clean system prompt; no orchestrator context pollution.
 
 ### 6. Pi Web Access
-- **Package**: `pi-web-access` v0.35.0
+- **Package**: `pi-web-access` v0.44.0 (installed; pinned as `@0.44.0` in the `chat_meter_web` replica)
 - Tools: `web_search`, `fetch_content`, `get_search_content`
 - Multi-provider search (OpenAI, Brave, Exa, Tavily, Perplexity, Gemini) and page/YouTube/GitHub fetching
 
@@ -103,12 +103,14 @@ Discovered recursively from `~/.pi/agent/skills/<name>/SKILL.md`. Only `name` + 
 | `skill-creator` | `neopmpmtj/skill-skill-creator` |
 | `video-finder` | `neopmpmtj/skill-video-finder` |
 | `yt-download` | `neopmpmtj/skill-yt-download` |
+| `agent-replica-adapt` | `neopmpmtj/skill-agent-replica-adapt` |
 
 - `gog-workspace` — Google Workspace (Gmail, Calendar, Drive, Contacts, Sheets, Docs). Carries a non-spec `version:` key — **kept deliberately** (upstream skill-packaging metadata; pi tolerates it, the spec validator flags it). Ships `INSTALL.md` + `scripts/install.sh` for from-scratch installs on any server.
 - `partner-agent-export` — package/ship a partner agent as a self-contained installer, and import it on another Pi.
 - `pi-prompt-dump` — reproduce the live Pi system prompt and instruction files; owns the `pi-prompt-capture` extension.
 - `skill-creator` — create, edit, and evaluate skills (vendored Apache 2.0 copy of `anthropics/skills`; see its `ATTRIBUTION.md`).
 - `video-finder` — find YouTube videos by topic or reference.
+- `agent-replica-adapt` — turn a copy of `~/chat_meter` into a new isolated agent: rewrites every identity string, writes the launcher, verifies isolation. Deterministic `scripts/adapt.py` with a `--check` mode; validated clean by `quick_validate.py`. Cloned in place at `~/.pi/agent/skills/agent-replica-adapt` (branch `main`, tracking `origin/main`).
 - `yt-download` — download YouTube videos offline via yt-dlp.
 
 Validate any skill with:
@@ -137,6 +139,29 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 - **Secrets**: own `.env` with `DEEPSEEK_API_KEY` (mode 600). `OPENAI_API_KEY` and `GEMINI_API_KEY` are optional and are not set. `auth.json` is deepseek-only
 - **Runtime**: Node v24.21.0, local `package.json` (`sharp`, `exifr`). No skills, subagents, cron, or registry entry
 - **Docs**: `~/image-describer/README.md`
+
+### 13b. chat_meter
+- **Workspace**: `~/chat_meter/` — repo root holds `.env` and `model-rates.json`; the agent home is `~/chat_meter/chat-meter/` (own `PI_CODING_AGENT_DIR`, own git repo, **not** in the partner registry, no remote yet)
+- **Launcher**: `~/.local/bin/pi-chat-meter` — sources **only** `~/chat_meter/.env`, reads `default-model.json` (provider · model · thinking), execs `pi … --no-builtin-tools`. The switch applies to the next launch
+- **Purpose**: plain chat, no tools, over three providers (DeepSeek `deepseek-flash`/`deepseek-v4-pro`, OpenAI `gpt-5.4`/`gpt-5.4-mini`, Google `gemini-3.8-flash`/`gemini-3.7-flash`), with every token recorded per run
+- **Two channels**: `/ask` (extension, one direct request through `ctx.modelRegistry`, no chat turn, origin `command`) and ordinary chat turns (read back from `sessions/**/*.jsonl`, origin `chat`). Both fold into one run via `details.runId` + `parentId`
+- **Commands**: `/ask "question" [--model|--provider|--effort|--timeout] [--set-default-*]`, `/usage [--all|--session|<runId>]`
+- **Ledger**: `~/chat_meter/chat-meter/logs/ledger.sqlite` — `runs`, `calls`, `session_files` (byte offsets). Tokens stored, dollars derived from the rate card at read time (`effectiveFrom` versions); `cost_pi` kept as a cross-check. Schema changes empty the ledger on purpose
+- **Dashboard**: `cd ~/chat_meter/chat-meter && npm run dashboard` → `http://127.0.0.1:8787`. One `node:http` process serves API + page (no Vite, no CORS list); SSE refresh; settings write `default-model.json`; root pinned to the folder above `dashboard/`, overridable with `DASHBOARD_ROOT`
+- **Secrets**: own `.env` with `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` (mode 600); `auth.json` holds `$ENV` references only
+- **Runtime**: Node v24.21.0, local `package.json` (`@earendil-works/pi-ai`, `@earendil-works/pi-coding-agent`, typescript), 68 tests, `npm run typecheck`
+- **Docs**: `~/chat_meter/README.md`, `~/chat_meter/chat-meter/docs/CHEATSHEET.md`
+
+### 13c. chat_meter_web
+- **Workspace**: `~/chat_meter_web/` — an isolated replica of `~/chat_meter` (same code, own git history, no branch), agent home `~/chat_meter_web/chat-meter-web/`
+- **Launcher**: `~/.local/bin/pi-chat-meter-web` — sources **only** `~/chat_meter_web/.env`, `PI_CODING_AGENT_DIR=~/chat_meter_web/chat-meter-web`, same `default-model.json` switch and `--no-builtin-tools` as the template
+- **Isolation**: separate `.env`, agent home, `logs/ledger.sqlite` and `sessions/`; shares nothing with `~/chat_meter`, which stays clean as a template
+- **Divergence point**: the web copy is where new behaviour is built; the template is copied from again for the next agent
+- **Web access**: `pi-web-access@0.44.0`, installed into this agent's own `npm/` and loaded from `+dist/index.js`. `web-search.json` routes Brave → keyless Exa MCP → DuckDuckGo with `workflow: "none"`; `BRAVE_API_KEY`/`PERPLEXITY_API_KEY` are optional in its `.env`. Pinned per `chat-meter-web/docs/DEPENDENCIES.md`
+- **Tool ledger**: `tool_calls` + `tool_files` tables created additively in the same `ledger.sqlite` (chat `SCHEMA_VERSION` unchanged). `ledger/search-ingest.ts` reads `toolResult` entries from session files with its own byte offsets, so past searches backfill; `ledger/tool-rates.ts` prices per query per provider (`rated`/`unrated`/`partial`). Shown by `/usage`, `/usage --tools` and the dashboard's Web searches section
+- **Dashboard**: same `npm run dashboard` (defaults to port 8787; prints a clear message instead of a stack trace when the port is taken). Hash-routed tabs `#metrics` / `#settings`; settings sections for Model (`default-model.json`), Web search (route order + workflow + key markers, `web-search.json`), Prices (both cards, read-only, `unrated` flagged) and Prompts (read-only `/ask`); new routes `GET/PUT /api/search-route`, `GET /api/rates`, `GET /api/prompts`
+- **Identity strings**: all rewritten to the new path, agent home and launcher (`trust.json`, `ledger/env.ts` fallback, `src/ask.ts`, `APPEND_SYSTEM.md`, README, CHEATSHEET, `package.json` name, `report.ts` footer prefix, extension custom types). `adapt.py --check` reports clean
+- **Provenance**: adapted with the `agent-replica-adapt` skill; the template stays untouched so it can be copied again
 
 ### 14. Apps-Scripts
 - `/home/pmpmt/.pi/apps-scripts/backup_laptop_tool/` — Google Drive backup tool
@@ -174,7 +199,7 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 | HTTP idle timeout | 120s |
 | Image auto-resize | true |
 | Terminal progress | shown |
-| Installed packages | pi-web-access 0.35.0, pi-agent-browser-native 0.9.1, pi-agents-pool 0.2.0, @mjakl/pi-subagent 3.1.0 |
+| Installed packages | main agent: pi-web-access 0.44.0, pi-agent-browser-native 0.9.1, pi-agents-pool 0.2.0, @mjakl/pi-subagent 3.1.0 · chat_meter_web: pi-web-access 0.44.0 (pinned) |
 | Enabled models | deepseek-v4-pro, deepseek-flash |
 | MCP servers | none |
 
