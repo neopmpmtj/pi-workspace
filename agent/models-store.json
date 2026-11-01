@@ -84,7 +84,7 @@
         "type": "chat"
       }
     ],
-    "checkedAt": 1793100969708,
+    "checkedAt": 1793181525397,
     "lastModified": 1790772117000,
     "etag": "W/\"833a51b4211b57d882564ca5f56383e8\""
   },
@@ -7601,7 +7601,7 @@
     ],
     "lastModified": 1792673371000,
     "etag": "W/\"a05c971c6366fb5f0764e317f0b30d13\"",
-    "checkedAt": 1793100969862
+    "checkedAt": 1793181525551
   },
   "openai": {
     "models": [
@@ -8446,8 +8446,6 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
-          "supportsAdditionalTools": true,
-          "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true
         },
         "inputLimits": {
@@ -8495,8 +8493,6 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
-          "supportsAdditionalTools": true,
-          "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true
         },
         "inputLimits": {
@@ -8599,8 +8595,6 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
-          "supportsAdditionalTools": true,
-          "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true
         },
         "inputLimits": {
@@ -8657,8 +8651,6 @@
         "compat": {
           "supportsStrictMode": true,
           "supportsOpenAIGrammarTools": true,
-          "supportsAdditionalTools": true,
-          "supportsToolSearch": true,
           "supportsMidConvoSystemMessages": true
         },
         "inputLimits": {
@@ -9639,8 +9631,8 @@
         "contextWindow": 922000
       }
     ],
-    "lastModified": 1793046867000,
-    "etag": "W/\"fb27388143bf00b0c681cc7ab76c3ef8\"",
-    "checkedAt": 1793100969982
+    "lastModified": 1793180593000,
+    "etag": "W/\"fdd98e75148df38e327e888c53628074\"",
+    "checkedAt": 1793181525383
   }
 }
