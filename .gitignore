@@ -29,6 +29,7 @@ service_account*.json
 sessions-summarizer/summarizer-state.json
 sessions-summaries/
 sessions-memory/
+sessions-slim/
 
 # ── Node modules & packages ────────────────────────────────────────
 node_modules/

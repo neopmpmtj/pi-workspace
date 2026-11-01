@@ -1,6 +1,6 @@
 # Pi State Summary
 
-> *Last updated: 2026-10-27*
+> *Last updated: 2026-11-01*
 > *Living document — reflects current state, not history.*
 
 ---
@@ -169,6 +169,7 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 - `/home/pmpmt/.pi/apps-scripts/on-demand-stt-rewrite/` — speech-to-text + text rewrite
 - `/home/pmpmt/.pi/apps-scripts/text-to-speech/` — text-to-speech app
 - `/home/pmpmt/.pi/apps-scripts/temp_holding_folder/` — temp storage for installs
+- `/home/pmpmt/.pi/apps-scripts/session-slim/slim_session.py` — slim a session JSONL to readable JSON (user text, assistant text, model, name, compaction summary, subagent report). Output goes to `~/.pi/sessions-slim/`. `--session` selects one file by filename or session id under `~/.pi/agent/sessions/`. Usage: `session-slim/README.md`
 
 ### 15. Vendored Binaries
 - `~/.pi/agent/bin/fd`, `~/.pi/agent/bin/rg` — pinned copies used by tools that expect `fd`/`rg`
@@ -257,6 +258,7 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/image-describer/extensions/describe-images/index.ts` | `/describe-images` command and `describe_images` tool |
 | `~/image-describer/README.md` | Setup, flags, model capability table, verification |
 | `~/.local/bin/pi-image-describer` | Isolated launcher for the image-describer agent |
+| `~/.pi/apps-scripts/session-slim/slim_session.py` | Slim a Pi session JSONL to readable JSON in `~/.pi/sessions-slim/` |
 | `~/.pi/html/server.mjs` | Dashboard server entry point |
 | `~/.pi/html/token-tracker/db/token_usage_tracker.db` | Token analytics DB |
 | `/etc/systemd/system/my_PC_backup.{timer,service}` | Backup schedule |
