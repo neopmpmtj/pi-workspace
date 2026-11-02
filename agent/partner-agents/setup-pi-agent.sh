@@ -37,7 +37,7 @@ fi
 
 # ~/.pi is Pi's home directory, not a scratch dir — refuse names that collide.
 case "$AGENT_NAME" in
-  agent|docs|cron|apps-scripts|html|sessions-memory|sessions-summaries|sessions-summarizer|web-search-cache|postgres-migration|partner-agents|explore-discover|genesis-tester)
+  agent|docs|cron|apps-scripts|html|sessions-memory|sessions-summaries|sessions-summarizer|web-search-cache|postgres-migration|partner-agents|explore-discover|image-describer)
     echo -e "${RED}Error: '$AGENT_NAME' is a reserved Pi directory name.${NC}"
     exit 1 ;;
 esac
