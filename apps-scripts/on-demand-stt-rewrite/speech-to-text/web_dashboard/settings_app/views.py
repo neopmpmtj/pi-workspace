@@ -22,7 +22,7 @@ def dashboard_view(request):
     if request.method == "POST":
         # Get form data
         language = request.POST.get('language', 'en')
-        model = request.POST.get('model', 'whisper-1')
+        model = request.POST.get('model', 'gpt-transcribe')
         add_timestamp = request.POST.get('add_timestamp') == 'on'
         hotkey = request.POST.get('paste_hotkey', 'auto')
 

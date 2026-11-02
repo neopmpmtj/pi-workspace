@@ -27,7 +27,7 @@ class TranscribeConfig:
         temperature: Sampling temperature (0.0 to 1.0)
         response_format: Format of the response ('text' or 'json')
     """
-    model: str = "whisper-1"
+    model: str = "gpt-transcribe"
     timeout: int = 30
     max_retries: int = 3
     language: str = "en"

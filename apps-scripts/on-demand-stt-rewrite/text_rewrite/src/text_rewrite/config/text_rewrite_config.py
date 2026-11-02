@@ -60,7 +60,7 @@ class RewriteConfig:
     
     def __init__(self):
         # Default configuration values
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4.1-mini"
         self.temperature = 0.0
         self.max_tokens = 800
         self.prompt_template = PROMPT_TEMPLATES['to-llm']  # Default to story

@@ -24,7 +24,7 @@ def load_runtime_config() -> Dict[str, Any]:
     default_config = {
         "transcription": {
             "language": "pt",
-            "model": "whisper-1"
+            "model": "gpt-transcribe"
         },
         "paste": {
             "add_timestamp": False,

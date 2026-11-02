@@ -23,7 +23,7 @@ def load_config():
         return {
             "transcription": {
                 "language": "pt",
-                "model": "whisper-1"
+                "model": "gpt-transcribe"
             },
             "paste": {
                 "add_timestamp": False,
@@ -91,7 +91,7 @@ def main():
                 print("Will take effect on next transcription!")
         
         elif choice == "2":
-            new_model = input("\nEnter model name (default: whisper-1): ").strip()
+            new_model = input("\nEnter model name (default: gpt-transcribe): ").strip()
             if new_model:
                 config_data['transcription']['model'] = new_model
                 save_config(config_data)
