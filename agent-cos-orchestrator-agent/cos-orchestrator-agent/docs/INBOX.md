@@ -18,9 +18,22 @@ through when it ships, with the date; do not delete it, so the history stays rea
 
 ## This agent
 
-- [ ] `gpt-6.1-sol` is enabled in `settings.json` with no `OPENAI_API_KEY` in `.env`, so every
+- [x] ~~`gpt-6.1-sol` is enabled in `settings.json` with no `OPENAI_API_KEY` in `.env`, so every
       launch prints `No models match pattern "gpt-6.1-sol"`. Waiting on the key, then re-check
-      whether the sibling's `settings.json` should get the model back too.
+      whether the sibling's `settings.json` should get the model back too.~~ Key placed
+      2026-11-02; a live `gpt-6.1-sol` call answers, and no `auth.json` entry is needed because
+      the launcher exports `OPENAI_API_KEY`.
+
+## VPS `neopmpmtj`
+
+- [ ] `~/.pi/agent/.env` on the VPS holds a dead `GEMINI_API_KEY` (`AQ.Ab8…`, 53 chars): a live
+      Gemini call returns 401 "The bound service account is deleted or disabled". The working
+      key is the `AIza…` one from the CoS replica's `.env`, which is what the four sibling
+      `.env` files now use. User will replace it later; the VPS `~/.pi/agent` identity's Gemini
+      models fail until then.
+- [ ] Decide the Telegram ownership on the VPS: the CoS replica's `telegram.json` was left out
+      on purpose (its token is identical to `~/.pi/agent/.env`'s, one polling owner). Retired
+      copy sits at `~/retired-pi-cos-orchestrator-agent-20261102/`.
 
 ## Group rename, left open
 
