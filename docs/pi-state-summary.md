@@ -274,7 +274,8 @@ Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervis
 | `~/.pi/agent/prompts/*.md` | Custom prompts (`/document`, `/dump`, `/explore-pi`, `/readocs`, `/short`) |
 | `~/.pi/agent/skills/<name>/SKILL.md` | The six skills (each a standalone repo) |
 | `~/.pi/agent/skills/skill-creator/scripts/quick_validate.py` | Skill frontmatter/spec validator |
-| `~/.pi/agent/extensions/{cron,git-commit,secret-scrubber,pi-prompt-capture}.ts` | Custom extensions of the main agent (auto-sync was moved out) |
+| `~/.pi/agent/extensions/{cron,git-commit}.ts` + `observability/` | What remains on the main agent: cron store, `/commit` command, token observability |
+| `cos-orchestrator-agent/cos-orchestrator-agent/extensions/{auto-sync,secret-scrubber}.ts`, `pi-prompt-capture.ts` (symlink → `agent/skills/pi-prompt-dump/extensions/`), `chat/`, `input-contains-{path,url,email}/`, `less-than-input-words/` | CoS extensions. Auto-sync, secret scrubbing and prompt capture all moved here from the main agent on 2026-11-02; both are agent-dir-relative (capture writes to `<agent-dir>/state/prompt-capture`, scrubber logs to `<agent-dir>/events.log`) |
 | `cos-orchestrator-agent/cos-orchestrator-agent/extensions/auto-sync.ts` | On `session_shutdown`: stage `~/.pi`, secret-scan the staged diff, commit (`[pi:<host>] <last assistant line>`), push; on rejection rebase once then keep the commit locally. Skips subagents. Also adds `/sync` and `/sync pull` |
 | `~/.local/bin/pi-cos-orchestrator-agent` | Launcher of the main agent: pulls `~/.pi` `--ff-only` before start, sources the CoS `.env`, sets `PI_CODING_AGENT_DIR`, honours `default-model.json` |
 | `~/.pi/logs/auto-sync.log` | Auto-sync decisions (pull skips, secret-guard refusals, rebase outcomes) |
