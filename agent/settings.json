@@ -40,7 +40,8 @@
       "extensions": [
         "+index.ts"
       ]
-    }
+    },
+    "npm:@llblab/pi-telegram"
   ],
   "hideThinkingBlock": false,
   "followUpMode": "one-at-a-time",

@@ -87,3 +87,7 @@ agent/skills/video-finder/
 agent/skills/yt-download/
 agent/skills/pi-prompt-dump/
 agent/skills/agent-replica-adapt/
+
+# ── Cron store & run history (machine-local state, never synced) ──
+cron/jobs.json
+cron/runs/
