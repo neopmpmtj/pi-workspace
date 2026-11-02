@@ -11,11 +11,12 @@
     "find"
   ],
   "extensions": [
+    "+extensions/auto-sync.ts",
     "+extensions/chat/index.ts",
-    "+extensions/less-than-input-words/index.ts",
+    "+extensions/input-contains-email/index.ts",
     "+extensions/input-contains-path/index.ts",
     "+extensions/input-contains-url/index.ts",
-    "+extensions/input-contains-email/index.ts"
+    "+extensions/less-than-input-words/index.ts"
   ],
   "enabledModels": [
     "deepseek-flash",

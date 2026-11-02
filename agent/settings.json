@@ -55,7 +55,6 @@
     "deepseek-flash"
   ],
   "extensions": [
-    "+extensions/auto-sync.ts",
     "+extensions/secret-scrubber.ts",
     "+extensions/cron.ts",
     "+extensions/git-commit.ts",
