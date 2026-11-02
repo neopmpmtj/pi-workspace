@@ -242,10 +242,13 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | Host | Role | State |
 |---|---|---|
 | `neopmpmtj` (100.85.79.17) | Replica of this agent: unattended, driven from Telegram | `~/.pi` is a clone of `pi-workspace`; boot autostart via **user** unit `pi-agent.service` (`~/pi-service/pi-supervisor.sh` → tmux socket `-L pi` → `~/.local/bin/pi`); linger `yes`; bot **@pi_vps_assistant_bot** |
+| `neopmpmtj` — chief of staff | **Currently owns the Telegram bridge** instead of the main agent | unit `pi-cos.service` (`~/pi-service/pi-cos-supervisor.sh` → tmux socket `-L pi-cos` → `~/.local/bin/pi-cos-orchestrator-agent`), agent dir `~/.pi/cos-orchestrator-agent/cos-orchestrator-agent/`, own `.env` (DeepSeek, Gemini, `TELEGRAM_BOT_TOKEN`), own `telegram.json` (ignored), `npm:@llblab/pi-telegram` installed in its own npm dir. `pi-agent.service` is **disabled** — one bot token, one polling owner |
 
 - Same stack as here: nvm node `v24.21.0` → pi `1.4.0` → `~/.local/bin/pi` wrapper sourcing `.env`. The old self-contained `~/bin/pi` + `~/pi/node` launcher is retired; its scaffolding is archived in `~/.pi.archived-20261102`
 - Sync either direction with `git -C ~/.pi pull --ff-only` / `push`; the seven skills are cloned there as their own repos
-- **Automatic sync on both hosts**: the `~/.local/bin/pi` wrapper pulls `--ff-only` before each top-level start, and `extensions/auto-sync.ts` commits + pushes on shutdown. Subagents do neither; a rejected push is rebased once, then left local with a loud notice
+- **Automatic sync**: the `~/.local/bin/pi` wrapper (main agent) pulls `--ff-only` before each top-level start, and `extensions/auto-sync.ts` commits + pushes on shutdown. Subagents do neither; a rejected push is rebased once, then left local with a loud notice. **The chief-of-staff agent has neither** — its launcher does not pull and its settings load no sync extension, so VPS changes made through the CoS agent need a manual commit
+- Switching the Telegram bridge between agents: stop one unit before starting the other (`systemctl --user disable --now pi-agent.service` ↔ `pi-cos.service`) — the bot token allows exactly one polling owner
+- `telegram.json` is ignored at **any depth** (`**/telegram.json`): untracking one with `git rm --cached` commits a deletion that **removes the file on every machine that pulls** — restore it locally afterwards
 - Machine facts for that host live in its untracked `/home/pmpmt/AGENTS.md`, not in the shared instruction files
 
 ---
