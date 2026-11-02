@@ -246,7 +246,7 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 
 - Same stack as here: nvm node `v24.21.0` → pi `1.4.0` → `~/.local/bin/pi` wrapper sourcing `.env`. The old self-contained `~/bin/pi` + `~/pi/node` launcher is retired; its scaffolding is archived in `~/.pi.archived-20261102`
 - Sync either direction with `git -C ~/.pi pull --ff-only` / `push`; the seven skills are cloned there as their own repos
-- **Automatic sync**: the `~/.local/bin/pi` wrapper (main agent) pulls `--ff-only` before each top-level start, and `extensions/auto-sync.ts` commits + pushes on shutdown. Subagents do neither; a rejected push is rebased once, then left local with a loud notice. **The chief-of-staff agent has neither** — its launcher does not pull and its settings load no sync extension, so VPS changes made through the CoS agent need a manual commit
+- **Automatic sync belongs to the chief-of-staff agent** (the main agent since 2026-11-02): `cos-orchestrator-agent/cos-orchestrator-agent/extensions/auto-sync.ts` commits + pushes `~/.pi` on shutdown, and `~/.local/bin/pi-cos-orchestrator-agent` pulls `--ff-only` before start (subagent-guarded, 120 s debounce). The plain `~/.local/bin/pi` wrapper and the main agent's `settings.json` no longer do either. The CoS copy logs to the same `~/.pi/logs/auto-sync.log`
 - Switching the Telegram bridge between agents: stop one unit before starting the other (`systemctl --user disable --now pi-agent.service` ↔ `pi-cos.service`) — the bot token allows exactly one polling owner
 - `telegram.json` is ignored at **any depth** (`**/telegram.json`): untracking one with `git rm --cached` commits a deletion that **removes the file on every machine that pulls** — restore it locally afterwards
 - Machine facts for that host live in its untracked `/home/pmpmt/AGENTS.md`, not in the shared instruction files
@@ -271,9 +271,9 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/.pi/agent/prompts/*.md` | Custom prompts (`/document`, `/dump`, `/explore-pi`, `/readocs`, `/short`) |
 | `~/.pi/agent/skills/<name>/SKILL.md` | The six skills (each a standalone repo) |
 | `~/.pi/agent/skills/skill-creator/scripts/quick_validate.py` | Skill frontmatter/spec validator |
-| `~/.pi/agent/extensions/{auto-sync,cron,git-commit,secret-scrubber,pi-prompt-capture}.ts` | Custom extensions |
-| `~/.pi/agent/extensions/auto-sync.ts` | On `session_shutdown`: stage `~/.pi`, secret-scan the staged diff, commit (`[pi:<host>] <last assistant line>`), push; on rejection rebase once then keep the commit locally. Skips subagents. Also adds `/sync` and `/sync pull` |
-| `~/.local/bin/pi` (pre-exec) | Before starting pi: `git -C ~/.pi pull --ff-only`, 120 s debounce, subagent-guarded, never fatal |
+| `~/.pi/agent/extensions/{cron,git-commit,secret-scrubber,pi-prompt-capture}.ts` | Custom extensions of the main agent (auto-sync was moved out) |
+| `cos-orchestrator-agent/cos-orchestrator-agent/extensions/auto-sync.ts` | On `session_shutdown`: stage `~/.pi`, secret-scan the staged diff, commit (`[pi:<host>] <last assistant line>`), push; on rejection rebase once then keep the commit locally. Skips subagents. Also adds `/sync` and `/sync pull` |
+| `~/.local/bin/pi-cos-orchestrator-agent` | Launcher of the main agent: pulls `~/.pi` `--ff-only` before start, sources the CoS `.env`, sets `PI_CODING_AGENT_DIR`, honours `default-model.json` |
 | `~/.pi/logs/auto-sync.log` | Auto-sync decisions (pull skips, secret-guard refusals, rebase outcomes) |
 | `~/.pi/agent/extensions/observability/index.ts` | Run recording → `runs.jsonl` + `runs.sqlite`; subagent lineage + token rollup views; `/tokens` |
 | `~/.pi/.pi/extensions/{pi-event-tracer,session-memory}/index.ts` | Project-local extensions |
