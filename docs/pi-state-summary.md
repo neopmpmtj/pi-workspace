@@ -202,7 +202,7 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 | HTTP idle timeout | 120s |
 | Image auto-resize | true |
 | Terminal progress | shown |
-| Installed packages | main agent: pi-web-access 0.44.0, pi-agent-browser-native 0.9.1, pi-agents-pool 0.2.0, @mjakl/pi-subagent 3.1.0 · chat_meter_web: pi-web-access 0.44.0 (pinned) |
+| Installed packages | main agent: pi-web-access 0.44.0, pi-agent-browser-native 0.9.1, pi-agents-pool 0.2.0, @mjakl/pi-subagent 3.1.0, @llblab/pi-telegram 0.58.3 (declared, no bot config here) · chat_meter_web: pi-web-access 0.44.0 (pinned) |
 | Enabled models | deepseek-v4-pro, deepseek-flash |
 | MCP servers | none |
 
@@ -214,7 +214,7 @@ All settings live in `~/.pi/agent/settings.json`.
 
 | What | Where | State |
 |---|---|---|
-| Main workspace | `/home/pmpmt/.pi` → `neopmpmtj/pi-workspace` (private) | local `main` is **ahead of origin** (unpushed commits); only session/model state files are dirty |
+| Main workspace | `/home/pmpmt/.pi` → `neopmpmtj/pi-workspace` (private) | clean on `main`, tracking origin; runtime state (sessions, cron store/runs, prompt-capture, `agent/tmp`, `agent/pi-web-access`, `agent/telegram.json`) gitignored |
 | Each skill | `/home/pmpmt/.pi/agent/skills/<name>/` → `neopmpmtj/skill-<name>` (private) | clean on `main`, tracking origin; ignored by `pi-workspace` |
 | Partner agent | `/home/pmpmt/.pi/explore-discover` → `neopmpmtj/explore-discover` (public) | clean on `main` |
 | genesis-tester (standalone) | `/home/pmpmt/.pi/genesis-tester` | nested local repo, 5 commits, **no remote**; excluded from `pi-workspace` by `~/.pi/.gitignore` |
@@ -230,6 +230,18 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 
 ---
 
+## Replica Hosts
+
+| Host | Role | State |
+|---|---|---|
+| `neopmpmtj` (100.85.79.17) | Replica of this agent: unattended, driven from Telegram | `~/.pi` is a clone of `pi-workspace`; boot autostart via **user** unit `pi-agent.service` (`~/pi-service/pi-supervisor.sh` → tmux socket `-L pi` → `~/.local/bin/pi`); linger `yes`; bot **@pi_vps_assistant_bot** |
+
+- Same stack as here: nvm node `v24.21.0` → pi `1.4.0` → `~/.local/bin/pi` wrapper sourcing `.env`. The old self-contained `~/bin/pi` + `~/pi/node` launcher is retired; its scaffolding is archived in `~/.pi.archived-20261102`
+- Sync either direction with `git -C ~/.pi pull --ff-only` / `push`; the seven skills are cloned there as their own repos
+- Machine facts for that host live in its untracked `/home/pmpmt/AGENTS.md`, not in the shared instruction files
+
+---
+
 ## Key Files
 
 | File | Purpose |
@@ -240,8 +252,9 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/.pi/agent/auth.json` | Provider auth (`deepseek`, `gemini`) |
 | `~/.pi/agent/models-store.json` | Extra provider/model definitions |
 | `~/.pi/agent/trust.json` | Project trust decisions |
-| `~/.pi/agent/AGENTS.md` | Orchestrator instructions (delegation protocol, specialists) |
-| `~/.pi/agent/APPEND_SYSTEM.md` | Location context, secrets rule, CLI hygiene |
+| `~/.pi/agent/AGENTS.md` | Portable rules: orchestrator role, delegation, skill authoring, subagent troubleshooting (tracked) |
+| `~/.pi/agent/APPEND_SYSTEM.md` | Portable rules: secrets, CLI hygiene, working style, downloads, inter-agent comms (tracked) |
+| `~/AGENTS.md` | **Machine-local facts** (location, Postgres, remote hosts, tooling) — untracked, loaded as a context file by directory layering |
 | `~/.pi/agent/agents/frontend.md` | Front-end sub-agent definition |
 | `~/.pi/agent/agents/researcher.md` | Web research sub-agent definition |
 | `~/.pi/agent/prompts/*.md` | Custom prompts (`/document`, `/dump`, `/explore-pi`, `/readocs`, `/short`) |
