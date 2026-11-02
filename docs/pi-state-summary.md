@@ -138,6 +138,13 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 - **Tools**: `read`, `grep`, `find`, `ls`, `describe_images`
 - **Secrets**: own `.env` with `DEEPSEEK_API_KEY` (mode 600). `OPENAI_API_KEY` and `GEMINI_API_KEY` are optional and are not set. `auth.json` is deepseek-only
 - **Runtime**: Node v24.21.0, local `package.json` (`sharp`, `exifr`). No skills, subagents, cron, or registry entry
+
+### 13b. Imported agent group (`pi-agents-experts-grouped`)
+- **Origin**: contents of `~/pi-agents-experts-grouped` copied into `~/.pi/` (2026-11-02), minus its top-level `.gitignore`, `.git` and `.gitmodules`. There it was a repo with four submodules; here they are plain directories, tracked by `pi-workspace`
+- **Contents**: `cos-orchestrator-agent/`, `web-master/`, `gog-workspace-agents/`, `image-describer/`, `scripts/`, `config.json`, `xtra-info.md`, `.cursor/`, `.dashboard-logs/`
+- **`config.json`**: input-routing thresholds — `lessThanInputWords` (6, enabled), `inputContainsPath`, `inputContainsUrl`, `inputContainsEmail` (all enabled, all print)
+- **Excluded at import**: every `.env` and `auth.json` (each sub-project's own `.gitignore` covers them; they exist on disk at mode 600 and never enter git), plus `node_modules/` and build output — the copy is ~985 MB on disk but only ~2 MB of tracked source
+- **Note**: `image-describer/` exists twice (here as `image-describer/image-describer/` and standalone at `~/image-describer/`)
 - **Docs**: `~/image-describer/README.md`
 
 ### 13b. chat_meter
