@@ -2,7 +2,14 @@
   "defaultProvider": "deepseek",
   "defaultModel": "deepseek-flash",
   "defaultThinkingLevel": "high",
-  "defaultTools": ["read", "bash", "edit", "write", "grep", "find"],
+  "defaultTools": [
+    "read",
+    "bash",
+    "edit",
+    "write",
+    "grep",
+    "find"
+  ],
   "extensions": [
     "+extensions/chat/index.ts",
     "+extensions/less-than-input-words/index.ts",
@@ -18,5 +25,8 @@
     "gemini-3.7-flash"
   ],
   "theme": "dark",
-  "lastChangelogVersion": "1.4.0"
+  "lastChangelogVersion": "1.4.0",
+  "packages": [
+    "npm:@llblab/pi-telegram"
+  ]
 }
