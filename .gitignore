@@ -108,3 +108,5 @@ agent/state/prompt-capture/
 # Runtime state of bridge/sub-agents
 tmp/pi-telegram/
 cos-orchestrator-agent/cos-orchestrator-agent/tmp/
+
+z.old/

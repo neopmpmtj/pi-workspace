@@ -2,6 +2,26 @@
   "defaultProvider": "deepseek",
   "defaultModel": "deepseek-flash",
   "defaultThinkingLevel": "high",
+  "compaction": {
+    "enabled": true
+  },
+  "collapseChangelog": false,
+  "doubleEscapeAction": "tree",
+  "images": {
+    "autoResize": true
+  },
+  "terminal": {
+    "showTerminalProgress": true
+  },
+  "steeringMode": "one-at-a-time",
+
+  "hideThinkingBlock": false,
+  "followUpMode": "one-at-a-time",
+  "httpIdleTimeoutMs": 120000,
+  "treeFilterMode": "all",
+  "warnings": {
+    "anthropicExtraUsage": true
+  },  
   "defaultTools": [
     "read",
     "bash",
