@@ -238,6 +238,7 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 
 - Same stack as here: nvm node `v24.21.0` → pi `1.4.0` → `~/.local/bin/pi` wrapper sourcing `.env`. The old self-contained `~/bin/pi` + `~/pi/node` launcher is retired; its scaffolding is archived in `~/.pi.archived-20261102`
 - Sync either direction with `git -C ~/.pi pull --ff-only` / `push`; the seven skills are cloned there as their own repos
+- **Automatic sync on both hosts**: the `~/.local/bin/pi` wrapper pulls `--ff-only` before each top-level start, and `extensions/auto-sync.ts` commits + pushes on shutdown. Subagents do neither; a rejected push is rebased once, then left local with a loud notice
 - Machine facts for that host live in its untracked `/home/pmpmt/AGENTS.md`, not in the shared instruction files
 
 ---
@@ -260,7 +261,10 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | `~/.pi/agent/prompts/*.md` | Custom prompts (`/document`, `/dump`, `/explore-pi`, `/readocs`, `/short`) |
 | `~/.pi/agent/skills/<name>/SKILL.md` | The six skills (each a standalone repo) |
 | `~/.pi/agent/skills/skill-creator/scripts/quick_validate.py` | Skill frontmatter/spec validator |
-| `~/.pi/agent/extensions/{cron,git-commit,secret-scrubber,pi-prompt-capture}.ts` | Custom extensions |
+| `~/.pi/agent/extensions/{auto-sync,cron,git-commit,secret-scrubber,pi-prompt-capture}.ts` | Custom extensions |
+| `~/.pi/agent/extensions/auto-sync.ts` | On `session_shutdown`: stage `~/.pi`, secret-scan the staged diff, commit (`[pi:<host>] <last assistant line>`), push; on rejection rebase once then keep the commit locally. Skips subagents. Also adds `/sync` and `/sync pull` |
+| `~/.local/bin/pi` (pre-exec) | Before starting pi: `git -C ~/.pi pull --ff-only`, 120 s debounce, subagent-guarded, never fatal |
+| `~/.pi/logs/auto-sync.log` | Auto-sync decisions (pull skips, secret-guard refusals, rebase outcomes) |
 | `~/.pi/agent/extensions/observability/index.ts` | Run recording → `runs.jsonl` + `runs.sqlite`; subagent lineage + token rollup views; `/tokens` |
 | `~/.pi/.pi/extensions/{pi-event-tracer,session-memory}/index.ts` | Project-local extensions |
 | `~/.pi/cron/jobs.json` / `~/.pi/cron/runs/` | Cron job store / run history |
