@@ -94,8 +94,6 @@ cron/runs/
 # ── Machine-local runtime dirs (regenerated, never synced) ──
 agent/tmp/
 agent/pi-web-access/
-# scaffolded by the agents-pool extension on first run; not shared content
-agent/agents/explore.md
 
 # Per-machine Telegram bot config (botToken ref + owner id) — never shared
 agent/telegram.json
