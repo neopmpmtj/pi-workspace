@@ -183,16 +183,6 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 ### 15. Vendored Binaries
 - `~/.pi/agent/bin/fd`, `~/.pi/agent/bin/rg` — pinned copies used by tools that expect `fd`/`rg`
 
-### 16. Standalone Agent — genesis-tester
-- **Workspace**: `~/.pi/genesis-tester/` — outside the partner-agent framework (not in the registry); nested git repo (5 commits, **no remote**), excluded from `pi-workspace` via `~/.pi/.gitignore`
-- **Launcher**: `pi-genesis-tester()` in `~/.bashrc:139` — `set -a` + sources the agent's **own** `.env`, then exports `PI_CODING_AGENT_DIR`
-- **Config**: `settings.json` (deepseek / deepseek-flash / high), `auth.json` (own copy, `chmod 600`), `trust.json`, `.gitignore`
-- **Stock prompt only**: no `AGENTS.md`, no `APPEND_SYSTEM.md`, no skills, no `packages` → tools are just `read`, `bash`, `edit`, `write`; the only extension is a `pi-prompt-capture.ts` symlink to the main agent's skill
-- **Sessions**: `~/.pi/genesis-tester/sessions/<cwd-slug>/` — inherited from `PI_CODING_AGENT_DIR`; override with `PI_CODING_AGENT_SESSION_DIR` or `--session-dir`
-- **Secrets**: `.env` and `auth.json` are live-key copies, both gitignored and untracked. ⚠️ `sessions/` and `state/prompt-capture/` **are tracked** (the `sessions/` line is commented out in `.gitignore`) — contained only by the missing remote
-- **Vendored**: `bin/fd` + `bin/rg` (8.8 MB), committed
-
----
 
 ## Key Configuration
 
@@ -224,7 +214,6 @@ All settings live in `~/.pi/agent/settings.json`.
 | Main workspace | `/home/pmpmt/.pi` → `neopmpmtj/pi-workspace` (private) | clean on `main`, tracking origin; runtime state (sessions, cron store/runs, prompt-capture, `agent/tmp`, `agent/pi-web-access`, `agent/telegram.json`) gitignored |
 | Each skill | `/home/pmpmt/.pi/agent/skills/<name>/` → `neopmpmtj/skill-<name>` (private) | clean on `main`, tracking origin; ignored by `pi-workspace` |
 | Partner agent | `/home/pmpmt/.pi/explore-discover` → `neopmpmtj/explore-discover` (public) | clean on `main` |
-| genesis-tester (standalone) | `/home/pmpmt/.pi/genesis-tester` | nested local repo, 5 commits, **no remote**; excluded from `pi-workspace` by `~/.pi/.gitignore` |
 
 Clone/update a skill directly at its path:
 
@@ -284,8 +273,6 @@ Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervis
 | `~/.pi/cron/jobs.json` / `~/.pi/cron/runs/` | Cron job store / run history |
 | `~/.pi/agent/partner-agents/partner-agents.list` | Partner agent registry |
 | `~/.pi/agent/partner-agents/export-partner-agent.sh` | Build a partner-agent installer |
-| `~/.pi/genesis-tester/settings.json` | Standalone `genesis-tester` agent config (no packages, no extensions) |
-| `~/.pi/genesis-tester/.env` | Standalone agent's own credentials (sourced by `pi-genesis-tester()`) |
 | `~/image-describer/settings.json` | image-describer config: `deepseek-flash`, `describe_images`, describe-images extension |
 | `~/image-describer/.env` | image-describer credentials (`DEEPSEEK_API_KEY`, mode 600) — sourced by its launcher |
 | `~/image-describer/extensions/describe-images/index.ts` | `/describe-images` command and `describe_images` tool |
