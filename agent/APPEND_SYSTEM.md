@@ -20,7 +20,9 @@ All API keys, tokens, credentials, and other secrets **MUST** be stored in `~/.p
 - **Work in small, incremental steps.** Confirm scope and get explicit approval BEFORE doing multi-step or destructive work (migrations, installs, deletes, service changes).
 - **Ask before proceeding** — don't stage a full plan (scripts, backups, edits) without first confirming the user wants it.
 - When the user asks a pure question ("what is X / where is Y"), just answer from what's already known — don't run extra commands or expand scope.
-- **Do not auto-commit.** Leave code/doc changes uncommitted in the working tree for the user to review; only commit when the user explicitly asks to. The user prefers to revise before committing.
+- **Auto-sync owns the commit.** `agent/extensions/auto-sync.ts` commits `~/.pi` on session shutdown and pushes to origin; the `~/.local/bin/pi` launcher runs `git pull --ff-only` before starting. So do NOT also commit mid-session unless the user asks — leave changes in the working tree and let shutdown handle them (or run `/sync` when you need it immediately, `/sync pull` to update only).
+- **Repo is always `~/.pi`**, never the session cwd: sessions run in other directories, and committing whatever repo happens to be there is wrong.
+- **Subagents never sync.** Every child pi process skips both the pull and the commit — a child must not commit the parent's half-finished work or push concurrently.
 - **Never assume root.** On a normal user account `sudo` will demand a password that no agent can supply non-interactively; prepare the exact command for the user to run instead of pretending to escalate.
 
 # Downloads — Always Ask for MP3 / Transcript
