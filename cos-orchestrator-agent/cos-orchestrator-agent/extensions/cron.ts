@@ -12,14 +12,15 @@
  * - /cron management command
  * - cron tool for the agent to schedule its own jobs
  *
- * Placement: ~/.pi/agent/extensions/cron.ts
+ * Placement: ~/.pi/cos-orchestrator-agent/cos-orchestrator-agent/extensions/cron.ts
+ * The engine stays at ~/.pi/cron/ (three levels up from this file).
  */
 
 import * as child_process from "node:child_process";
 import { Type } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { normalizeCronJobCreate, normalizeCronJobPatch } from "../../cron/normalize";
-import { computeNextRunAtMs, MAX_TIMER_DELAY_MS, computeTimerDelay } from "../../cron/schedule";
+import { normalizeCronJobCreate, normalizeCronJobPatch } from "../../../cron/normalize";
+import { computeNextRunAtMs, MAX_TIMER_DELAY_MS, computeTimerDelay } from "../../../cron/schedule";
 import {
   loadStore,
   saveStore,
@@ -29,8 +30,8 @@ import {
   getRunHistory,
   generateJobId,
   generateRunId,
-} from "../../cron/store";
-import type { CronJob, CronStoreFile, CronRunEntry } from "../../cron/types";
+} from "../../../cron/store";
+import type { CronJob, CronStoreFile, CronRunEntry } from "../../../cron/types";
 
 // ── State ──
 
