@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "default": {
-      "botToken": "$TELEGRAM_BOT_TOKEN",
-      "allowedUserId": 6363173838
-    }
-  }
-}
