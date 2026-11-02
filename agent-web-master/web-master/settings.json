@@ -12,7 +12,8 @@
     "gpt-5.4",
     "gpt-5.4-mini",
     "gemini-3.8-flash",
-    "gemini-3.7-flash"
+    "gemini-3.7-flash",
+    "gemini-3.6-flash"
   ],
   "theme": "dark",
   "lastChangelogVersion": "1.4.0",
