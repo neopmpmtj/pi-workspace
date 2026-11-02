@@ -301,7 +301,6 @@ Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervis
 | `cron-job-system-setup/` | Cron job system |
 | `multi-agent-orchestrator-setup/` | Multi-agent orchestrator (current + historical) |
 | `separate-pi-instances/` | Running separate Pi instances / workspaces |
-| `genesis-tester-standalone-agent/` | Bare standalone agent: `PI_CODING_AGENT_DIR` isolation, session-dir precedence, credential paths, drift/finding analysis |
 | `image-describer-creation-report.md` | Minimal read-only sibling agent: isolated launcher + own `.env`, inventory delta vs the main agent, what was left out and how to add it back |
 | `skill-stale-commands-fix/` | Skill command fix |
 | `speech-to-text-keyboard-shortcut-fix/` | STT keyboard fix |
