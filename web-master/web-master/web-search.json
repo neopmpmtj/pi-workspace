@@ -1,0 +1,17 @@
+{
+  "workflow": "none",
+  "searchRouting": {
+    "providers": [
+      "duckduckgo",
+      "perplexity",
+      "brave",
+      "exa"
+    ],
+    "fallbackOn": [
+      "transient",
+      "quota",
+      "network",
+      "invalid-response"
+    ]
+  }
+}

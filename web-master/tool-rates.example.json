@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "currency": "USD",
+  "unit": "per_search",
+  "updatedAt": "2026-10-27T10:00:00Z",
+  "providers": {
+    "brave": {
+      "perSearch": 0.005,
+      "source": "brave.com/search/api \u2014 $5 per 1k requests"
+    },
+    "perplexity": {
+      "perSearch": 0.005,
+      "source": "Perplexity Search API \u2014 $5 per 1k requests (fast mode $1/1k; we bill the standard rate)"
+    },
+    "tavily": {
+      "perSearch": 0.008,
+      "source": "tavily.com \u2014 $0.008 per credit"
+    },
+    "exa": {
+      "perSearch": 0,
+      "source": "keyless Exa MCP; set a real price here if you add EXA_API_KEY"
+    },
+    "duckduckgo": {
+      "perSearch": 0,
+      "source": "free"
+    },
+    "gemini": {
+      "perSearch": 0.014,
+      "tokensUnmetered": true,
+      "source": "Gemini grounding \u2014 $14/1k after 5k free; model tokens are NOT in the session"
+    },
+    "openai": {
+      "perSearch": 0.01,
+      "tokensUnmetered": true,
+      "source": "OpenAI web_search \u2014 $10/1k calls; search tokens are NOT in the session"
+    }
+  },
+  "fetch": {
+    "perUrl": 0
+  }
+}

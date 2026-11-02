@@ -1,0 +1,27 @@
+{
+  "defaultProvider": "deepseek",
+  "defaultModel": "deepseek-flash",
+  "defaultThinkingLevel": "low",
+  "defaultTools": [],
+  "extensions": [
+    "+extensions/chat/index.ts"
+  ],
+  "enabledModels": [
+    "deepseek-flash",
+    "deepseek-v4-pro",
+    "gpt-5.4",
+    "gpt-5.4-mini",
+    "gemini-3.8-flash",
+    "gemini-3.7-flash"
+  ],
+  "theme": "dark",
+  "lastChangelogVersion": "1.4.0",
+  "packages": [
+    {
+      "source": "npm:pi-web-access@0.44.0",
+      "extensions": [
+        "+dist/index.js"
+      ]
+    }
+  ]
+}

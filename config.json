@@ -1,0 +1,19 @@
+{
+  "lessThanInputWords": {
+    "enabled": true,
+    "words": 6,
+    "print": true
+  },
+  "inputContainsPath": {
+    "enabled": true,
+    "print": true
+  },
+  "inputContainsUrl": {
+    "enabled": true,
+    "print": true
+  },
+  "inputContainsEmail": {
+    "enabled": true,
+    "print": true
+  }
+}

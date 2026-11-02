@@ -1,0 +1,22 @@
+{
+  "name": "image-describer",
+  "launcher": "pi-image-describer",
+  "defaultPrompt": "/describe-images",
+  "call": "/describe-images [--dir <abs path>]",
+  "purpose": "Describes every new image in the inbox `~/pi-agents-experts-grouped/image-describer/images` (one UUID subfolder per image) and writes `<image>.md` beside each. Prints the run line and `Saved` paths, never the descriptions.",
+  "inbox": "~/pi-agents-experts-grouped/image-describer/images",
+  "latestRun": "~/pi-agents-experts-grouped/image-describer/image-describer/front-and-center.md",
+  "contract": "~/pi-agents-experts-grouped/image-describer/image-describer/docs/CALLING.md",
+  "commands": [
+    {
+      "name": "/describe-images",
+      "description": "Describe images in a directory and in immediate subfolders with fewer than two files"
+    }
+  ],
+  "tools": [
+    {
+      "name": "describe_images",
+      "description": "Describe eligible images in a directory and in immediate subfolders that contain fewer than two files, one request per file, oldest first. Skips a subfolder that already has two or more files, and skips a file whose description is already beside it. Returns filename-labelled descriptions. Does not describe images already attached to the conversation."
+    }
+  ]
+}

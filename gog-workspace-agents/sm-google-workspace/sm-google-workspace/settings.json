@@ -1,0 +1,24 @@
+{
+  "defaultProvider": "deepseek",
+  "defaultModel": "deepseek-flash",
+  "defaultThinkingLevel": "high",
+  "defaultTools": [
+    "read",
+    "bash",
+    "edit",
+    "write",
+    "grep",
+    "find"
+  ],
+  "extensions": [
+    "+extensions/chat/index.ts"
+  ],
+  "enabledModels": [
+    "deepseek-flash",
+    "deepseek-v4-pro",
+    "gemini-3.8-flash",
+    "gemini-3.7-flash"
+  ],
+  "theme": "dark",
+  "lastChangelogVersion": "1.4.0"
+}

@@ -1,0 +1,19 @@
+{
+  "name": "sm-google-workspace",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test --test-timeout=20000 test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "publish:agent": "node --experimental-strip-types scripts/publish.ts"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
+  }
+}

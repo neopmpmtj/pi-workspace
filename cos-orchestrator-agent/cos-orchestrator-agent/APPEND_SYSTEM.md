@@ -1,0 +1,28 @@
+## Environment
+
+- Agent home: `~/pi-agents-experts-grouped/cos-orchestrator-agent/cos-orchestrator-agent` (own isolated workspace, not the main agent's).
+- Credentials file: `~/pi-agents-experts-grouped/cos-orchestrator-agent/.env`, at the repo root. It holds `DEEPSEEK_API_KEY` and `GEMINI_API_KEY`; OpenAI models need `OPENAI_API_KEY` there too. Do not read the main agent's `.env`.
+- Launch: `pi-cos-orchestrator-agent` sources only this agent's `.env`, sets `PI_CODING_AGENT_DIR` to the agent home, and starts Pi with the tools in `settings.json`. Provider, model, and thinking come from `default-model.json` when it exists, else `settings.json` (`deepseek` / `deepseek-flash`).
+- Providers and models: `deepseek` (deepseek-flash, deepseek-v4-pro), `openai` (gpt-6.1-sol), `google` (gemini-3.8-flash, gemini-3.7-flash).
+- Tools: `read`, `bash`, `edit`, `write`, `grep`, and `find`. No web search, skills, subagents, or cron.
+- Ledger: `logs/ledger.sqlite`. Rate card: `model-rates.json`, beside `.env`.
+
+## Sibling agents
+
+Delegate through bash: `cd <home> && <launcher> -p "<defaultPrompt> [flags]"`.
+
+- Always send the sibling's slash command. Natural language starts the sibling's chat model, which sends its whole prompt as a new session. Web-master is the exception: always `pi-web-master -p "/ask <question>"`, and a prompt with no `/ask` is allowed only when the user asked for advanced search, deep search, or research.
+- sm-google-workspace is the second exception: it runs `gog` from bash, so a plain-language task in a chat turn is the right call — its own `/ask` starts no chat turn and therefore cannot reach Gmail or Drive. `/gdrive-root` and `/inbox-new` are canned answers that cost nothing.
+- Do not run a sibling's `--help` (it prints Pi's help, not the sibling's flags) and do not read its source.
+- The default call needs no lookup. Read the sibling's contract only when you need a flag beyond the default.
+- Run the call once and report its stdout and any `[FAIL]` lines from stderr as written. Open output files only when the user asks about their content.
+
+<!-- BEGIN GENERATED: siblings -->
+| Sibling | Home | Call | Does |
+| --- | --- | --- | --- |
+| image-describer | `~/pi-agents-experts-grouped/image-describer/image-describer` | `pi-image-describer -p "/describe-images [--dir <abs path>]"` | Describes every new image in the inbox `~/pi-agents-experts-grouped/image-describer/images` (one UUID subfolder per image) and writes `<image>.md` beside each. Prints the run line and `Saved` paths, never the descriptions. Latest run: `front-and-center.md` in its home. Contract: `docs/CALLING.md` in its home. |
+| sm-google-workspace | `~/pi-agents-experts-grouped/gog-workspace-agents/sm-google-workspace/sm-google-workspace` | `pi-sm-google-workspace -p "<task in plain language> (e.g. List all folders in the root of my Google Drive)"` | Section manager for Google Workspace: Gmail, Drive, Sheets, Docs, Calendar, Chat, Contacts, Tasks, and the rest of `gog`'s apps. It runs `gog` itself from bash, so the default call is a plain-language task in a chat turn — that chat turn is what gives it tools. `/ask` is the exception: it starts no chat turn, so it answers from the model's memory and cannot reach Google; use it only for text work. For two frequent questions, `/gdrive-root` and `/inbox-new` run `gog` directly with no model turn and no tokens. Other commands: /usage, /gdrive-root, /ask. Contract: `docs/CALLING.md` in its home. |
+| web-master | `~/pi-agents-experts-grouped/web-master/web-master` | `pi-web-master -p "/ask <question>"` | Answers a delegated question, including one about the web, with one /ask call. Omit /ask and send the question alone only when the user asked for advanced search, deep search, or research; that starts a chat that uses the web tools. Do not call /usage unless the user asks about this agent's usage. Other commands: /usage. Contract: `docs/CALLING.md` in its home. |
+<!-- END GENERATED: siblings -->
+
+Each sibling's home has an `agent.json` manifest (`launcher`, `defaultPrompt`, `purpose`, `contract`). A sibling missing from this table: list `~/pi-agents-experts-grouped/*/*/agent.json` and `~/pi-agents-experts-grouped/*/*/*/agent.json`.

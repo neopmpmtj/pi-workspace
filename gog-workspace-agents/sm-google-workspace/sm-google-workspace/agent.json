@@ -1,0 +1,28 @@
+{
+  "name": "sm-google-workspace",
+  "launcher": "pi-sm-google-workspace",
+  "defaultPrompt": "/inbox-new",
+  "call": "<task in plain language> (e.g. List all folders in the root of my Google Drive)",
+  "purpose": "Section manager for Google Workspace: Gmail, Drive, Sheets, Docs, Calendar, Chat, Contacts, Tasks, and the rest of `gog`'s apps. It runs `gog` itself from bash, so the default call is a plain-language task in a chat turn — that chat turn is what gives it tools. `/ask` is the exception: it starts no chat turn, so it answers from the model's memory and cannot reach Google; use it only for text work. For two frequent questions, `/gdrive-root` and `/inbox-new` run `gog` directly with no model turn and no tokens.",
+  "account": "neopmpmtj@gmail.com",
+  "contract": "~/pi-agents-experts-grouped/gog-workspace-agents/sm-google-workspace/sm-google-workspace/docs/CALLING.md",
+  "tools": [],
+  "commands": [
+    {
+      "name": "/usage",
+      "description": "Tokens and cost: /usage · /usage --all · /usage --session · /usage <runId>"
+    },
+    {
+      "name": "/gdrive-root",
+      "description": "Root of Google Drive: name, folder|file, id, modified — one tab-separated row per item. No model turn, no tokens."
+    },
+    {
+      "name": "/inbox-new",
+      "description": "Unread mail newer than N hours (default 24): date, from, subject, id. No model turn, no tokens."
+    },
+    {
+      "name": "/ask",
+      "description": "One request, no chat turn: /ask \"question\" [--model gpt-6.1-sol] [--effort low] [--timeout 60]. Save defaults with --set-default-model."
+    }
+  ]
+}

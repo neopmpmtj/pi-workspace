@@ -1,0 +1,20 @@
+{
+  "name": "cos-orchestrator-agent",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test --test-timeout=20000 test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "dashboard": "node --experimental-strip-types dashboard/server.ts",
+    "fetch:publications": "node --experimental-strip-types scripts/fetch-publications.ts"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
+  }
+}

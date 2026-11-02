@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "currency": "USD",
+  "unit": "per_million_tokens",
+  "updatedAt": "2026-10-25T10:00:00Z",
+  "models": {
+    "deepseek-flash": [
+      { "effectiveFrom": "2026-01-01T00:00:00Z", "input": 0.3, "output": 1.2, "cacheRead": 0.006, "source": "models-store.json" }
+    ],
+    "gpt-6.1-sol": [
+      { "effectiveFrom": "2026-01-01T00:00:00Z", "input": 2, "output": 10, "cacheRead": 0.1, "source": "models-store.json" }
+    ],
+    "gemini-3.8-flash": [
+      { "effectiveFrom": "2026-01-01T00:00:00Z", "input": 0.75, "output": 3.75, "cacheRead": 0.075, "source": "models-store.json" }
+    ]
+  }
+}

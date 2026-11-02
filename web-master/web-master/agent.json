@@ -1,0 +1,19 @@
+{
+  "name": "web-master",
+  "launcher": "pi-web-master",
+  "defaultPrompt": "/ask",
+  "call": "/ask <question>",
+  "purpose": "Answers a delegated question, including one about the web, with one /ask call. Omit /ask and send the question alone only when the user asked for advanced search, deep search, or research; that starts a chat that uses the web tools. Do not call /usage unless the user asks about this agent's usage.",
+  "contract": "~/pi-agents-experts-grouped/web-master/web-master/docs/CALLING.md",
+  "commands": [
+    {
+      "name": "/usage",
+      "description": "Tokens and cost: /usage · /usage --usage-totals · /usage --this-session · /usage --web-search · /usage <runId> · /usage --help"
+    },
+    {
+      "name": "/ask",
+      "description": "One request, no chat turn: /ask \"question\". /ask --help lists the flags."
+    }
+  ],
+  "tools": []
+}

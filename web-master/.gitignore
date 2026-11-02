@@ -1,0 +1,16 @@
+node_modules/
+package-lock.json
+
+# local state
+logs/
+sessions/
+front-and-center.md
+
+# secrets and machine-local config
+.env
+auth.json
+model-rates.json
+tool-rates.json
+
+*.tmp
+*.log

@@ -1,0 +1,9 @@
+{
+  "general": false,
+  "leisure": false,
+  "work": false,
+  "financial": false,
+  "venue": false,
+  "detailed": false,
+  "count": true
+}

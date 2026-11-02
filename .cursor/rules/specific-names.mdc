@@ -1,0 +1,31 @@
+---
+description: Name files, config sections, and exports after the agent or the task
+alwaysApply: true
+---
+
+# Specific names
+
+Name a file, a config section, and an exported symbol after the agent that owns it or the task it performs. A generic label does not say which agent or which task.
+
+The path can carry the agent when the file already lives inside that agent. The identifier still has to name the task.
+
+```json
+// Bad: the section could belong to any word count
+{ "lessThanWords": { "enabled": true, "words": 6 } }
+
+// Good: this section counts words in the orchestrator input
+{ "lessThanInputWords": { "enabled": true, "words": 6, "print": true } }
+```
+
+```text
+src/utils.ts
+src/helper.ts
+src/less-than-six.ts
+```
+
+```text
+src/less-than-input-words.ts
+extensions/less-than-input-words/index.ts
+```
+
+Fields inside a task section stay short (`enabled`, `words`, `print`). The section around them is what must name the task.
