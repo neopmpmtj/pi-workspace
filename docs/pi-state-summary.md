@@ -125,13 +125,13 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 - **Workspace convention**: each partner/sibling agent lives at `~/.pi/<name>` (own `PI_CODING_AGENT_DIR`, own git repo)
 - **Registry**: `~/.pi/agent/partner-agents/partner-agents.list` (one absolute workspace path per line)
 - **Tooling**: `setup-pi-agent.sh` (create — targets `~/.pi/<name>` and refuses reserved Pi directory names), `push-partner-agents.sh` (sync all), `export-partner-agent.sh` (build an installer — prefers `~/.pi/<name>`, falls back to the legacy `~/.pi/partner-agents/<name>`), plus `shared/` and `gitignore.template`
-- **Installed**: `explore-discover` at `~/.pi/explore-discover` — its own repo (`neopmpmtj/explore-discover`), clean on `main`; `image-describer` at `~/image-describer` (see 13a)
+- **Installed**: `explore-discover` at `~/.pi/explore-discover` — its own repo (`neopmpmtj/explore-discover`), clean on `main`; `image-describer` at `~/.pi/agent-image-describer` (see 13a)
 - **Exports**: `~/.pi/agent/partner-agents/exports/<name>/install-<name>.sh`
 - Workflow documented by the `partner-agent-export` skill
 
 ### 13a. image-describer
-- **Workspace**: `~/image-describer/` — isolated `PI_CODING_AGENT_DIR`, own git repo, not in the partner registry
-- **Launcher**: `~/.local/bin/pi-image-describer` — sources **only** `~/image-describer/.env`, bypassing `~/.local/bin/pi` (which hardcodes `source ~/.pi/agent/.env`)
+- **Workspace**: `~/.pi/agent-image-describer/` — isolated `PI_CODING_AGENT_DIR`, own git repo, not in the partner registry
+- **Launcher**: `~/.local/bin/pi-image-describer` — sources **only** `~/.pi/agent-image-describer/.env`, bypassing `~/.local/bin/pi` (which hardcodes `source ~/.pi/agent/.env`)
 - **Chat model**: `deepseek-flash`, thinking `low`
 - **Directory descriptions**: extension `extensions/describe-images` — `/describe-images` and the `describe_images` tool. One vision request per file, oldest first. Descriptions stay in the session. The only file it writes is a JSONL run ledger (default `./logs/image-runs.jsonl`)
 - **Vision models**: `deepseek-flash` (default), `gpt-5.4`, `gemini-3.8-flash`. Chat `enabledModels` stays `deepseek-flash`
@@ -144,8 +144,8 @@ python3 ~/.pi/agent/skills/skill-creator/scripts/quick_validate.py <skill-dir>
 - **Contents**: `cos-orchestrator-agent/`, `web-master/`, `gog-workspace-agents/`, `image-describer/`, `scripts/`, `config.json`, `xtra-info.md`, `.cursor/`, `.dashboard-logs/`
 - **`config.json`**: input-routing thresholds — `lessThanInputWords` (6, enabled), `inputContainsPath`, `inputContainsUrl`, `inputContainsEmail` (all enabled, all print)
 - **Excluded at import**: every `.env` and `auth.json` (each sub-project's own `.gitignore` covers them; they exist on disk at mode 600 and never enter git), plus `node_modules/` and build output — the copy is ~985 MB on disk but only ~2 MB of tracked source
-- **Note**: `image-describer/` exists twice (here as `image-describer/image-describer/` and standalone at `~/image-describer/`)
-- **Docs**: `~/image-describer/README.md`
+- **Note**: `image-describer/` exists twice (here as `image-describer/image-describer/` and standalone at `~/.pi/agent-image-describer/`)
+- **Docs**: `~/.pi/agent-image-describer/README.md`
 
 ### 13b. chat_meter
 - **Workspace**: `~/chat_meter/` — repo root holds `.env` and `model-rates.json`; the agent home is `~/chat_meter/chat-meter/` (own `PI_CODING_AGENT_DIR`, own git repo, **not** in the partner registry, no remote yet)
@@ -231,7 +231,7 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | Host | Role | State |
 |---|---|---|
 | `neopmpmtj` (100.85.79.17) | Replica of this agent: unattended, driven from Telegram | `~/.pi` is a clone of `pi-workspace`; boot autostart via **user** unit `pi-agent.service` (`~/pi-service/pi-supervisor.sh` → tmux socket `-L pi` → `~/.local/bin/pi`); linger `yes`; bot **@pi_vps_assistant_bot** |
-| `neopmpmtj` — chief of staff | **Currently owns the Telegram bridge** instead of the main agent | unit `pi-cos.service` (`~/pi-service/pi-cos-supervisor.sh` → tmux socket `-L pi-cos` → `~/.local/bin/pi-cos-orchestrator-agent`), agent dir `~/.pi/cos-orchestrator-agent/cos-orchestrator-agent/`, own `.env` (DeepSeek, Gemini, `TELEGRAM_BOT_TOKEN`), own `telegram.json` (ignored), `npm:@llblab/pi-telegram` installed in its own npm dir. `pi-agent.service` is **disabled** — one bot token, one polling owner |
+| `neopmpmtj` — chief of staff | **Currently owns the Telegram bridge** instead of the main agent | unit `pi-cos.service` (`~/pi-service/pi-cos-supervisor.sh` → tmux socket `-L pi-cos` → `~/.local/bin/pi-cos-orchestrator-agent`), agent dir `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/`, own `.env` (DeepSeek, Gemini, `TELEGRAM_BOT_TOKEN`), own `telegram.json` (ignored), `npm:@llblab/pi-telegram` installed in its own npm dir. `pi-agent.service` is **disabled** — one bot token, one polling owner |
 
 Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervisor waits up to 40 s for a previous CoS `pi` to exit (matched by `PI_CODING_AGENT_DIR` in `/proc/<pid>/environ`, so a later re-activated main agent does not block it), and a watchdog issues `/telegram-connect` if the status line still reads `telegram disconnected` after start. Reason: on shutdown the auto-sync hook commits + pushes *after* the unit reports `Stopped`, so a new instance could start while the old one still held the Telegram transport lock — the newcomer then refuses to auto-connect and the bot goes silent until someone connects manually ("Replaced stale lock"). `TimeoutStopSec=60`. Verified with three consecutive restarts, all ending connected with one process.
 
@@ -273,10 +273,10 @@ Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervis
 | `~/.pi/cron/jobs.json` / `~/.pi/cron/runs/` | Cron job store / run history |
 | `~/.pi/agent/partner-agents/partner-agents.list` | Partner agent registry |
 | `~/.pi/agent/partner-agents/export-partner-agent.sh` | Build a partner-agent installer |
-| `~/image-describer/settings.json` | image-describer config: `deepseek-flash`, `describe_images`, describe-images extension |
-| `~/image-describer/.env` | image-describer credentials (`DEEPSEEK_API_KEY`, mode 600) — sourced by its launcher |
-| `~/image-describer/extensions/describe-images/index.ts` | `/describe-images` command and `describe_images` tool |
-| `~/image-describer/README.md` | Setup, flags, model capability table, verification |
+| `~/.pi/agent-image-describer/settings.json` | image-describer config: `deepseek-flash`, `describe_images`, describe-images extension |
+| `~/.pi/agent-image-describer/.env` | image-describer credentials (`DEEPSEEK_API_KEY`, mode 600) — sourced by its launcher |
+| `~/.pi/agent-image-describer/extensions/describe-images/index.ts` | `/describe-images` command and `describe_images` tool |
+| `~/.pi/agent-image-describer/README.md` | Setup, flags, model capability table, verification |
 | `~/.local/bin/pi-image-describer` | Isolated launcher for the image-describer agent |
 | `~/.pi/agents-shared-scripts/session-slim/slim_session.py` | Shared session slimmer; writes readable JSON to `~/.pi/sessions-slim/` |
 | `~/.pi/html/server.mjs` | Dashboard server entry point |

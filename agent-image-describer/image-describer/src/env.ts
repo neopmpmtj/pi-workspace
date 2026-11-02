@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 
 export function agentDir(env: NodeJS.ProcessEnv): string {
-  return env.PI_CODING_AGENT_DIR || path.join(os.homedir(), "pi-agents-experts-grouped", "image-describer", "image-describer");
+  return env.PI_CODING_AGENT_DIR || path.join(os.homedir(), ".pi", "agent-image-describer", "image-describer");
 }
 
 /** `.env` lives beside the agent directory, in the repo root. */

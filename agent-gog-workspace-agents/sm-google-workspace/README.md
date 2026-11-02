@@ -5,7 +5,7 @@ Section manager for Google Workspace. Tools are Pi's defaults — read, bash, ed
 ## Layout
 
 ```
-~/pi-agents-experts-grouped/gog-workspace-agents/sm-google-workspace/   repo root: .env, rate card
+~/.pi/agent-gog-workspace-agents/sm-google-workspace/   repo root: .env, rate card
 └── sm-google-workspace/                                                 Pi agent home (PI_CODING_AGENT_DIR)
     ├── default-model.json    provider + model + thinking
     ├── extensions/chat/      the /ask and /usage commands

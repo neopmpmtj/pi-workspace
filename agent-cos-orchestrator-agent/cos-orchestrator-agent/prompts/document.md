@@ -1,11 +1,11 @@
 ---
 description: Auto-document the most recent fix, implementation, or setup from this session as a detailed report
 ---
-Review the conversation history of this session. Identify the significant fixes, implementations, or system setup that were completed. Generate a detailed documentation report and save it to `/home/pmpmt/pi-agents-experts-grouped/cos-orchestrator-agent/cos-orchestrator-agent/docs/documented-from-session`.
+Review the conversation history of this session. Identify the significant fixes, implementations, or system setup that were completed. Generate a detailed documentation report and save it to `/home/pmpmt/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/docs/documented-from-session`.
 
 ## Report Structure
 
-Follow the exact patterns found in the existing documentation in `/home/pmpmt/pi-agents-experts-grouped/cos-orchestrator-agent/cos-orchestrator-agent/docs/documented-from-session`. Read at least one existing report (e.g., `2026-11-01T1628-sm-google-workspace-agent-setup/2026-11-01T1628-sm-google-workspace-agent-setup.md`) to understand the format before writing. The format is:
+Follow the exact patterns found in the existing documentation in `/home/pmpmt/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/docs/documented-from-session`. Read at least one existing report (e.g., `2026-11-01T1628-sm-google-workspace-agent-setup/2026-11-01T1628-sm-google-workspace-agent-setup.md`) to understand the format before writing. The format is:
 
 ### Required sections
 
@@ -34,7 +34,7 @@ Not every report needs every section. If there was no research phase, skip it. I
 
 ### Naming and location
 
-- Create a directory: `/home/pmpmt/pi-agents-experts-grouped/cos-orchestrator-agent/cos-orchestrator-agent/docs/documented-from-session/<kebab-case-topic>/`
+- Create a directory: `/home/pmpmt/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/docs/documented-from-session/<kebab-case-topic>/`
 - Create the report file: `<kebab-case-topic>.md` inside that directory
 - Prefix filename with a <timestamp>
 - The directory name should match the report filename (minus .md)

@@ -2,7 +2,7 @@
 
 This Pi agent describes images. A single image already in the conversation can be read directly. A directory of images is handled by the `describe-images` extension: one vision request per file, oldest first, with the descriptions returned in the session.
 
-Launch with `pi-image-describer`. That launcher loads only `~/pi-agents-experts-grouped/image-describer/.env`. It does not read the main agent's `.env`.
+Launch with `pi-image-describer`. That launcher loads only `~/.pi/agent-image-describer/.env`. It does not read the main agent's `.env`.
 
 Quick reference: [docs/CHEATSHEET.md](docs/CHEATSHEET.md).
 
@@ -116,7 +116,7 @@ Runtime is Node.js v24.21.0, the version `pi-image-describer` pins. From this di
 npm install
 ```
 
-`DEEPSEEK_API_KEY` is already the key this agent uses. To call the other models, add `OPENAI_API_KEY` or `GEMINI_API_KEY` to `~/pi-agents-experts-grouped/image-describer/.env`. Do not replace that file from `.env.example` if it already exists. Restart via `pi-image-describer` so the launcher exports the new key.
+`DEEPSEEK_API_KEY` is already the key this agent uses. To call the other models, add `OPENAI_API_KEY` or `GEMINI_API_KEY` to `~/.pi/agent-image-describer/.env`. Do not replace that file from `.env.example` if it already exists. Restart via `pi-image-describer` so the launcher exports the new key.
 
 ## Dashboard
 
@@ -129,14 +129,14 @@ The API and the site run in two terminals. The `dashboard` script is in this dir
 Terminal 1, the API, from this directory:
 
 ```bash
-cd ~/pi-agents-experts-grouped/image-describer/image-describer
+cd ~/.pi/agent-image-describer/image-describer
 npm run dashboard
 ```
 
 Terminal 2, the site:
 
 ```bash
-cd ~/pi-agents-experts-grouped/image-describer/image-describer/dashboard
+cd ~/.pi/agent-image-describer/image-describer/dashboard
 npm run dev
 ```
 
@@ -175,7 +175,7 @@ The page has two views, Metrics and Settings, reached at `#metrics` and `#settin
 
 ### Model rates
 
-Prices come from `model-rates.json` in the repo root (`~/pi-agents-experts-grouped/image-describer/model-rates.json`), beside `.env`. A service outside this repository keeps it current, for example once a day. The file is not in git. `model-rates.example.json` beside it is the template. `GET /api/rates` reads the file on every request, so a replaced file is used the next time the page loads, without restarting the API. It returns `{ "source": "file", "updatedAt": ..., "models": ... }`. A supported model missing from the file uses its built-in rate. When the file is missing, `source` is `built-in` and the rates are the table in `dashboard/src/rates.ts`. When the file is malformed, the API logs one `[FAIL]` line, returns the built-in table, and adds `error` with the reason. The chart says so.
+Prices come from `model-rates.json` in the repo root (`~/.pi/agent-image-describer/model-rates.json`), beside `.env`. A service outside this repository keeps it current, for example once a day. The file is not in git. `model-rates.example.json` beside it is the template. `GET /api/rates` reads the file on every request, so a replaced file is used the next time the page loads, without restarting the API. It returns `{ "source": "file", "updatedAt": ..., "models": ... }`. A supported model missing from the file uses its built-in rate. When the file is missing, `source` is `built-in` and the rates are the table in `dashboard/src/rates.ts`. When the file is malformed, the API logs one `[FAIL]` line, returns the built-in table, and adds `error` with the reason. The chart says so.
 
 ```json
 {

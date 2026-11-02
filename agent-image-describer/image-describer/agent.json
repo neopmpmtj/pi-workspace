@@ -3,10 +3,10 @@
   "launcher": "pi-image-describer",
   "defaultPrompt": "/describe-images",
   "call": "/describe-images [--dir <abs path>]",
-  "purpose": "Describes every new image in the inbox `~/pi-agents-experts-grouped/image-describer/images` (one UUID subfolder per image) and writes `<image>.md` beside each. Prints the run line and `Saved` paths, never the descriptions.",
-  "inbox": "~/pi-agents-experts-grouped/image-describer/images",
-  "latestRun": "~/pi-agents-experts-grouped/image-describer/image-describer/front-and-center.md",
-  "contract": "~/pi-agents-experts-grouped/image-describer/image-describer/docs/CALLING.md",
+  "purpose": "Describes every new image in the inbox `~/.pi/agent-image-describer/images` (one UUID subfolder per image) and writes `<image>.md` beside each. Prints the run line and `Saved` paths, never the descriptions.",
+  "inbox": "~/.pi/agent-image-describer/images",
+  "latestRun": "~/.pi/agent-image-describer/image-describer/front-and-center.md",
+  "contract": "~/.pi/agent-image-describer/image-describer/docs/CALLING.md",
   "commands": [
     {
       "name": "/describe-images",

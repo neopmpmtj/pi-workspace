@@ -76,7 +76,7 @@ export async function runAsk(input: AskInput, deps: AskDeps): Promise<AskOutcome
 
   if (!deps.registry.hasConfiguredAuth(model)) {
     // Rejected before any request: a missing key must never look like a paid run.
-    throw new Error(`No API key configured for provider "${model.provider}". Add it to ~/pi-agents-experts-grouped/web-master/.env.`);
+    throw new Error(`No API key configured for provider "${model.provider}". Add it to ~/.pi/agent-web-master/.env.`);
   }
 
   const systemPrompt = await readAskSystemPrompt(deps.env, input.prompt);

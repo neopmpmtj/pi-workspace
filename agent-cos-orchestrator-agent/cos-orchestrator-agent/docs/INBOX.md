@@ -8,7 +8,7 @@ through when it ships, with the date; do not delete it, so the history stays rea
 - [ ] More canned commands, in the spirit of `/gdrive-root` and `/inbox-new` — today's calendar,
       recent documents, unread from one sender, Drive search by name. Each one is a fixed
       `gog` call in `src/gog.ts` plus a command registration, so it costs no tokens.
-      Home: `~/pi-agents-experts-grouped/gog-workspace-agents/sm-google-workspace/sm-google-workspace`.
+      Home: `~/.pi/agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace`.
 - [ ] `--limit N` on the list-shaped canned commands (start with `/inbox-new`), so a busy inbox
       does not print forty rows. Same place.
 - [x] ~~Confirm the keyring passphrase in that repo's `.env` is the current one; it was carried

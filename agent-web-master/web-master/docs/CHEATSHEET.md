@@ -5,7 +5,7 @@ A plain chat agent on Pi with a token ledger. Two ways to spend money, one place
 ## Layout
 
 ```
-~/pi-agents-experts-grouped/web-master/                    repo root · .env · model-rates.json · tool-rates.json · README
+~/.pi/agent-web-master/                    repo root · .env · model-rates.json · tool-rates.json · README
 └── web-master/                  PI_CODING_AGENT_DIR
     ├── AGENTS.md                prompt (short on purpose: it is billed every turn)
     ├── APPEND_SYSTEM.md         environment notes
@@ -34,10 +34,10 @@ pi-web-master                              # TUI
 pi-web-master -p '/ask "your question"'    # one provider call, no chat turn
 pi-web-master -p "your question"           # chat turn, web tools
 pi-web-master -p "/ask --help"
-cd ~/pi-agents-experts-grouped/web-master/web-master && npm run dashboard   # http://127.0.0.1:8789
+cd ~/.pi/agent-web-master/web-master && npm run dashboard   # http://127.0.0.1:8789
 ```
 
-`~/.local/bin/pi-web-master` sources **only** `~/pi-agents-experts-grouped/web-master/.env`, reads `default-web-master-model.json`,
+`~/.local/bin/pi-web-master` sources **only** `~/.pi/agent-web-master/.env`, reads `default-web-master-model.json`,
 and execs `pi --provider … --model … --thinking … --no-builtin-tools`. The switch applies to
 the **next launch**.
 
@@ -180,7 +180,7 @@ the chat side, and the next command rewrites its own row.
 | Tools | `web_search`, `fetch_content`, `get_search_content` |
 | Route | Brave → keyless Exa MCP → DuckDuckGo (`searchRouting`, `fallbackOn` typed failures) |
 | Workflow | `none` — no curator, no summary model, raw results |
-| Keys | `BRAVE_API_KEY`, `PERPLEXITY_API_KEY` optional in `~/pi-agents-experts-grouped/web-master/.env` |
+| Keys | `BRAVE_API_KEY`, `PERPLEXITY_API_KEY` optional in `~/.pi/agent-web-master/.env` |
 | Isolation | `PI_CODING_AGENT_DIR` wins outright, so `web-search.json` and `web-search-cache/` stay in this agent |
 
 Two rules the prompt enforces: **never pass `provider`** (it would bypass the metered route),
@@ -212,7 +212,7 @@ Same thing by hand in `web-master/web-search.json` — read on every search, no 
 - Do not set `provider` beside `searchRouting`: a single-provider field wins and turns routing
   off.
 - New provider means a new price: add `providers.<name>.perSearch` to
-  `~/pi-agents-experts-grouped/web-master/tool-rates.json`, or every one of its searches reads `unrated`.
+  `~/.pi/agent-web-master/tool-rates.json`, or every one of its searches reads `unrated`.
 
 Verify which rung answered:
 
@@ -268,8 +268,8 @@ Full transcripts stay in `sessions/`.
 
 | Path | Why |
 |---|---|
-| `~/pi-agents-experts-grouped/web-master/.env` | the three keys, mode 600 |
-| `~/pi-agents-experts-grouped/web-master/model-rates.json` | our prices (gitignored; template `.example.json`) |
+| `~/.pi/agent-web-master/.env` | the three keys, mode 600 |
+| `~/.pi/agent-web-master/model-rates.json` | our prices (gitignored; template `.example.json`) |
 | `web-master/default-web-master-model.json` | what the launcher will use next |
 | `web-master/agent.json` | what the orchestrator reads: launcher, `/ask` call, purpose |
 | `web-master/logs/ledger.sqlite` | every call |
@@ -279,7 +279,7 @@ Full transcripts stay in `sessions/`.
 
 | Symptom | Cause |
 |---|---|
-| `[FAIL] No API key configured for provider "x"` | key missing from `~/pi-agents-experts-grouped/web-master/.env` |
+| `[FAIL] No API key configured for provider "x"` | key missing from `~/.pi/agent-web-master/.env` |
 | `[FAIL] Unknown model "prov"` | the model is not in that provider's cached catalog |
 | `[FAIL] table … has no column` | schema bumped; delete `logs/ledger.sqlite` |
 | `[FAIL] Request aborted` | `--web-master-timeout` fired; a failed row with 0 tokens was written |

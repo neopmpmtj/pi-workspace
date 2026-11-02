@@ -5,13 +5,13 @@ For another agent calling this one from the shell. Human reference: [CHEATSHEET.
 ## Default call
 
 ```bash
-cd ~/pi-agents-experts-grouped/image-describer/image-describer && pi-image-describer -p "/describe-images"
-cd ~/pi-agents-experts-grouped/image-describer/image-describer && pi-image-describer -p "/describe-images --dir <absolute path>"
+cd ~/.pi/agent-image-describer/image-describer && pi-image-describer -p "/describe-images"
+cd ~/.pi/agent-image-describer/image-describer && pi-image-describer -p "/describe-images --dir <absolute path>"
 ```
 
 - Always send a slash command. Natural language starts this agent's chat model, which sends its whole prompt as a new session; the slash command does not start a chat turn.
 - Run from the agent home: `logs/metrics.sqlite` and the session folder are relative to the working directory.
-- Omit `--dir` to process the whole inbox (`images-dir.json`, currently `~/pi-agents-experts-grouped/image-describer/images`).
+- Omit `--dir` to process the whole inbox (`images-dir.json`, currently `~/.pi/agent-image-describer/images`).
 - Inbox layout: one UUID-named subfolder per image. A subfolder with two or more files, or an image that already has `<image>.md` beside it, is skipped.
 
 <!-- BEGIN GENERATED: commands -->
@@ -85,6 +85,6 @@ Save flags write a settings file and make no vision call. Use them only when the
 
 ## Reading results
 
-- Latest run, every success: `~/pi-agents-experts-grouped/image-describer/image-describer/front-and-center.md`.
+- Latest run, every success: `~/.pi/agent-image-describer/image-describer/front-and-center.md`.
 - One image: `<image>.md` beside the image.
 - Read these only when the user asks about the content. Do not open the image itself.

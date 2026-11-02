@@ -5,7 +5,7 @@ For another agent calling this one from the shell. Human reference: [CHEATSHEET.
 ## Default call
 
 ```bash
-cd ~/pi-agents-experts-grouped/web-master/web-master && pi-web-master -p "/ask <question>"
+cd ~/.pi/agent-web-master/web-master && pi-web-master -p "/ask <question>"
 ```
 
 This is the call whenever you delegate to web-master, including a question about the web. `/ask` is one provider call. It does not load the chat bootstrap.
@@ -13,7 +13,7 @@ This is the call whenever you delegate to web-master, including a question about
 ## Research call
 
 ```bash
-cd ~/pi-agents-experts-grouped/web-master/web-master && pi-web-master -p "<question>"
+cd ~/.pi/agent-web-master/web-master && pi-web-master -p "<question>"
 ```
 
 Use this only when the user asked for advanced search, deep search, or research. The message must not start with `/ask`. It starts one chat turn, which loads the bootstrap files and uses `web_search`, `fetch_content`, and `get_search_content` itself. Do not name a provider on those tools. The caller sends the question. The process exits when that turn finishes.

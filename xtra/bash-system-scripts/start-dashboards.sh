@@ -6,12 +6,12 @@
 #   image describer page        http://127.0.0.1:5173
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 log_dir="$root/.dashboard-logs"
-orch="$root/cos-orchestrator-agent/cos-orchestrator-agent"
-describer="$root/image-describer/image-describer"
+orch="$root/agent-cos-orchestrator-agent/cos-orchestrator-agent"
+describer="$root/agent-image-describer/image-describer"
 describer_ui="$describer/dashboard"
-web_master="$root/web-master/web-master"
+web_master="$root/agent-web-master/web-master"
 
 mkdir -p "$log_dir"
 

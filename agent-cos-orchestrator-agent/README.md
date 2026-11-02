@@ -14,7 +14,7 @@ web-master are the siblings. `/ask`, `/usage`, ingested chat turns, and the dash
 ## Layout
 
 ```
-~/pi-agents-experts-grouped/cos-orchestrator-agent/   repo root: .env, rate card, docs
+~/.pi/agent-cos-orchestrator-agent/   repo root: .env, rate card, docs
 └── cos-orchestrator-agent/                           Pi agent home (PI_CODING_AGENT_DIR)
     ├── default-model.json    provider + model + effort; written by the dashboard
     ├── extensions/chat/      the /ask command
@@ -110,7 +110,7 @@ than migrating: sessions rebuild the chat side, and the next command rewrites it
 ## Dashboard
 
 ```bash
-cd ~/pi-agents-experts-grouped/cos-orchestrator-agent/cos-orchestrator-agent && npm run dashboard     # http://127.0.0.1:8787
+cd ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent && npm run dashboard     # http://127.0.0.1:8787
 ```
 
 Port 8787 is this dashboard. The image describer API uses 8788.

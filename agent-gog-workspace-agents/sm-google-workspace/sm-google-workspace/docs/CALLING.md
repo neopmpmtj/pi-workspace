@@ -5,8 +5,8 @@ For another agent calling this one from the shell. Human reference: [README.md](
 ## Default call
 
 ```bash
-cd ~/pi-agents-experts-grouped/gog-workspace-agents/sm-google-workspace && pi-sm-google-workspace -p "/inbox-new"
-cd ~/pi-agents-experts-grouped/gog-workspace-agents/sm-google-workspace && pi-sm-google-workspace -p "List all folders in the root of my Google Drive"
+cd ~/.pi/agent-gog-workspace-agents/sm-google-workspace && pi-sm-google-workspace -p "/inbox-new"
+cd ~/.pi/agent-gog-workspace-agents/sm-google-workspace && pi-sm-google-workspace -p "List all folders in the root of my Google Drive"
 ```
 
 - Run from the agent repo root (the folder holding `.env`), so relative paths and the ledger resolve.

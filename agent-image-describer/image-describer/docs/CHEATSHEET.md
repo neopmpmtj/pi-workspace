@@ -1,6 +1,6 @@
 # image-describer cheatsheet
 
-Agent home: `~/pi-agents-experts-grouped/image-describer/image-describer`. Launcher: `pi-image-describer` (loads only `~/pi-agents-experts-grouped/image-describer/.env`, then runs `pi`).
+Agent home: `~/.pi/agent-image-describer/image-describer`. Launcher: `pi-image-describer` (loads only `~/.pi/agent-image-describer/.env`, then runs `pi`).
 
 ---
 
@@ -132,14 +132,14 @@ Changing mode, a saved effort, the saved vision provider, the saved language, or
 | `<image-folder>/<filename>.md` | Per-image description, beside that image. A folder with this second file is skipped on the next run. |
 | `logs/metrics.sqlite` | One row per image (duration, tokens, mode, effort, language, status; not description text). |
 | `logs/summaries.sqlite` | One row per image whose description opened with `## Summary`: that paragraph, the absolute image directory, the filename, the time, the mode, the language, the model, and the run id. |
-| `~/pi-agents-experts-grouped/image-describer/image-describer/default-mode.json` | Which preset is default (exactly one `true`). |
-| `~/pi-agents-experts-grouped/image-describer/image-describer/default-provider.json` | Saved vision provider and model. A missing file means `deepseek-flash`. |
-| `~/pi-agents-experts-grouped/image-describer/image-describer/default-language.json` | Saved language name. A missing file means `English`. |
-| `~/pi-agents-experts-grouped/image-describer/image-describer/images-dir.json` | Standing images inbox (`{ "dir": "/absolute/path" }`). External scripts read this file. A missing file requires `--dir`. |
-| `~/pi-agents-experts-grouped/image-describer/image-describer/prompts.json` | Optional per-mode prompt overrides (dashboard or manual). |
-| `~/pi-agents-experts-grouped/image-describer/image-describer/front-and-center.md` | Latest run that described images. Header has the run id, time, and absolute directory. Body is every success in that run. |
+| `~/.pi/agent-image-describer/image-describer/default-mode.json` | Which preset is default (exactly one `true`). |
+| `~/.pi/agent-image-describer/image-describer/default-provider.json` | Saved vision provider and model. A missing file means `deepseek-flash`. |
+| `~/.pi/agent-image-describer/image-describer/default-language.json` | Saved language name. A missing file means `English`. |
+| `~/.pi/agent-image-describer/image-describer/images-dir.json` | Standing images inbox (`{ "dir": "/absolute/path" }`). External scripts read this file. A missing file requires `--dir`. |
+| `~/.pi/agent-image-describer/image-describer/prompts.json` | Optional per-mode prompt overrides (dashboard or manual). |
+| `~/.pi/agent-image-describer/image-describer/front-and-center.md` | Latest run that described images. Header has the run id, time, and absolute directory. Body is every success in that run. |
 | `sessions/**/*.jsonl` | Session history (dashboard chat cost). |
-| `~/pi-agents-experts-grouped/image-describer/model-rates.json` | USD rates per model with effective dates, written by an external service. Missing or malformed means the built-in rates. Template: `model-rates.example.json`. |
+| `~/.pi/agent-image-describer/model-rates.json` | USD rates per model with effective dates, written by an external service. Missing or malformed means the built-in rates. Template: `model-rates.example.json`. |
 
 **Image types:** JPEG/JPG, PNG, WebP, GIF, TIFF, BMP, HEIC/HEIF (HEIC may fail decode locally). Oldest-first ordering. GIF/TIFF: first frame only.
 
@@ -152,8 +152,8 @@ Changing mode, a saved effort, the saved vision provider, the saved language, or
 **Run locally**
 
 ```bash
-cd ~/pi-agents-experts-grouped/image-describer/image-describer && npm run dashboard          # API → 127.0.0.1:8788
-cd ~/pi-agents-experts-grouped/image-describer/image-describer/dashboard && npm run dev      # UI → http://127.0.0.1:5173
+cd ~/.pi/agent-image-describer/image-describer && npm run dashboard          # API → 127.0.0.1:8788
+cd ~/.pi/agent-image-describer/image-describer/dashboard && npm run dev      # UI → http://127.0.0.1:5173
 ```
 
 **URLs**
@@ -166,7 +166,7 @@ cd ~/pi-agents-experts-grouped/image-describer/image-describer/dashboard && npm 
 **Build static site**
 
 ```bash
-cd ~/pi-agents-experts-grouped/image-describer/image-describer/dashboard && npm install && npm run build
+cd ~/.pi/agent-image-describer/image-describer/dashboard && npm install && npm run build
 ```
 
 **Useful env (API)**
@@ -204,7 +204,7 @@ fuser -k 8788/tcp && npm run dashboard
 
 ## Project maintenance CLI
 
-From `~/pi-agents-experts-grouped/image-describer/image-describer`:
+From `~/.pi/agent-image-describer/image-describer`:
 
 ```bash
 npm install

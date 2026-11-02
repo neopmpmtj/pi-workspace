@@ -1,10 +1,10 @@
 # image-describer — creation report
 
-`image-describer` is a small, single-purpose, read-only pi agent that looks at images and describes them. It lives entirely in its own isolated workspace at `~/.pi/image-describer` (own `PI_CODING_AGENT_DIR`, own `AGENTS.md`, own `.env`, own git repo) and is started with its own launcher, `~/.local/bin/pi-image-describer`, which never sources the main agent's secrets. It runs on a single model, `deepseek-flash` (the one DeepSeek model that accepts image input), at thinking level `low`, with only the read-only tools `read`, `grep`, `find`, `ls`. Created on **2026-10-22** on host **pmpmt-ThinkPad-T15-Gen-2i**.
+`image-describer` is a small, single-purpose, read-only pi agent that looks at images and describes them. It lives entirely in its own isolated workspace at `~/.pi/agent-image-describer` (own `PI_CODING_AGENT_DIR`, own `AGENTS.md`, own `.env`, own git repo) and is started with its own launcher, `~/.local/bin/pi-image-describer`, which never sources the main agent's secrets. It runs on a single model, `deepseek-flash` (the one DeepSeek model that accepts image input), at thinking level `low`, with only the read-only tools `read`, `grep`, `find`, `ls`. Created on **2026-10-22** on host **pmpmt-ThinkPad-T15-Gen-2i**.
 
 ## 1. Files created
 
-`ls -la ~/.pi/image-describer`:
+`ls -la ~/.pi/agent-image-describer`:
 
 ```
 total 288
@@ -41,15 +41,15 @@ Launcher: `/home/pmpmt/.local/bin/pi-image-describer` (mode `755`).
 
 The global wrapper `~/.local/bin/pi` hardcodes `ENV_FILE="$HOME/.pi/agent/.env"` and sources it under `set -a`, so **any** agent started with plain `pi` inherits all 16 of the main agent's environment variables — DeepSeek, OpenAI and Gemini keys, Google OAuth client credentials, gog keyring passwords, the Postgres password hash, and so on.
 
-`pi-image-describer` deliberately does not go through that wrapper. It sources only `~/.pi/image-describer/.env` (a one-line file), so exactly one secret — `DEEPSEEK_API_KEY` — is in scope. Measured empirically in a clean `env -i` shell that sources only the agent's `.env`: **1** of the 16 main-agent secret variables is present.
+`pi-image-describer` deliberately does not go through that wrapper. It sources only `~/.pi/agent-image-describer/.env` (a one-line file), so exactly one secret — `DEEPSEEK_API_KEY` — is in scope. Measured empirically in a clean `env -i` shell that sources only the agent's `.env`: **1** of the 16 main-agent secret variables is present.
 
-It also sets `PI_CODING_AGENT_DIR="$HOME/.pi/image-describer"` so config, sessions and trust are fully separate, and pins `PATH` to node `v24.21.0` (the version pi is installed under) before `exec`.
+It also sets `PI_CODING_AGENT_DIR="$HOME/.pi/agent-image-describer"` so config, sessions and trust are fully separate, and pins `PATH` to node `v24.21.0` (the version pi is installed under) before `exec`.
 
 Residual nuance: the launcher cannot unset variables that are *already* exported in the parent shell. Isolation holds because an ordinary interactive shell does not source the main agent's `.env` — only a launcher does. If you ever run `pi-image-describer` from a shell that has already sourced `~/.pi/agent/.env`, those variables are inherited.
 
 ## 3. Inventory: main agent vs image-describer
 
-| Aspect | Main agent (`~/.pi/agent`) | image-describer (`~/.pi/image-describer`) |
+| Aspect | Main agent (`~/.pi/agent`) | image-describer (`~/.pi/agent-image-describer`) |
 |---|---|---|
 | AGENTS.md | orchestrator role | read-only image describer persona |
 | APPEND_SYSTEM.md | full addendum (secrets rule, postgres env, working style, partner-agent protocol) | 6-line environment note |
@@ -71,14 +71,14 @@ Residual nuance: the launcher cannot unset variables that are *already* exported
 
 ## 4. Deliberately left out — and how to add it back
 
-- **npm package** — install while pointed at the agent: `PI_CODING_AGENT_DIR=~/.pi/image-describer pi install npm:<pkg>`; it lands in that agent's `packages` list.
-- **Local extension** — copy the `.ts` into `~/.pi/image-describer/extensions/`, then add `"+extensions/<file>"` to the `extensions` array in `settings.json`.
+- **npm package** — install while pointed at the agent: `PI_CODING_AGENT_DIR=~/.pi/agent-image-describer pi install npm:<pkg>`; it lands in that agent's `packages` list.
+- **Local extension** — copy the `.ts` into `~/.pi/agent-image-describer/extensions/`, then add `"+extensions/<file>"` to the `extensions` array in `settings.json`.
 - **Builtin extension** — add `"+builtin:codemode"` (or `llama.cpp`, `mcp`, `tool-search`) to the same `extensions` array.
-- **Skill** — copy the skill directory into `~/.pi/image-describer/skills/` and add `"+skills/<name>/SKILL.md"` to `settings.json` `skills`.
-- **Extra provider key** — add the variable to `~/.pi/image-describer/.env`, then add the matching provider block to `auth.json` (e.g. `"gemini": {"type":"api_key","key":"$GEMINI_API_KEY"}`) and the model id to `enabledModels`.
+- **Skill** — copy the skill directory into `~/.pi/agent-image-describer/skills/` and add `"+skills/<name>/SKILL.md"` to `settings.json` `skills`.
+- **Extra provider key** — add the variable to `~/.pi/agent-image-describer/.env`, then add the matching provider block to `auth.json` (e.g. `"gemini": {"type":"api_key","key":"$GEMINI_API_KEY"}`) and the model id to `enabledModels`.
 - **Write access** — `"defaultTools": ["read", "write", "edit", "bash", "grep", "find", "ls"]`.
 - **Remote / backup** — `gh repo create neopmpmtj/image-describer --public --source . --push` from the agent directory.
-- **Registry** — `echo ~/.pi/image-describer >> ~/.pi/agent/partner-agents/partner-agents.list`.
+- **Registry** — `echo ~/.pi/agent-image-describer >> ~/.pi/agent/partner-agents/partner-agents.list`.
 
 ## 5. Verification
 
@@ -168,5 +168,5 @@ The five tracked modifications are exactly the pre-existing ones from earlier wo
 - Read-only means descriptions live only in the chat transcript; nothing is saved to disk.
 - No bash, so no EXIF/`identify`/`exiftool` metadata inspection, no OCR tooling beyond the model's own vision.
 - No web search or fetch tools.
-- Single provider/key: if the DeepSeek key is rotated in `~/.pi/agent/.env`, `~/.pi/image-describer/.env` must be updated too (they are copies, not links — deliberate).
+- Single provider/key: if the DeepSeek key is rotated in `~/.pi/agent/.env`, `~/.pi/agent-image-describer/.env` must be updated too (they are copies, not links — deliberate).
 - Nothing is backed up: no remote, not in `partner-agents.list`.

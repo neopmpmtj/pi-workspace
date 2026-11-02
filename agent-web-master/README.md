@@ -18,7 +18,7 @@ settings, and web search with its own meter.
 ## Layout
 
 ```
-~/pi-agents-experts-grouped/web-master/                 repo root: .env, rate card, docs
+~/.pi/agent-web-master/                 repo root: .env, rate card, docs
 └── web-master/               Pi agent home (PI_CODING_AGENT_DIR)
     ├── default-web-master-model.json    provider + model + effort; written by the dashboard
     ├── web-search.json       search route: brave → exa → duckduckgo
@@ -110,7 +110,7 @@ pi-web-master -p "What is the current Node.js LTS version?"
 - Route: **Brave** (needs `BRAVE_API_KEY`) → **keyless Exa MCP** → **DuckDuckGo** (free).
   With no keys at all it still works, through Exa.
 - `workflow: "none"` — no curator, no summary model, nothing summarised behind your back.
-- Keys go in `~/pi-agents-experts-grouped/web-master/.env` (see `.env.example`).
+- Keys go in `~/.pi/agent-web-master/.env` (see `.env.example`).
 
 ### Changing the search order
 
@@ -172,7 +172,7 @@ unknown provider is never shown as free.
 ## Dashboard
 
 ```bash
-cd ~/pi-agents-experts-grouped/web-master/web-master && npm run dashboard     # http://127.0.0.1:8789
+cd ~/.pi/agent-web-master/web-master && npm run dashboard     # http://127.0.0.1:8789
 ```
 
 One process serves both the API and the page: no Vite, no second install, no CORS setup.

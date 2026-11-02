@@ -9,8 +9,8 @@ export function agentDir(env: NodeJS.ProcessEnv = process.env): string {
   if (configured) return configured;
   return path.join(
     env.HOME ?? "",
-    "pi-agents-experts-grouped",
-    "gog-workspace-agents",
+    ".pi",
+    "agent-gog-workspace-agents",
     "sm-google-workspace",
     "sm-google-workspace",
   );

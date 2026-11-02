@@ -4,7 +4,7 @@
   "defaultPrompt": "/ask",
   "call": "/ask <question>",
   "purpose": "Answers a delegated question, including one about the web, with one /ask call. Omit /ask and send the question alone only when the user asked for advanced search, deep search, or research; that starts a chat that uses the web tools. Do not call /usage unless the user asks about this agent's usage.",
-  "contract": "~/pi-agents-experts-grouped/web-master/web-master/docs/CALLING.md",
+  "contract": "~/.pi/agent-web-master/web-master/docs/CALLING.md",
   "commands": [
     {
       "name": "/usage",
