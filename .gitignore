@@ -100,3 +100,6 @@ agent/agents/explore.md
 
 # Per-machine Telegram bot config (botToken ref + owner id) — never shared
 agent/telegram.json
+
+# Prompt-capture runtime state (rewritten every turn)
+agent/state/prompt-capture/
