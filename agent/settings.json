@@ -55,11 +55,9 @@
     "deepseek-flash"
   ],
   "extensions": [
-    "+extensions/secret-scrubber.ts",
     "+extensions/cron.ts",
     "+extensions/git-commit.ts",
     "+extensions/observability/index.ts",
-    "+extensions/pi-prompt-capture.ts",
     "+builtin:codemode",
     "+builtin:llama.cpp",
     "+builtin:mcp",
