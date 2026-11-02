@@ -91,3 +91,9 @@ agent/skills/agent-replica-adapt/
 # ── Cron store & run history (machine-local state, never synced) ──
 cron/jobs.json
 cron/runs/
+
+# ── Machine-local runtime dirs (regenerated, never synced) ──
+agent/tmp/
+agent/pi-web-access/
+# scaffolded by the agents-pool extension on first run; not shared content
+agent/agents/explore.md
