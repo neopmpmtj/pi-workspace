@@ -975,7 +975,7 @@
     ],
     "lastModified": 1793265947000,
     "etag": "W/\"63a5510c277fa68dc8d8955da1c7b3e9\"",
-    "checkedAt": 1793535230081
+    "checkedAt": 1793612642471
   },
   "deepseek": {
     "models": [
@@ -1064,7 +1064,7 @@
     ],
     "lastModified": 1793020394000,
     "etag": "W/\"833a51b4211b57d882564ca5f56383e8\"",
-    "checkedAt": 1793535230192
+    "checkedAt": 1793612642158
   },
   "openai": {
     "models": [
