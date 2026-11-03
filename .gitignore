@@ -108,3 +108,6 @@ tmp/pi-telegram/
 cos-orchestrator-agent/cos-orchestrator-agent/tmp/
 
 z.old/
+
+# Last archive-to-target run (one move, machine-local)
+apps-scripts/archive-to-target-full-tree/archive-to-target-full-tree/archive-to-target-full-tree.last.json
