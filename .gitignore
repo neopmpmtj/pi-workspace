@@ -101,6 +101,9 @@ agent/telegram.json
 # Prompt-capture runtime state (rewritten every turn)
 agent/state/prompt-capture/
 
+# Per-machine model catalog cache, at any depth (agent dirs, sub-agents)
+models-store.json
+
 # Per-machine Telegram bot config, at any depth (agent dirs, sub-agents)
 **/telegram.json
 # Runtime state of bridge/sub-agents
