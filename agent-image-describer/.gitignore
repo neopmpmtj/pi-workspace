@@ -13,7 +13,7 @@ trust.json
 *.tmp
 *.log
 
-image-describer/models-store.json
+models-store.json
 
 image-describer/docs/archive/images/
 image-describer/front-and-center.md
