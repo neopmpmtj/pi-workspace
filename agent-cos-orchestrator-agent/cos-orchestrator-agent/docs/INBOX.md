@@ -74,8 +74,10 @@ Plan: `docs/runbooks/lan-server-full-access-and-local-agent.md`.
 - [x] ~~Install pi on the server (user `pmpmt`).~~ 2025-11-03: pi 1.4.0 on node v24.22.2, nvm
       default set, `~/.local/bin/pi` wrapper, PATH/nvm blocks in `.bashrc` and `.profile`. Runbook:
       `docs/runbooks/server-pi-install.md`. No credentials yet — `~/.pi/agent` does not exist.
-- [ ] Decide the server agent's model: copy API keys into `/home/pmpmt/.pi/agent/.env`, or wait for
-      the 3060 driver fix and point pi at a local Ollama endpoint.
+- [x] ~~Decide the server agent's model.~~ 2025-11-03: API keys now, local model later (user
+      decision). `/home/pmpmt/.pi/agent/.env` holds the keys (600) and `auth.json` only references
+      them via `!$HOME/.pi/agent/key <NAME>` — pi resolves the command per use. All three providers
+      verified with live calls after the change.
 - [ ] Eventually give the server's pi its own agent home + ledger and a laptop-side shim so CoS can
       call it the way it calls the local siblings.
 - [ ] Safeguards, once the organisation work is finished: re-scope `piadmin` sudo to the commands

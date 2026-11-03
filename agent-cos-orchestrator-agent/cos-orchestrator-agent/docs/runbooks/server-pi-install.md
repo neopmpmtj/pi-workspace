@@ -65,18 +65,51 @@ ssh lan-storage 'sudo -u pmpmt -H env -i HOME=/home/pmpmt PATH=/home/pmpmt/.loca
 #  1.4.0  ← proves the wrapper does not depend on nvm being sourced
 ```
 
-## Not done, deliberately
+## Credentials: `.env` holds the keys, `auth.json` only points at them (2025-11-03)
 
-- **No credentials.** `~/.pi/agent/` does not exist yet; it is created on first run. Until a provider
-  key exists (or a local model is wired up), every prompt fails at the provider call.
-- Options, in order of effort: copy `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `OPENAI_API_KEY` into
-  `/home/pmpmt/.pi/agent/.env` (mode 600) for API models; or wait for the RTX 3060 driver work and
-  point pi at a local Ollama endpoint (`http://127.0.0.1:11434/v1`), which is the eventual plan.
-- The TUI needs a terminal: run `ssh -t lan-storage pi` or a real session on the box. `pi -p "…"`
-  works non-interactively once a model is configured.
+Pi accepts a **command** as an API key when it is prefixed with `!` (see `docs/providers.md`,
+"Load an API key from a command"): it runs the command on first use and caches stdout for the
+process lifetime. That is the supported indirection, and it is what this host uses — no secret ever
+lives in `auth.json`.
 
-## First run
+```
+/home/pmpmt/.pi/agent/
+  .env       600  pmpmt   DEEPSEEK_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY
+  key        700  pmpmt   prints one named value from .env, exits non-zero if absent
+  auth.json  600  pmpmt   { "deepseek": { "type": "api_key", "key": "!$HOME/.pi/agent/key DEEPSEEK_API_KEY" }, … }
+```
+
+The reader, because JSON cannot spell "read a variable":
 
 ```bash
-ssh -t lan-storage pi          # interactive, after credentials exist
+#!/bin/bash
+set -u
+file="${PI_AGENT_ENV:-$HOME/.pi/agent/.env}"
+[ -r "$file" ] || exit 1
+value="$(awk -F= -v want="$1" '$1 == want { sub(/^[^=]*=/, ""); print; exit }' "$file")"
+[ -n "$value" ] || { echo "key: $1 not found in $file" >&2; exit 1; }
+printf '%s\n' "$value"
 ```
+
+`$HOME` expands because pi runs the command through a shell — verified, not assumed: the first
+`auth.json` written this way used `$HOME/…` and the call succeeded, which exec-without-shell would
+not have. `PI_AGENT_ENV` allows pointing at a different env file without touching `auth.json`.
+
+Keys were transferred by piping JSON from the laptop over SSH (`umask 077`) so no key appeared on a
+command line. To rotate: edit `.env` only. To revoke a provider: delete its entry in `auth.json`.
+
+## Verified end to end (2025-11-03, after the indirection)
+
+```
+pi --provider deepseek --model deepseek-flash -p "…"   → ENVREF_OK
+pi --provider google   --model gemini-3.8-flash -p "…" → ENVREF_GOOGLE
+pi --provider openai   --model gpt-6.1-sol     -p "…"  → ENVREF_OPENAI
+```
+
+## Still open
+
+- No default model is pinned: `pi` with no flags falls back to its own default. Add
+  `<agent-dir>/settings.json` (`defaultProvider`, `defaultModel`, `defaultThinkingLevel`,
+  `defaultTools`) when the dedicated server agent is created.
+- The TUI needs a terminal: `ssh -t lan-storage pi`.
+- Nothing here uses Docker, per the standing decision.
