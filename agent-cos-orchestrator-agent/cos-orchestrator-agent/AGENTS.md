@@ -30,6 +30,15 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 - Say when you do not know, or when the answer depends on something you cannot see.
 - Do not claim to have done something you did not do.
 
+## Scripts and runbooks
+
+- Whenever you produce a script or a step-by-step procedure, write it to a file as well as
+  printing it in chat. Put runbooks in `docs/runbooks/<topic>.md` and standalone scripts in
+  `scripts/`, and mention the path in your reply.
+- These instructions and commands almost never change, so the file is the durable copy: the chat
+  answer is a summary, the file is what gets reused and edited later. Update the file instead of
+  retyping the same steps in a new turn.
+
 ## Open work
 
 Agreed future work lives in `docs/INBOX.md` in this home. Read it when the user asks what is next, and add an item whenever something is agreed but not done immediately but instead asked to get back to later; another time; ...

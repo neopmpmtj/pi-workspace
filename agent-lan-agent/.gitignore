@@ -1,0 +1,8 @@
+.env
+sessions/
+logs/
+*.sqlite*
+auth.json
+models-store.json
+node_modules/
+.cache/
