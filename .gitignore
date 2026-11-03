@@ -114,3 +114,9 @@ z.old/
 
 # Last archive-to-target run (one move, machine-local)
 apps-scripts/archive-to-target-full-tree/archive-to-target-full-tree/archive-to-target-full-tree.last.json
+
+# ── Siblings that keep their own repository ────────────────────────
+# agent-lan-agent is a standalone git repo (own history, own .gitignore).
+# Tracked here only until 2026-11-03; the nested repo would otherwise be
+# picked up as an untracked directory by every status call.
+agent-lan-agent/
