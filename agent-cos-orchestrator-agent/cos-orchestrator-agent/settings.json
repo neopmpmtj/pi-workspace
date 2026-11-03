@@ -34,6 +34,7 @@
     "+extensions/cron.ts",
     "+extensions/auto-sync.ts",
     "+extensions/chat/index.ts",
+    "+extensions/arquive/index.ts",
     "+extensions/input-contains-email/index.ts",
     "+extensions/input-contains-path/index.ts",
     "+extensions/input-contains-url/index.ts",
