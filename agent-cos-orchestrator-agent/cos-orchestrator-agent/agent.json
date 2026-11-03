@@ -47,6 +47,10 @@
     {
       "name": "/cron",
       "description": "Manage cron jobs (interactive mode only)"
+    },
+    {
+      "name": "/archive",
+      "description": "Move a file or folder into the archive: /archive <path> · /archive --undo"
     }
   ]
 }

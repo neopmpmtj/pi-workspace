@@ -1,20 +1,20 @@
-// Turns `/arquive` text into argv for archive_to_target_full_tree.py and runs that script.
+// Turns `/archive` text into argv for archive_to_target_full_tree.py and runs that script.
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
 import path from "node:path";
 
-export const ARQUIVE_HELP = `/arquive <path>
-/arquive --dry-run <path>
-/arquive --undo
-/arquive --target <dir> <path>
+export const ARCHIVE_HELP = `/archive <path>
+/archive --dry-run <path>
+/archive --undo
+/archive --target <dir> <path>
 
 Moves <path> into the archive target from archive-to-target-full-tree.config.json.
-One run is remembered. /arquive --undo puts only that run back.`;
+One run is remembered. /archive --undo puts only that run back.`;
 
 const FLAGS_WITH_VALUE = new Set(["--target", "--list", "--config", "--source"]);
 const FLAGS = new Set(["--undo", "--dry-run", "--help", "-h"]);
 
-export type ArquiveParse = { help: true } | { error: string } | { argv: string[] };
+export type ArchiveParse = { help: true } | { error: string } | { argv: string[] };
 
 export function splitShellArgs(input: string): string[] {
   const tokens: string[] = [];
@@ -42,7 +42,7 @@ export function splitShellArgs(input: string): string[] {
   return tokens;
 }
 
-export function parseArquiveArgs(input: string): ArquiveParse {
+export function parseArchiveArgs(input: string): ArchiveParse {
   let tokens: string[];
   try {
     tokens = splitShellArgs(input.trim());
@@ -84,7 +84,7 @@ export function parseArquiveArgs(input: string): ArquiveParse {
   return { argv };
 }
 
-export function arquiveScriptPath(home = homedir()): string {
+export function archiveScriptPath(home = homedir()): string {
   return path.join(
     home,
     ".pi",
@@ -95,13 +95,13 @@ export function arquiveScriptPath(home = homedir()): string {
   );
 }
 
-export function runArquive(
+export function runArchive(
   argv: string[],
   cwd: string,
   signal?: AbortSignal,
 ): Promise<{ code: number; output: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn("python3", [arquiveScriptPath(), ...argv], { cwd, signal });
+    const child = spawn("python3", [archiveScriptPath(), ...argv], { cwd, signal });
     let output = "";
     const take = (chunk: Buffer | string) => {
       output += chunk.toString();
@@ -114,3 +114,9 @@ export function runArquive(
     });
   });
 }
+
+// Backward-compatible aliases
+export const ARQUIVE_HELP = ARCHIVE_HELP;
+export const parseArquiveArgs = parseArchiveArgs;
+export const arquiveScriptPath = archiveScriptPath;
+export const runArquive = runArchive;
