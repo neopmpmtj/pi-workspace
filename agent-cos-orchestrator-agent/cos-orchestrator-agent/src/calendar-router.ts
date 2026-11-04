@@ -254,6 +254,7 @@ export function contextBlock(verdict: CalendarVerdict): string {
     const event = created.event ?? {};
     lines.push(
       "The event WAS created. Report it plainly, with its time and its link when present.",
+      "Creating it again would put a SECOND identical event on the calendar - do not do that.",
       `created: ${event.summary ?? "?"} · ${event.start ?? "?"} -> ${event.end ?? "?"}` +
         (event.location ? ` · ${event.location}` : "") +
         (event.link ? ` · ${event.link}` : ""),

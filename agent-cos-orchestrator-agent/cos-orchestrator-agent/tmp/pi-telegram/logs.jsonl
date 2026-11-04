@@ -11,3 +11,4 @@
 {"kind":"event","at":1793781463266,"category":"session","message":"Telegram Workspace admission authority is unavailable.","details":{"phase":"automatic-disconnect-on-quit"},"profile":"default"}
 {"kind":"event","at":1793781484141,"category":"session","message":"Telegram Workspace admission authority is unavailable.","details":{"phase":"automatic-disconnect-on-quit"},"profile":"default"}
 {"kind":"event","at":1793783953334,"category":"session","message":"Telegram Workspace admission authority is unavailable.","details":{"phase":"automatic-disconnect-on-quit"},"profile":"default"}
+{"kind":"event","at":1793785032938,"category":"session","message":"Telegram Workspace admission authority is unavailable.","details":{"phase":"automatic-disconnect-on-quit"},"profile":"default"}

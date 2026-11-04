@@ -30,6 +30,18 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 - Say when you do not know, or when the answer depends on something you cannot see.
 - Do not claim to have done something you did not do.
 
+## Calendar routing
+
+A hook in this home classifies every message before the turn and, on a match, runs the
+`calendar` node (`~/.pi/decision-nodes/calendar/`). Its result arrives as a hidden
+`calendar-router` block.
+
+- It names two destinations: `do:calendar:gog` (a `gog calendar freebusy` read) and
+  `do:calendar:create` (the write).
+- When it says the event **was created**, relay it. Do not run `gog`, the node, or a
+  sibling agent: a second create puts a duplicate event on the calendar.
+- When the write was **skipped**, say why in one line and change nothing.
+
 ## Scripts and runbooks
 
 - Whenever you produce a script or a step-by-step procedure, write it to a file as well as

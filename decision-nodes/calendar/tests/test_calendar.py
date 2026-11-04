@@ -178,6 +178,57 @@ class Validation(unittest.TestCase):
         self.assertIsNone(event["location"])
 
 
+class Write(unittest.TestCase):
+    """The write is idempotent: the same title in the same window never lands twice."""
+
+    def setUp(self):
+        self.event = {"summary": "Barber", "location": None, "confidence": 0.9,
+                      "start": datetime(2026, 11, 5, 15, 0, tzinfo=ZONE),
+                      "end": datetime(2026, 11, 5, 16, 0, tzinfo=ZONE)}
+        self.row = {"utterance": "barber tomorrow 3pm", "routes": []}
+
+    def test_an_identical_event_blocks_a_second_write(self):
+        payload = '{"events": [{"id": "abc", "summary": "barber", "htmlLink": "L"}]}'
+        with mock.patch.object(config.subprocess, "run",
+                               return_value=Completed(["gog"], 0, payload, "")) as run:
+            result = config.create_event(self.event, self.row)
+        self.assertEqual(run.call_count, 1)          # the check only
+        self.assertEqual(result["status"], "skipped")
+        self.assertIn("already on the calendar", result["note"])
+        self.assertEqual(result["event"]["link"], "L")
+
+    def test_a_different_title_lets_the_write_through(self):
+        check = Completed(["gog"], 0, '{"events": [{"id": "x", "summary": "Other"}]}', "")
+        created = Completed(["gog"], 0, '{"id": "new", "htmlLink": "L2"}', "")
+        with mock.patch.object(config.subprocess, "run", side_effect=[check, created]) as run:
+            result = config.create_event(self.event, self.row)
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(result["status"], "created")
+        self.assertEqual(result["event"]["id"], "new")
+
+    def test_a_failed_duplicate_check_still_writes(self):
+        check = Completed(["gog"], 1, "", "boom")
+        created = Completed(["gog"], 0, '{"id": "new"}', "")
+        with mock.patch.object(config.subprocess, "run", side_effect=[check, created]):
+            result = config.create_event(self.event, self.row)
+        self.assertEqual(result["status"], "created")
+
+    def test_an_empty_window_writes(self):
+        check = Completed(["gog"], 0, '{"events": []}', "")
+        created = Completed(["gog"], 0, '{"id": "new"}', "")
+        with mock.patch.object(config.subprocess, "run", side_effect=[check, created]):
+            result = config.create_event(self.event, self.row)
+        self.assertEqual(result["status"], "created")
+
+    def test_a_gog_failure_is_reported_not_raised(self):
+        check = Completed(["gog"], 0, '{"events": []}', "")
+        failed = Completed(["gog"], 1, "", "quota exceeded")
+        with mock.patch.object(config.subprocess, "run", side_effect=[check, failed]):
+            result = config.create_event(self.event, self.row)
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("quota exceeded", result["note"])
+
+
 class Routing(unittest.TestCase):
     def test_a_match_returns_both_destinations_in_order(self):
         row = {"abstained": False, "calendar": {"is_match": True}}

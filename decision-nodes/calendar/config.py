@@ -310,7 +310,20 @@ def _parse_local(value: str) -> datetime | None:
 # ------------------------------------------------------------------- the write
 
 def create_event(event: dict, row: dict) -> dict:
-    """`gog calendar create` on `primary`. The last deterministic step."""
+    """`gog calendar create` on `primary`. The last deterministic step.
+
+    Idempotent on purpose: if an event with the same title is already in that window,
+    nothing is written. That is what stops a re-sent message - or a second path that
+    tried the same write - from producing two identical events. A failed duplicate
+    check does not block the write: the free/busy read already said FREE.
+    """
+    existing = _existing_event(event)
+    if existing:
+        return {"destination": "do:calendar:create", "status": "skipped",
+                "note": f"already on the calendar ({existing.get('id')})",
+                "event": {"summary": event["summary"], "id": existing.get("id"),
+                          "link": existing.get("htmlLink")}}
+
     env = dict(os.environ)
     env.update(_env_file(GOG_ENV))
 
@@ -356,6 +369,30 @@ def create_event(event: dict, row: dict) -> dict:
             "extract_usage": event.get("usage"),
         },
     }
+
+
+def _existing_event(event: dict) -> dict | None:
+    """The event already sitting in that window with the same title, or None."""
+    env = dict(os.environ)
+    env.update(_env_file(GOG_ENV))
+    command = ["gog", "calendar", "events", GOG_CALENDAR, "-j",
+               "--from", event["start"].isoformat(),
+               "--to", event["end"].isoformat()]
+    try:
+        proc = subprocess.run(command, capture_output=True, text=True, timeout=60, env=env)
+        if proc.returncode != 0:
+            return None
+        payload = json.loads(proc.stdout.strip() or "{}")
+    except (subprocess.SubprocessError, OSError, json.JSONDecodeError):
+        return None
+
+    wanted = (event["summary"] or "").strip().casefold()
+    for candidate in payload.get("events") or []:
+        if not isinstance(candidate, dict):
+            continue
+        if (candidate.get("summary") or "").strip().casefold() == wanted:
+            return candidate
+    return None
 
 
 def _parse_created(stdout: str) -> tuple[str | None, str | None]:
