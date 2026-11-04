@@ -307,3 +307,4 @@ Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervis
 | `text-to-speech-app-setup/` | Text-to-speech app |
 | `gog-workspace-portable-install/` | Portable gog-workspace install (Google Console → pinned binary → keyring transplant → VPS rollout) |
 | `yt-download-user-manual.md` | yt-download skill usage |
+| `pi-state-of-jev.md` | Current state of the JEV classifiers: multi CLI, idle decision nodes, key file |

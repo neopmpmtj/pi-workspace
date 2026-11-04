@@ -112,3 +112,7 @@ by default; refuses the current Cursor files by name).
 - [ ] 28 supplier spreadsheets live only in `pmpmt@192.168.1.60:~/Downloads/#Arquive_Downloads/Trabalhos Jo/`
       (business data, Jan/Feb 2026). If they should survive a disk failure, they need a real backup
       target, not a downloads folder.
+
+## JEV
+
+- Current state of the classifiers: `~/.pi/docs/pi-state-of-jev.md`.

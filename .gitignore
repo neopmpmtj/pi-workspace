@@ -120,3 +120,8 @@ apps-scripts/archive-to-target-full-tree/archive-to-target-full-tree/archive-to-
 # Tracked here only until 2026-11-03; the nested repo would otherwise be
 # picked up as an untracked directory by every status call.
 agent-lan-agent/
+
+# ── Decision-node runtime (verdicts and sweep logs, never synced) ──
+decision-nodes/**/verdicts.jsonl
+decision-nodes/**/logs/
+decision-nodes/**/__pycache__/

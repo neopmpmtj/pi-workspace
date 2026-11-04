@@ -1,0 +1,25 @@
+{"id":"S1","kind":"probe","text":"I just spent 20 euros on petrol","act":"narrate","must_fire":["money"],"must_not_fire":["schedule","contact"],"note":"money with personal colouring"}
+{"id":"S2","kind":"probe","text":"that job earned me 1500 euros","act":"narrate","must_fire":["money"],"must_not_fire":["schedule","contact"],"note":"income, not expenditure"}
+{"id":"S3","kind":"probe","text":"the invoice parser uses OpenAI","act":"narrate","must_fire":[],"must_not_fire":["money"],"note":"adversarial negative: mentions invoicing, states no amount"}
+{"id":"S4","kind":"probe","text":"I want to make a lot of money one day","act":"narrate","must_fire":[],"must_not_fire":["money"],"note":"adversarial negative: money in the abstract"}
+{"id":"S5","kind":"probe","text":"I met Ana at 3pm at the cafe","act":"narrate","must_fire":["schedule","contact"],"must_not_fire":["money"],"note":"occurrence + named person"}
+{"id":"S6","kind":"probe","text":"book a dentist appointment for Tuesday morning","act":"instruct","must_fire":["schedule"],"must_not_fire":["money"],"note":"future commitment"}
+{"id":"S7","kind":"probe","text":"this came about on the 15th of September","act":"narrate","must_fire":[],"must_not_fire":["schedule"],"note":"D2 boundary: bare date mention, not an event"}
+{"id":"S8","kind":"probe","text":"I need to remember to rotate that key","act":"narrate","must_fire":["task"],"must_not_fire":["schedule"],"note":"to-do with no time"}
+{"id":"S9","kind":"probe","text":"check the email","act":"instruct","must_fire":[],"must_not_fire":["task","idea"],"note":"instruction to act now is NOT a stored to-do"}
+{"id":"S10","kind":"probe","text":"did the backup run?","act":"ask","must_fire":[],"must_not_fire":["task","idea"],"note":"act/tell boundary"}
+{"id":"S11","kind":"probe","text":"I went to the bakery this morning and bought bread for my parents","act":"narrate","must_fire":["personal"],"must_not_fire":["schedule"],"note":"D1+ personal; 'this morning' is not a calendar event"}
+{"id":"S12","kind":"probe","text":"the node loops and I am not sure about the thresholds","act":"narrate","must_fire":[],"must_not_fire":["personal","money","schedule"],"note":"adversarial negative: work in progress"}
+{"id":"S13","kind":"probe","text":"Ana's number is 912 345 678, save it","act":"instruct","must_fire":["contact"],"must_not_fire":["money"],"note":"explicit contact capture"}
+{"id":"S14","kind":"probe","text":"the subagent failed again","act":"narrate","must_fire":[],"must_not_fire":["contact","personal","money"],"note":"adversarial negative"}
+{"id":"S15","kind":"probe","text":"I had lunch with Ana at 1pm and spent 40 euros","act":"narrate","must_fire":["money","schedule","personal","contact"],"must_not_fire":[],"note":"fan-out: four detectors at once, which a flat taxonomy cannot express"}
+{"id":"S16","kind":"probe","text":"don't book anything for Tuesday","act":"instruct","must_fire":["schedule"],"must_not_fire":["task"],"note":"negation probe: the model still has to see the event"}
+{"id":"S17","kind":"probe","text":"Podes verificar as copias de seguranca?","act":"instruct","must_fire":[],"must_not_fire":["personal","money"],"note":"Portuguese-only"}
+{"id":"S18","kind":"probe","text":"Gastei vinte euros no gasoleo hoje","act":"narrate","must_fire":["money"],"must_not_fire":["schedule"],"note":"Portuguese money, spelled-out amount"}
+{"id":"S19","kind":"probe","text":"I am going to redo the wiring on the sensor board at some point","act":"narrate","must_fire":["task"],"must_not_fire":["schedule"],"note":"D8: a stated plan counts as a task, vague time is not a schedule"}
+{"id":"S20","kind":"probe","text":"There is a project I want to make: an assistant that phones shops to ask about availability","act":"narrate","must_fire":["idea"],"must_not_fire":["money"],"note":"D9: exploratory concept"}
+{"id":"S21","kind":"probe","text":"remind me to call the accountant next week","act":"instruct","must_fire":["task"],"must_not_fire":["money"],"note":"explicit reminder"}
+{"id":"S22","kind":"probe","text":"I am tired today, I slept badly","act":"narrate","must_fire":["personal"],"must_not_fire":["money","schedule","task","idea","contact"],"note":"pure personal state - must not spread"}
+{"id":"S23","kind":"probe","text":"the report is on the shared drive","act":"narrate","must_fire":[],"must_not_fire":["personal","money","schedule","task","contact","idea"],"note":"full negative: must fire nothing"}
+{"id":"S24","kind":"probe","text":"o Tiago disse que o orcamento ficou em 300 euros","act":"narrate","must_fire":["money","contact"],"must_not_fire":["schedule"],"note":"code-switching, Portuguese"}
+{"id":"S25","kind":"probe","text":"I am thinking of changing how the recorder works, maybe a shorter countdown","act":"narrate","must_fire":["idea"],"must_not_fire":["money","schedule","contact"],"note":"the noisy-idea case: is this an idea or work in progress?"}

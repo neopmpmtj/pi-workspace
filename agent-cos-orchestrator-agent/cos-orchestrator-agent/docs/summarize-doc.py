@@ -164,6 +164,10 @@ class OllamaClient:
             "model": self.model,
             "prompt": prompt,
             "stream": False,
+            # Gemma 4 / Qwen3.5 are thinking models: without this the whole token
+            # budget is spent in the `thinking` field and `response` comes back
+            # empty. Ollama ignores the flag for models that do not think.
+            "think": False,
             "options": {"num_ctx": num_ctx, "temperature": temperature},
         }
         data = json.dumps(payload).encode("utf-8")
@@ -181,6 +185,10 @@ class OllamaClient:
                     raw = resp.read().decode("utf-8", errors="replace")
                 parsed = json.loads(raw)
                 text = (parsed.get("response") or "").strip()
+                if not text:
+                    # Fallback for a model that overrides `think: false`: use its
+                    # reasoning trace rather than failing with an empty summary.
+                    text = (parsed.get("thinking") or "").strip()
                 if not text:
                     raise RuntimeError("empty response from model")
                 return text

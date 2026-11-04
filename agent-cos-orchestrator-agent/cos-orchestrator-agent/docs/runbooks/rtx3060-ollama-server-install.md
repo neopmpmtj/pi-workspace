@@ -61,70 +61,85 @@ unrelated to the driver, worth a separate maintenance window.
 
 Original diagnosis, kept for reference:
 
-## Step 2 — decide where the models live
+## Step 2 — models on `/home` — DONE 2026-11-04
 
-Ollama's installer keeps weights in `/usr/share/ollama/.ollama/models`, i.e. on `/` (73 G, 33 G
-free). The default set is ~25–30 GB and `--all` is more. Either accept the tight fit or move it to
-`/home` (378 G, 323 G free) **before** pulling models:
+Ollama's default is `/usr/share/ollama/.ollama/models` on `/` (73 G, 30 G free after the driver work).
+Weights now live on the data partition instead:
 
 ```bash
-sudo mkdir -p /home/models/ollama
-sudo chown ollama:ollama /home/models/ollama
-sudo tee /etc/systemd/system/ollama.service.d/05-models-dir.conf >/dev/null <<'EOF'
+install -d -m 750 -o ollama -g ollama /home/models/ollama
+systemctl stop ollama && cp -a /usr/share/ollama/.ollama/models/. /home/models/ollama/
+chown -R ollama:ollama /home/models/ollama && rm -rf /usr/share/ollama/.ollama/models
+cat > /etc/systemd/system/ollama.service.d/05-models-dir.conf <<'EOF'
 [Service]
 Environment="OLLAMA_MODELS=/home/models/ollama"
 EOF
+systemctl daemon-reload && systemctl start ollama
 ```
 
-`10-local-ai.conf` (written by the kit's `--tune` step) supplies context length, Flash Attention,
-q8_0 KV cache, and the 1-model limits — no conflict between the two drop-ins.
+Both drop-ins are active and complementary: `05-models-dir.conf` (weights location) and
+`10-local-ai.conf` (written by the kit: 16K ctx, Flash Attention, q8_0 KV, 1 parallel / 1 model).
+Result: **20 GB of weights on `/home`, `/` untouched at 30 G free.**
 
-## Step 3 — run the kit on the server
-
-Copy the folder over (the kit expects `install-ollama-stack.sh` + `summarize-doc.py` side by side):
+## Step 3 — kit installed — DONE 2026-11-04 06:08–06:47
 
 ```bash
-ssh lan-pmpmt 'mkdir -p ~/ollama-stack'
 rsync -a docs/{install-ollama-stack.sh,summarize-doc.py,INSTALL.md,rtx3060-local-ai-models.md} \
   lan-pmpmt:~/ollama-stack/
-rsync -a docs/ollama-stack-v1.0.0.tar.gz lan-pmpmt:~/ollama-stack/
-ssh lan-pmpmt 'chmod +x ~/ollama-stack/install-ollama-stack.sh ~/ollama-stack/summarize-doc.py'
-ssh lan-pmpmt 'cd ~/ollama-stack && bash install-ollama-stack.sh --dry-run'   # read the plan
+ssh lan-storage "sudo -n bash -c 'cd /home/pmpmt/ollama-stack && bash install-ollama-stack.sh --yes --models \"nomic-embed-text\"'"
 ```
 
-Then the real run, escalated: `pmpmt` has no passwordless sudo, so either
+Install first with only the 274 MB embed model, so the weights directory could be moved to `/home`
+before the 21 GB came down. Then the rest via `~/ollama-stack/pull-all.sh` (nohup, logs in
+`~/ollama-stack/logs/pull.log`), ~9.5 MB/s throughout.
+
+| Model | Size | Pulled |
+| --- | ---: | --- |
+| `gemma4:12b` | 8.0 GB | 06:22 |
+| `qwen3.5:9b` | 6.6 GB | 06:35 |
+| `qwen2.5vl:7b` | 6.0 GB | 06:47 |
+| `nomic-embed-text` | 274 MB | 06:08 |
+
+Ollama `0.40.14`, service `enabled`/`active`, API on `127.0.0.1:11434` only.
+
+Measured on the card (warm):
+
+| Model | Speed | Notes |
+| --- | ---: | --- |
+| `gemma4:12b` | ~49–65 tok/s | thinking model |
+| `qwen3.5:9b` | ~55 tok/s | thinking model |
+| `qwen2.5vl:7b` | ~14–26 tok/s | no thinking, direct answers |
+
+`ollama ps` reports **100% GPU** and `CONTEXT 16384`; VRAM peaks around 8.9 GB of 12 GB.
+
+### Two defects in the kit, both handled
+
+1. **`summarize-doc.py` was broken for the two thinking models it ships with.** It read only
+   `response`, so `gemma4:12b` and `qwen3.5:9b` burned the token budget inside the `thinking` field
+   and returned an empty `response` → `RuntimeError: empty response from model`. Patched locally
+   (`docs/summarize-doc.py`, pushed to the server): the request now sends `"think": false`, and if
+   a model still returns only reasoning, the reasoning text is used rather than failing.
+2. The kit's own smoke test requests a chat completion from `nomic-embed-text`, which is an
+   embedding model, so the run always ends with `ERR Smoke test request failed`. Cosmetic: the model
+   is present and lists correctly.
+
+## Step 4 — document summariser — DONE 2026-11-04
+
+`poppler-utils` was already installed (`pdftotext 24.02.0`). End-to-end test, chunk-and-combine over
+a 39,549-character PDF:
 
 ```bash
-ssh -t lan-pmpmt 'cd ~/ollama-stack && sudo bash install-ollama-stack.sh'      # you type the password
-# or, driven by the agent through pistore's NOPASSWD sudo:
-ssh lan-storage "sudo -u pmpmt -H bash -lc 'cd /home/pmpmt/ollama-stack && bash install-ollama-stack.sh --yes'"
+ssh lan-pmpmt 'cd ~/ollama-stack && ./summarize-doc.py "$HOME/Downloads/Talus terms and conditions.pdf" \
+  -m gemma4:12b --lang en'
+# 4 chunks + combine, 59.2 s total → ~/Downloads/Talus terms and conditions.pdf.summary.md
 ```
 
-Checks afterwards:
+The summary is coherent and correctly identifies the document as a TELUS International AI
+contributor agreement, with key points and section structure.
 
-```bash
-ollama --version
-systemctl status ollama --no-pager
-ollama list
-curl -s http://127.0.0.1:11434/api/version
-ollama run gemma4:12b "two bullets on photosynthesis"
-ollama ps          # must say 100% GPU
-```
+## Still open
 
-Port 11434 stays bound to `127.0.0.1`. Reach it from this laptop only through a tunnel:
-`ssh -L 11434:127.0.0.1:11434 lan-pmpmt`.
-
-## Step 4 — document summariser
-
-```bash
-sudo apt install -y poppler-utils        # pdftotext for PDFs; ocrmypdf too if scans are involved
-~/.local/bin/...  # see below
-~/ollama-stack/summarize-doc.py ~/Downloads/report.pdf -m qwen3.5:9b --lang pt
-```
-
-## Open questions for the user
-
-- Install the driver fix (needs a reboot of that desktop) — yes/no?
-- Models on `/home` (recommended) or leave them on `/`?
-- Default set (~25–30 GB) or `--all`?
-- Which sudo path: user types the password, or the agent drives it via `pistore`?
+- Reach it from this laptop only through a tunnel: `ssh -L 11434:127.0.0.1:11434 lan-pmpmt`.
+  Do not expose 11434 — Ollama has no authentication.
+- `--all` extras (`phi4`, `deepseek-r1:14b`, `llama3.1:8b`, `lfm3-audio`, ~25 GB more) not pulled.
+- 145 pending apt upgrades on the server, untouched.
