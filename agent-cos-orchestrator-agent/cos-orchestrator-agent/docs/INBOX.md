@@ -91,3 +91,24 @@ Plan: `docs/runbooks/lan-server-full-access-and-local-agent.md`.
       own `origin` all point at `gog-workspace-agents.git` now.
 - [ ] `~/archived-pi-agents-experts/gog-worksapce-agents` keeps the old spelling: it is a
       separate archived tree and was not part of this rename.
+
+## LAN server `pmpmt` home, downloads and videos (started 2026-11-03)
+
+Key + access: `ssh lan-pmpmt` → `pmpmt@192.168.1.60` (`~/.ssh/id_ed25519_lan-pmpmt`, installed via
+`pistore`'s NOPASSWD sudo). Runbook: `docs/runbooks/lan-pmpmt-ssh-key.md`.
+Inventory + reclaim tools: `scripts/downloads-inventory.sh`, `scripts/downloads-reclaim.sh` (dry-run
+by default; refuses the current Cursor files by name).
+
+- [ ] **Video clean-up on both hosts, not started.** Server: 406 videos outside `~/Videos` (there is
+      no `~/Videos`): 18 real `.mp4` = 1.49 GB, plus 388 `.webm` voice-diary artefacts = 0.14 GB
+      spread over `~/Documents` backups, `~/.voicediary`, `~/.vscode`, `~/Downloads`. Laptop: 42
+      (2 real, 90.5 MB; 40 VoiceDiary dev `.webm` under `~/python`). Decide what counts as debris
+      before deleting — the `.webm` files sit inside timestamped project backups. Dry-run first.
+- [ ] `lan-agent`'s `config/storage.json` is still pinned to `pistore:/home/pistore/storage`, so
+      `/storage` commands cannot see `/home/pmpmt`. Either repoint it at `lan-pmpmt`, or keep the
+      two-identity split (`lan-storage` for storage, `lan-pmpmt` for home) and document it.
+- [ ] Server sshd still has `PasswordAuthentication yes` for `pmpmt`; same open item as `pistore`
+      above — flip both to key-only once the keys have settled.
+- [ ] 28 supplier spreadsheets live only in `pmpmt@192.168.1.60:~/Downloads/#Arquive_Downloads/Trabalhos Jo/`
+      (business data, Jan/Feb 2026). If they should survive a disk failure, they need a real backup
+      target, not a downloads folder.
