@@ -156,3 +156,11 @@ by default; refuses the current Cursor files by name).
       caught. Consider matching on the window alone, or on title similarity.
 - [ ] Attendees, reminders and recurrence on `do:calendar:create` — `gog` supports all three
       (`--attendees`, `--reminder`, `--rrule`); nothing in the node passes them yet.
+
+## Skills
+
+- [ ] `svg-photo-convert` (created 2026-11-04) was **self-tested only**: this agent has no
+      subagent tool and no `claude` CLI, so the four prompts in
+      `skills/svg-photo-convert/evals/evals.json` never ran as with-skill/baseline pairs, and
+      the description was not optimised against trigger queries. Both need a harness with
+      subagents; the measured self-test results are in `evals/README.md`.

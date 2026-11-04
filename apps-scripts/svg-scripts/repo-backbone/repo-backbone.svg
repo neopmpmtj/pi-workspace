@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1540" width="1180" height="1540" role="img" aria-label="Repository backbone: .pi">
+  <title>.pi — repo backbone</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0%" stop-color="#0a0e1c"/><stop offset="100%" stop-color="#131a33"/></linearGradient>
+    <linearGradient id="spine" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4cc9f0" stop-opacity="0.85"/><stop offset="55%" stop-color="#f72585" stop-opacity="0.55"/><stop offset="100%" stop-color="#f72585" stop-opacity="0.12"/></linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#4cc9f0"/><stop offset="100%" stop-color="#f72585"/></linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1180" height="1540" fill="url(#bg)"/>
+  <g font-family="Inter, Helvetica, Arial, sans-serif">
+    <text x="48" y="52" font-size="11" letter-spacing="3.2" fill="#4cc9f0" opacity="0.9">REPO BACKBONE</text>
+    <text x="48" y="90" font-size="30" font-weight="700" fill="#eaf0ff">.pi</text>
+    <text x="48" y="115" font-size="12.5" fill="#8ea2c9" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">/home/pmpmt/.pi</text>
+    <text x="1132" y="74" text-anchor="end" font-size="26" font-weight="700" fill="#eaf0ff">6</text>
+    <text x="1132" y="96" text-anchor="end" font-size="11" fill="#8ea2c9">not tracked</text>
+    <text x="960" y="74" text-anchor="end" font-size="26" font-weight="700" fill="#eaf0ff">574</text>
+    <text x="960" y="96" text-anchor="end" font-size="11" fill="#8ea2c9">files tracked by git</text>
+    <text x="788" y="74" text-anchor="end" font-size="26" font-weight="700" fill="#eaf0ff">19</text>
+    <text x="788" y="96" text-anchor="end" font-size="11" fill="#8ea2c9">directories</text>
+    <text x="616" y="74" text-anchor="end" font-size="26" font-weight="700" fill="#eaf0ff">20</text>
+    <text x="616" y="96" text-anchor="end" font-size="11" fill="#8ea2c9">top-level entries</text>
+  </g>
+  <line x1="48" y1="132" x2="1132" y2="132" stroke="#eaf0ff" stroke-opacity="0.10"/>
+  <rect x="113" y="136" width="10" height="1332" rx="5" fill="url(#spine)"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="191.0" x2="172" y2="191.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="191.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="196.0" font-size="15" font-weight="600" fill="#eaf0ff">apps-scripts</text>
+    <text x="184" y="215.0" font-size="11.5"><tspan fill="#5a6b8c">ExplainLike12 · archive-to-target-full-tree ·…</tspan></text>
+    <rect x="604" y="187.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="187.0" width="250.0" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="195.5" font-size="12" fill="#eaf0ff">175</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="257.0" x2="172" y2="257.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="257.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="262.0" font-size="15" font-weight="600" fill="#eaf0ff">agent-cos-orchestrator-agent</text>
+    <text x="184" y="281.0" font-size="11.5"><tspan fill="#5a6b8c">cos-orchestrator-agent · cron · README.md · +1</tspan></text>
+    <rect x="604" y="253.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="253.0" width="168.6" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="261.5" font-size="12" fill="#eaf0ff">118</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="323.0" x2="172" y2="323.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="323.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="328.0" font-size="15" font-weight="600" fill="#eaf0ff">agent-image-describer</text>
+    <text x="184" y="347.0" font-size="11.5"><tspan fill="#5a6b8c">image-describer · images · model-rates.exampl…</tspan></text>
+    <rect x="604" y="319.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="319.0" width="108.6" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="327.5" font-size="12" fill="#eaf0ff">76</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="389.0" x2="172" y2="389.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="389.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="394.0" font-size="15" font-weight="600" fill="#eaf0ff">agent-web-master</text>
+    <text x="184" y="413.0" font-size="11.5"><tspan fill="#5a6b8c">web-master · README.md · model-rates.example.…</tspan></text>
+    <rect x="604" y="385.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="385.0" width="75.7" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="393.5" font-size="12" fill="#eaf0ff">53</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="455.0" x2="172" y2="455.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="455.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="460.0" font-size="15" font-weight="600" fill="#eaf0ff">agent-gog-workspace-agents</text>
+    <text x="184" y="479.0" font-size="11.5"><tspan fill="#5a6b8c">sm-google-workspace</tspan></text>
+    <rect x="604" y="451.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="451.0" width="72.9" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="459.5" font-size="12" fill="#eaf0ff">51</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="521.0" x2="172" y2="521.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="521.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="526.0" font-size="15" font-weight="600" fill="#eaf0ff">docs</text>
+    <text x="184" y="545.0" font-size="11.5"><tspan fill="#5a6b8c">backup-laptop-tool-setup · backup-service-acc…</tspan></text>
+    <rect x="604" y="517.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="517.0" width="40.0" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="525.5" font-size="12" fill="#eaf0ff">28</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="587.0" x2="172" y2="587.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="587.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="592.0" font-size="15" font-weight="600" fill="#eaf0ff">shared-extensions</text>
+    <text x="184" y="611.0" font-size="11.5"><tspan fill="#5a6b8c">extensions · session-summarizer</tspan></text>
+    <rect x="604" y="583.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="583.0" width="34.3" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="591.5" font-size="12" fill="#eaf0ff">24</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="653.0" x2="172" y2="653.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="653.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="658.0" font-size="15" font-weight="600" fill="#eaf0ff">decision-nodes</text>
+    <text x="184" y="677.0" font-size="11.5"><tspan fill="#5a6b8c">calendar · intake · scheduler</tspan></text>
+    <rect x="604" y="649.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="649.0" width="27.1" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="657.5" font-size="12" fill="#eaf0ff">19</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="719.0" x2="172" y2="719.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="719.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="724.0" font-size="15" font-weight="600" fill="#eaf0ff">agent</text>
+    <text x="184" y="743.0" font-size="11.5"><tspan fill="#5a6b8c">agents · bin · sessions · +3</tspan></text>
+    <rect x="604" y="715.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="715.0" width="5.7" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="723.5" font-size="12" fill="#eaf0ff">4</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="785.0" x2="172" y2="785.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="785.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="790.0" font-size="15" font-weight="600" fill="#eaf0ff">cron</text>
+    <text x="184" y="809.0" font-size="11.5"><tspan fill="#5a6b8c">runs · jobs.json · normalize.ts · +3</tspan></text>
+    <rect x="604" y="781.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="781.0" width="5.7" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="789.5" font-size="12" fill="#eaf0ff">4</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="851.0" x2="172" y2="851.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="851.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="856.0" font-size="15" font-weight="600" fill="#eaf0ff">xtra</text>
+    <text x="184" y="875.0" font-size="11.5"><tspan fill="#5a6b8c">bash-system-scripts · xtra-info.md</tspan></text>
+    <rect x="604" y="847.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="847.0" width="5.7" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="855.5" font-size="12" fill="#eaf0ff">4</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="917.0" x2="172" y2="917.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="917.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="922.0" font-size="15" font-weight="600" fill="#eaf0ff">agents-shared-scripts</text>
+    <text x="184" y="941.0" font-size="11.5"><tspan fill="#5a6b8c">session-slim</tspan></text>
+    <rect x="604" y="913.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="913.0" width="3.0" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="921.5" font-size="12" fill="#eaf0ff">2</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="983.0" x2="172" y2="983.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="983.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="988.0" font-size="15" font-weight="600" fill="#eaf0ff">jev-classifier</text>
+    <text x="184" y="1007.0" font-size="11.5"><tspan fill="#4cc9f0" opacity="0.85">own git repo</tspan><tspan fill="#5a6b8c"> · </tspan><tspan fill="#5a6b8c">archive-experiments · docs · jev-classifier-m…</tspan></text>
+    <rect x="604" y="979.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="979.0" width="3.0" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="987.5" font-size="12" fill="#eaf0ff">1</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="1049.0" x2="172" y2="1049.0" stroke="#4cc9f0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="118" cy="1049.0" r="7.0" fill="#0f1730" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <text x="184" y="1054.0" font-size="15" font-weight="400" font-style="italic" fill="#eaf0ff">config.json</text>
+    <rect x="604" y="1045.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <rect x="604" y="1045.0" width="3.0" height="8" rx="4.0" fill="url(#bar)" opacity="0.9"/>
+    <text x="870" y="1053.5" font-size="12" fill="#eaf0ff">1</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="1115.0" x2="172" y2="1115.0" stroke="#6b7ea6" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <circle cx="118" cy="1115.0" r="7.0" fill="#0a0e1c" stroke="#6b7ea6" stroke-width="2"/>
+    <text x="184" y="1120.0" font-size="15" font-weight="600" fill="#8ea2c9">agent-lan-agent</text>
+    <text x="184" y="1139.0" font-size="11.5"><tspan fill="#4cc9f0" opacity="0.85">own git repo · git-ignored</tspan><tspan fill="#5a6b8c"> · </tspan><tspan fill="#5a6b8c">lan-agent</tspan></text>
+    <rect x="604" y="1111.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <text x="870" y="1119.5" font-size="12" fill="#8ea2c9">ignored</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="1181.0" x2="172" y2="1181.0" stroke="#6b7ea6" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <circle cx="118" cy="1181.0" r="7.0" fill="#0a0e1c" stroke="#6b7ea6" stroke-width="2"/>
+    <text x="184" y="1186.0" font-size="15" font-weight="600" fill="#8ea2c9">explore-discover-pi</text>
+    <text x="184" y="1205.0" font-size="11.5"><tspan fill="#4cc9f0" opacity="0.85">own git repo · git-ignored</tspan><tspan fill="#5a6b8c"> · </tspan><tspan fill="#5a6b8c">explore-discover-pi</tspan></text>
+    <rect x="604" y="1177.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <text x="870" y="1185.5" font-size="12" fill="#8ea2c9">ignored</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="1247.0" x2="172" y2="1247.0" stroke="#6b7ea6" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <circle cx="118" cy="1247.0" r="7.0" fill="#0a0e1c" stroke="#6b7ea6" stroke-width="2"/>
+    <text x="184" y="1252.0" font-size="15" font-weight="600" fill="#8ea2c9">logs</text>
+    <text x="184" y="1271.0" font-size="11.5"><tspan fill="#5a6b8c">auto-sync.log</tspan></text>
+    <rect x="604" y="1243.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <text x="870" y="1251.5" font-size="12" fill="#8ea2c9">untracked</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="1313.0" x2="172" y2="1313.0" stroke="#6b7ea6" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <circle cx="118" cy="1313.0" r="7.0" fill="#0a0e1c" stroke="#6b7ea6" stroke-width="2"/>
+    <text x="184" y="1318.0" font-size="15" font-weight="600" fill="#8ea2c9">sessions-summaries</text>
+    <text x="184" y="1337.0" font-size="11.5"><tspan fill="#4cc9f0" opacity="0.85">git-ignored</tspan><tspan fill="#5a6b8c"> · </tspan><tspan fill="#5a6b8c">2026-11-03T07-33-54-070Z_01a1a054-2f15-7415-b…</tspan></text>
+    <rect x="604" y="1309.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <text x="870" y="1317.5" font-size="12" fill="#8ea2c9">ignored</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="1379.0" x2="172" y2="1379.0" stroke="#6b7ea6" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <circle cx="118" cy="1379.0" r="7.0" fill="#0a0e1c" stroke="#6b7ea6" stroke-width="2"/>
+    <text x="184" y="1384.0" font-size="15" font-weight="600" fill="#8ea2c9">web-search-cache</text>
+    <text x="184" y="1403.0" font-size="11.5"><tspan fill="#4cc9f0" opacity="0.85">git-ignored</tspan></text>
+    <rect x="604" y="1375.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <text x="870" y="1383.5" font-size="12" fill="#8ea2c9">ignored</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <line x1="125.0" y1="1445.0" x2="172" y2="1445.0" stroke="#6b7ea6" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <circle cx="118" cy="1445.0" r="7.0" fill="#0a0e1c" stroke="#6b7ea6" stroke-width="2"/>
+    <text x="184" y="1450.0" font-size="15" font-weight="600" fill="#8ea2c9">z.old</text>
+    <text x="184" y="1469.0" font-size="11.5"><tspan fill="#4cc9f0" opacity="0.85">git-ignored</tspan><tspan fill="#5a6b8c"> · </tspan><tspan fill="#5a6b8c">archived-sessions · #AGENTS.md · #APPEND_SYST…</tspan></text>
+    <rect x="604" y="1441.0" width="250" height="8" rx="4.0" fill="#eaf0ff" opacity="0.06"/>
+    <text x="870" y="1449.5" font-size="12" fill="#8ea2c9">ignored</text>
+  </g>
+  <g font-family="Inter, Helvetica, Arial, sans-serif" font-size="11.5" fill="#8ea2c9">
+    <circle cx="54" cy="1508" r="6" fill="#0f1730" stroke="#4cc9f0" stroke-width="2"/>
+    <text x="70" y="1512">tracked by git</text>
+    <circle cx="204" cy="1508" r="6" fill="#0a0e1c" stroke="#6b7ea6" stroke-width="2"/>
+    <text x="220" y="1512">not tracked (ignored or empty)</text>
+    <text x="448" y="1512" opacity="0.75">bar = files tracked, scaled to 175</text>
+    <text x="1132" y="1512" text-anchor="end" opacity="0.6">github.com/neopmpmtj/pi-workspace</text>
+  </g>
+</svg>

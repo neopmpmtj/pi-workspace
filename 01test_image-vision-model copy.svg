@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 423 635" width="423" height="635">
+  <title>Portrait with a fruit headdress (stylized vector rendering of 01test_image-vision-model.jpeg)</title>
+  <desc>Studio-style portrait of a woman in a purple turban crowned with a surplus of fruit, in the manner of a Carmen Miranda / food-editorial shoot.</desc>
+
+  <!-- studio background -->
+  <rect width="423" height="635" fill="#f7f5f1"/>
+
+  <!-- ============ FRUIT CROWN ============ -->
+  <g id="headdress">
+    <!-- foliage behind the fruit -->
+    <path d="M250 120 C300 105 340 130 345 165 C320 150 290 145 262 152 Z" fill="#5d6b2c"/>
+    <path d="M275 185 C325 175 360 200 362 232 C332 214 300 208 272 214 Z" fill="#46521f"/>
+    <path d="M185 145 C215 118 250 112 272 128 C245 132 220 148 205 168 Z" fill="#6b7a33"/>
+
+    <!-- tall yellow fruit rising out of frame, top centre -->
+    <path d="M198 78 C196 46 206 18 218 0 L246 0 C236 24 232 52 234 80 Z" fill="#e8ce42"/>
+    <path d="M204 76 C203 50 210 24 220 6 L228 6 C220 28 216 52 218 78 Z" fill="#f4e178" opacity="0.7"/>
+
+    <!-- large red apple, upper centre-left -->
+    <ellipse cx="150" cy="60" rx="46" ry="43" fill="#a5273a"/>
+    <ellipse cx="138" cy="46" rx="24" ry="18" fill="#c8495c" opacity="0.75"/>
+    <path d="M150 20 C154 10 160 4 168 2" stroke="#4d3320" stroke-width="4" fill="none"/>
+
+    <!-- green-gold apple, upper left -->
+    <ellipse cx="92" cy="88" rx="42" ry="40" fill="#a9c33c"/>
+    <ellipse cx="80" cy="74" rx="20" ry="15" fill="#cfe06a" opacity="0.8"/>
+    <path d="M92 50 C96 40 104 34 112 32" stroke="#5a4a22" stroke-width="4" fill="none"/>
+
+    <!-- small red apple between apple and grapes -->
+    <ellipse cx="150" cy="140" rx="22" ry="20" fill="#b32b3e"/>
+    <ellipse cx="144" cy="132" rx="10" ry="7" fill="#d4556a" opacity="0.75"/>
+
+    <!-- green grape cluster, upper right -->
+    <g fill="#b9c98a">
+      <circle cx="292" cy="104" r="9"/><circle cx="308" cy="112" r="9"/>
+      <circle cx="283" cy="118" r="9"/><circle cx="300" cy="126" r="9"/>
+      <circle cx="316" cy="128" r="8"/><circle cx="291" cy="133" r="9"/>
+      <circle cx="308" cy="142" r="8"/>
+    </g>
+    <g fill="#cddb9f" opacity="0.8">
+      <circle cx="290" cy="101" r="4"/><circle cx="281" cy="115" r="4"/><circle cx="306" cy="109" r="4"/>
+    </g>
+
+    <!-- dark purple grape cluster, centre -->
+    <g fill="#4a2440">
+      <circle cx="212" cy="132" r="11"/><circle cx="232" cy="134" r="11"/><circle cx="252" cy="138" r="11"/>
+      <circle cx="196" cy="146" r="11"/><circle cx="216" cy="150" r="11"/><circle cx="236" cy="152" r="11"/>
+      <circle cx="256" cy="156" r="10"/><circle cx="274" cy="150" r="10"/><circle cx="180" cy="160" r="11"/>
+      <circle cx="200" cy="166" r="11"/><circle cx="220" cy="168" r="11"/><circle cx="240" cy="170" r="11"/>
+      <circle cx="260" cy="172" r="10"/><circle cx="172" cy="176" r="10"/><circle cx="192" cy="184" r="11"/>
+      <circle cx="212" cy="186" r="11"/><circle cx="232" cy="188" r="10"/><circle cx="250" cy="190" r="10"/>
+      <circle cx="204" cy="202" r="10"/><circle cx="224" cy="204" r="9"/><circle cx="186" cy="200" r="9"/>
+    </g>
+    <g fill="#6b3f5e" opacity="0.85">
+      <circle cx="208" cy="128" r="4"/><circle cx="228" cy="130" r="4"/><circle cx="192" cy="142" r="4"/>
+      <circle cx="212" cy="146" r="4"/><circle cx="176" cy="156" r="4"/><circle cx="236" cy="148" r="4"/>
+      <circle cx="256" cy="152" r="3.5"/><circle cx="196" cy="180" r="4"/><circle cx="216" cy="182" r="4"/>
+    </g>
+
+    <!-- yellow pear, right of the grapes -->
+    <path d="M318 148 C338 148 348 166 348 184 C348 202 332 212 318 212 C304 212 288 202 288 184 C288 166 298 148 318 148 Z" fill="#e3d24f"/>
+    <ellipse cx="306" cy="166" rx="9" ry="6" fill="#f2e694" opacity="0.8"/>
+
+    <!-- green apple at the far right -->
+    <ellipse cx="370" cy="170" rx="30" ry="29" fill="#6f9c37"/>
+    <ellipse cx="360" cy="160" rx="12" ry="9" fill="#9dc160" opacity="0.8"/>
+
+    <!-- deep red cherry / small apple low centre -->
+    <ellipse cx="254" cy="216" rx="18" ry="17" fill="#8e1f2e"/>
+    <ellipse cx="248" cy="208" rx="8" ry="6" fill="#bd4256" opacity="0.7"/>
+
+    <!-- green pear, lower right -->
+    <path d="M348 186 C372 186 386 208 386 230 C386 252 366 264 348 264 C330 264 312 252 312 230 C312 208 324 186 348 186 Z" fill="#7fa63a"/>
+    <ellipse cx="334" cy="208" rx="11" ry="8" fill="#a8c563" opacity="0.75"/>
+    <path d="M348 190 C350 178 356 170 364 166" stroke="#4e3a1c" stroke-width="5" fill="none"/>
+
+    <!-- pale yellow-green apple, lower centre-right -->
+    <ellipse cx="292" cy="254" rx="27" ry="26" fill="#ced95a"/>
+    <ellipse cx="283" cy="245" rx="11" ry="8" fill="#e6ee9a" opacity="0.8"/>
+
+    <!-- small red fruit nestled at the turban edge -->
+    <ellipse cx="222" cy="264" rx="16" ry="15" fill="#c2313f"/>
+    <ellipse cx="217" cy="257" rx="7" ry="5" fill="#e06575" opacity="0.75"/>
+
+    <!-- orange fruit cropped by the right edge -->
+    <ellipse cx="404" cy="292" rx="28" ry="27" fill="#d98a2a"/>
+    <ellipse cx="394" cy="282" rx="11" ry="8" fill="#efb35f" opacity="0.7"/>
+  </g>
+
+  <!-- ============ TURBAN ============ -->
+  <g id="turban">
+    <path d="M50 340 C38 250 104 182 190 182 C284 182 330 250 326 340 C322 402 296 444 244 448 L124 420 C76 402 58 380 50 340 Z" fill="#5b3d8f"/>
+    <!-- shadow side -->
+    <path d="M50 340 C58 272 92 214 148 190 C104 226 88 292 94 350 C99 396 122 416 152 426 L124 420 C76 402 58 380 50 340 Z" fill="#432c6b" opacity="0.55"/>
+    <!-- top-left fold of the wrap -->
+    <path d="M86 300 C84 258 100 222 130 202 C112 240 108 282 118 318 C126 348 142 364 160 372 C124 366 90 342 86 300 Z" fill="#6e4ca6" opacity="0.55"/>
+    <!-- crown highlight -->
+    <path d="M150 196 C214 178 288 206 314 262 C286 224 220 200 160 214 Z" fill="#8261bd" opacity="0.6"/>
+    <!-- folded band across the back of the head -->
+    <path d="M244 448 C286 440 314 408 322 366 C330 400 316 434 288 450 C276 457 258 452 244 448 Z" fill="#3a2559" opacity="0.5"/>
+    <!-- fabric creases -->
+    <path d="M180 196 C200 236 204 288 198 336" stroke="#4a3175" stroke-width="3" fill="none" opacity="0.5"/>
+    <path d="M262 202 C276 246 278 300 268 352" stroke="#4a3175" stroke-width="3" fill="none" opacity="0.45"/>
+  </g>
+
+  <!-- ============ FACE ============ -->
+  <g id="face">
+    <!-- dark hair peeking from under the turban -->
+    <path d="M74 300 C70 272 82 250 104 240 C92 262 86 288 88 314 C90 340 98 358 110 372 C86 362 76 334 74 300 Z" fill="#241611"/>
+    <path d="M240 268 C256 276 266 296 268 320 C256 300 244 284 230 276 Z" fill="#241611" opacity="0.9"/>
+
+    <!-- neck -->
+    <path d="M112 450 L206 462 L210 522 C176 538 138 536 110 520 Z" fill="#cf9c76"/>
+    <path d="M112 450 L206 462 L206 486 C170 496 134 492 108 480 Z" fill="#b07f57" opacity="0.55"/>
+
+    <!-- head oval, tipped slightly to the viewer's left -->
+    <ellipse cx="148" cy="368" rx="90" ry="108" fill="#d9a883" transform="rotate(-5 148 368)"/>
+    <!-- shadow along the far cheek / jaw -->
+    <path d="M212 300 C232 336 230 396 208 434 C196 456 176 468 158 470 C186 456 204 428 210 392 C216 356 216 322 206 296 Z" fill="#bf8a62" opacity="0.5"/>
+    <!-- temple shadow under the turban -->
+    <path d="M62 320 C62 288 74 262 96 248 C82 276 76 306 78 336 C80 366 88 386 100 400 C74 388 64 358 62 320 Z" fill="#b98459" opacity="0.45"/>
+    <!-- cheekbone highlight -->
+    <ellipse cx="112" cy="398" rx="30" ry="18" fill="#eec3a0" opacity="0.55" transform="rotate(-12 112 398)"/>
+    <!-- chin / lower lip highlight -->
+    <ellipse cx="140" cy="466" rx="24" ry="12" fill="#eec3a0" opacity="0.5"/>
+
+    <!-- brows -->
+    <path d="M62 328 C74 316 92 314 104 322 C90 318 76 320 64 330 Z" fill="#2a1a12"/>
+    <path d="M162 316 C176 306 194 306 206 314 C192 310 176 312 164 320 Z" fill="#2a1a12"/>
+
+    <!-- left eye (viewer's left) -->
+    <path d="M58 344 C70 328 96 326 110 342 C96 356 70 358 58 344 Z" fill="#fdf8f3"/>
+    <circle cx="86" cy="343" r="10" fill="#6b4a24"/>
+    <circle cx="86" cy="343" r="4.6" fill="#191008"/>
+    <circle cx="82" cy="339" r="1.8" fill="#ffffff" opacity="0.9"/>
+    <path d="M58 344 C70 328 96 326 110 342" stroke="#1c1109" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M56 342 C56 332 60 326 66 322" stroke="#1c1109" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+    <!-- right eye (viewer's right) -->
+    <path d="M162 334 C176 318 200 318 212 334 C198 348 174 348 162 334 Z" fill="#fdf8f3"/>
+    <circle cx="188" cy="333" r="10" fill="#6b4a24"/>
+    <circle cx="188" cy="333" r="4.6" fill="#191008"/>
+    <circle cx="184" cy="329" r="1.8" fill="#ffffff" opacity="0.9"/>
+    <path d="M162 334 C176 318 200 318 212 334" stroke="#1c1109" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+    <!-- nose -->
+    <path d="M132 360 C128 384 124 400 118 410 C126 418 138 418 146 412" fill="none" stroke="#b9835a" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="120" cy="414" rx="5" ry="3.5" fill="#a06e46" opacity="0.8"/>
+    <ellipse cx="146" cy="412" rx="5" ry="3.5" fill="#a06e46" opacity="0.8"/>
+
+    <!-- lips -->
+    <path d="M96 436 C110 424 130 424 144 432 C132 440 110 444 96 436 Z" fill="#a4142c"/>
+    <path d="M96 436 C110 446 132 448 146 438 C134 456 106 456 96 436 Z" fill="#c0203a"/>
+    <path d="M104 436 C118 432 132 433 142 437" stroke="#7d0d20" stroke-width="2" fill="none" opacity="0.8"/>
+    <ellipse cx="122" cy="446" rx="8" ry="3" fill="#e2697d" opacity="0.55"/>
+
+    <!-- blush -->
+    <ellipse cx="84" cy="400" rx="20" ry="12" fill="#d98d7a" opacity="0.35" transform="rotate(-15 84 400)"/>
+    <ellipse cx="196" cy="386" rx="18" ry="11" fill="#d98d7a" opacity="0.3" transform="rotate(-10 196 386)"/>
+  </g>
+
+  <!-- ============ EARRING ============ -->
+  <g id="earring">
+    <ellipse cx="228" cy="432" rx="5" ry="6" fill="#e4d6b4"/>
+    <circle cx="248" cy="424" r="17" fill="#d8c9a8"/>
+    <circle cx="248" cy="424" r="11" fill="none" stroke="#a8916c" stroke-width="2"/>
+    <circle cx="248" cy="424" r="5" fill="#efe6cf"/>
+    <path d="M236 438 C244 448 254 448 262 438 C258 452 240 452 236 438 Z" fill="#cfc09c"/>
+  </g>
+
+  <!-- ============ DRESS / SHOULDER ============ -->
+  <g id="dress">
+    <path d="M0 546 C46 522 92 522 128 536 C160 550 210 552 254 538 C318 518 380 524 423 552 L423 635 L0 635 Z" fill="#f0e7d2"/>
+    <path d="M0 546 C46 522 92 522 128 536 C160 550 210 552 254 538 C318 518 380 524 423 552 L423 566 C372 540 314 534 254 554 C200 570 156 566 120 550 C84 534 42 534 0 560 Z" fill="#d9ceb4" opacity="0.7"/>
+    <!-- floral paillette pattern -->
+    <g fill="#b9c98f" opacity="0.85">
+      <circle cx="60" cy="596" r="5"/><circle cx="130" cy="612" r="5"/><circle cx="205" cy="590" r="5"/>
+      <circle cx="278" cy="606" r="5"/><circle cx="352" cy="588" r="5"/><circle cx="404" cy="618" r="5"/>
+      <circle cx="96" cy="628" r="5"/><circle cx="244" cy="628" r="5"/><circle cx="322" cy="628" r="5"/>
+    </g>
+    <g fill="#e59ab0" opacity="0.85">
+      <circle cx="86" cy="586" r="4"/><circle cx="166" cy="602" r="4"/><circle cx="242" cy="584" r="4"/>
+      <circle cx="316" cy="600" r="4"/><circle cx="382" cy="600" r="4"/><circle cx="126" cy="632" r="4"/>
+      <circle cx="290" cy="630" r="4"/><circle cx="360" cy="632" r="4"/>
+    </g>
+    <g fill="#f4e9a8" opacity="0.9">
+      <circle cx="44" cy="612" r="3"/><circle cx="196" cy="574" r="3"/><circle cx="266" cy="580" r="3"/>
+      <circle cx="338" cy="616" r="3"/><circle cx="408" cy="594" r="3"/>
+    </g>
+
+    <!-- necklace of coloured beads -->
+    <path d="M120 552 C150 590 214 594 250 556" fill="none" stroke="#8b7a5e" stroke-width="1.5" opacity="0.7"/>
+    <circle cx="134" cy="566" r="6" fill="#6f8c3d"/>
+    <circle cx="152" cy="578" r="6" fill="#3f6ea8"/>
+    <circle cx="172" cy="586" r="6" fill="#b03040"/>
+    <circle cx="192" cy="590" r="6" fill="#d9b04a"/>
+    <circle cx="212" cy="586" r="6" fill="#5b8a52"/>
+    <circle cx="230" cy="576" r="6" fill="#2f4f7f"/>
+    <circle cx="244" cy="564" r="6" fill="#c06030"/>
+  </g>
+
+  <!-- ============ HAND ============ -->
+  <g id="hand">
+    <path d="M18 606 C22 574 40 552 66 546 C84 542 96 552 96 566 C96 574 90 580 82 582 C72 584 64 592 62 604 C60 620 58 632 54 635 L24 635 C18 628 16 618 18 606 Z" fill="#d9a883"/>
+    <path d="M96 566 C110 556 124 552 138 554 C148 556 150 566 142 572 C130 580 118 588 110 598 C104 606 100 616 98 626 L74 630 C80 606 88 580 96 566 Z" fill="#e0b08b"/>
+    <!-- fingers -->
+    <path d="M104 556 C122 546 142 544 156 550 C164 554 162 564 152 566 C136 570 120 576 110 584 C102 590 96 598 94 606 L76 612 C84 586 92 568 104 556 Z" fill="#e6b892"/>
+    <!-- nails -->
+    <g fill="#c21b2c">
+      <ellipse cx="44" cy="614" rx="9" ry="12" transform="rotate(-18 44 614)"/>
+      <ellipse cx="72" cy="620" rx="8" ry="12" transform="rotate(-6 72 620)"/>
+      <ellipse cx="96" cy="600" rx="7" ry="11" transform="rotate(20 96 600)"/>
+      <ellipse cx="118" cy="580" rx="6" ry="10" transform="rotate(42 118 580)"/>
+      <ellipse cx="140" cy="562" rx="6" ry="9" transform="rotate(62 140 562)"/>
+    </g>
+    <g fill="#e04b5a" opacity="0.6">
+      <ellipse cx="41" cy="608" rx="3" ry="4"/>
+      <ellipse cx="69" cy="614" rx="2.6" ry="4"/>
+    </g>
+  </g>
+</svg>

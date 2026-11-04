@@ -1,0 +1,262 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 2048" width="1240" height="2048" role="img" aria-label="Path of an input from entry to the model">
+  <title>Input trace: message → classification → model</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0%" stop-color="#0a0e1c"/><stop offset="100%" stop-color="#121a30"/></linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1240" height="2048" fill="url(#bg)"/>
+  <g font-family="Inter, Helvetica, Arial, sans-serif">
+    <text x="48" y="52" font-size="11" letter-spacing="3.2" fill="#4cc9f0">INPUT TRACE</text>
+    <text x="48" y="92" font-size="30" font-weight="700" fill="#eaf0ff">Your message → classification → me</text>
+    <text x="48" y="118" font-size="12.5" fill="#8ea2c9" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">/home/pmpmt/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent</text>
+    <text x="1192" y="78" text-anchor="end" font-size="22" font-weight="700" fill="#eaf0ff">5</text>
+    <text x="1192" y="100" text-anchor="end" font-size="11" fill="#8ea2c9">input hooks</text>
+    <text x="980" y="78" text-anchor="end" font-size="22" font-weight="700" fill="#eaf0ff">1</text>
+    <text x="980" y="100" text-anchor="end" font-size="11" fill="#8ea2c9">return-trip hooks</text>
+    <text x="768" y="78" text-anchor="end" font-size="22" font-weight="700" fill="#eaf0ff">1</text>
+    <text x="768" y="100" text-anchor="end" font-size="11" fill="#8ea2c9">can end the turn</text>
+    <text x="556" y="78" text-anchor="end" font-size="22" font-weight="700" fill="#eaf0ff">deepseek-flash</text>
+    <text x="556" y="100" text-anchor="end" font-size="11" fill="#8ea2c9">default model</text>
+  </g>
+  <line x1="48" y1="138" x2="1192" y2="138" stroke="#eaf0ff" stroke-opacity="0.10"/>
+  <text x="48" y="194" font-family="Inter, Helvetica, Arial, sans-serif" font-size="10.5" letter-spacing="2.4" fill="#4cc9f0">ENTRY</text>
+  <line x1="112" y1="190" x2="1192" y2="190" stroke="#4cc9f0" stroke-opacity="0.18"/>
+  <line x1="182" y1="212" x2="182" y2="251.0" stroke="#4cc9f0" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="212" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="251.0" r="7" fill="#0a0e1c" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="251.0" x2="248" y2="251.0" stroke="#4cc9f0" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="239" font-size="15" font-weight="600" fill="#eaf0ff">message enters</text>
+    <text x="268" y="259" font-size="11" fill="#5a6b8c">TUI keystroke · pi -p prompt · Telegram (@llblab/pi-telegram)</text>
+    <text x="268" y="278" font-size="11.5" fill="#8ea2c9">a Telegram message arrives with a `[telegram…]` prefix, which later hooks can detect</text>
+    <rect x="1095.0" y="240.0" width="81.0" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="1104.0" y="255.0" font-size="10.5" fill="#93a5c7">one string</text>
+  </g>
+  <line x1="182" y1="251.0" x2="182" y2="343.0" stroke="#4cc9f0" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="304" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="343.0" r="7" fill="#0a0e1c" stroke="#4cc9f0" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="343.0" x2="248" y2="343.0" stroke="#4cc9f0" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="331" font-size="15" font-weight="600" fill="#eaf0ff">pi core: input dispatch</text>
+    <text x="268" y="351" font-size="11" fill="#5a6b8c">extension event `input` · handlers run in settings.json load order</text>
+    <text x="268" y="370" font-size="11.5" fill="#8ea2c9">text starting with / goes to a command, not a turn · a handler may answer continue or handled</text>
+    <rect x="994.2" y="332.0" width="181.8" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="1003.2" y="347.0" font-size="10.5" fill="#93a5c7">handler order = load order</text>
+  </g>
+  <text x="48" y="422" font-family="Inter, Helvetica, Arial, sans-serif" font-size="10.5" letter-spacing="2.4" fill="#f72585">INPUT HOOK</text>
+  <line x1="152" y1="418" x2="1192" y2="418" stroke="#f72585" stroke-opacity="0.18"/>
+  <line x1="182" y1="440" x2="182" y2="479.0" stroke="#f72585" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="440" width="944" height="78" rx="12" fill="#111a31" stroke="#f72585" stroke-opacity="0.65"/>
+    <rect x="248" y="450" width="3" height="58" rx="1.5" fill="#f72585" opacity="0.9"/>
+    <circle cx="182" cy="479.0" r="7" fill="#0a0e1c" stroke="#f72585" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="479.0" x2="248" y2="479.0" stroke="#f72585" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="467" font-size="15" font-weight="600" fill="#eaf0ff">calendar-router</text>
+    <text x="268" y="487" font-size="11" fill="#5a6b8c">extensions/calendar-router/index.ts</text>
+    <text x="268" y="506" font-size="11.5" fill="#8ea2c9">sees the raw text, decides whether to act · config.json: calendarRouter.mode = route</text>
+    <rect x="1057.2" y="468.0" width="118.8" height="22" rx="11" fill="#3a1229" stroke="#ff8fc0" stroke-opacity="0.35"/>
+    <text x="1066.2" y="483.0" font-size="10.5" fill="#ff8fc0">can end the turn</text>
+    <rect x="924.1" y="468.0" width="125.1" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="933.1" y="483.0" font-size="10.5" fill="#93a5c7">prints true/false</text>
+    <rect x="854.0" y="468.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="863.0" y="483.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+  </g>
+  <line x1="182" y1="479.0" x2="182" y2="571.0" stroke="#f72585" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="532" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="571.0" r="7" fill="#0a0e1c" stroke="#f72585" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="571.0" x2="248" y2="571.0" stroke="#f72585" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="559" font-size="15" font-weight="600" fill="#eaf0ff">input-contains-email</text>
+    <text x="268" y="579" font-size="11" fill="#5a6b8c">extensions/input-contains-email/index.ts</text>
+    <text x="268" y="598" font-size="11.5" fill="#8ea2c9">sees the raw text, decides whether to act</text>
+    <rect x="1050.9" y="560.0" width="125.1" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="1059.9" y="575.0" font-size="10.5" fill="#93a5c7">prints true/false</text>
+    <rect x="980.8" y="560.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="989.8" y="575.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+  </g>
+  <line x1="182" y1="571.0" x2="182" y2="663.0" stroke="#f72585" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="624" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="663.0" r="7" fill="#0a0e1c" stroke="#f72585" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="663.0" x2="248" y2="663.0" stroke="#f72585" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="651" font-size="15" font-weight="600" fill="#eaf0ff">input-contains-path</text>
+    <text x="268" y="671" font-size="11" fill="#5a6b8c">extensions/input-contains-path/index.ts</text>
+    <text x="268" y="690" font-size="11.5" fill="#8ea2c9">sees the raw text, decides whether to act</text>
+    <rect x="1050.9" y="652.0" width="125.1" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="1059.9" y="667.0" font-size="10.5" fill="#93a5c7">prints true/false</text>
+    <rect x="980.8" y="652.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="989.8" y="667.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+  </g>
+  <line x1="182" y1="663.0" x2="182" y2="755.0" stroke="#f72585" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="716" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="755.0" r="7" fill="#0a0e1c" stroke="#f72585" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="755.0" x2="248" y2="755.0" stroke="#f72585" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="743" font-size="15" font-weight="600" fill="#eaf0ff">input-contains-url</text>
+    <text x="268" y="763" font-size="11" fill="#5a6b8c">extensions/input-contains-url/index.ts</text>
+    <text x="268" y="782" font-size="11.5" fill="#8ea2c9">sees the raw text, decides whether to act</text>
+    <rect x="1050.9" y="744.0" width="125.1" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="1059.9" y="759.0" font-size="10.5" fill="#93a5c7">prints true/false</text>
+    <rect x="980.8" y="744.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="989.8" y="759.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+  </g>
+  <line x1="182" y1="755.0" x2="182" y2="847.0" stroke="#f72585" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="808" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="847.0" r="7" fill="#0a0e1c" stroke="#f72585" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="847.0" x2="248" y2="847.0" stroke="#f72585" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="835" font-size="15" font-weight="600" fill="#eaf0ff">less-than-input-words</text>
+    <text x="268" y="855" font-size="11" fill="#5a6b8c">extensions/less-than-input-words/index.ts</text>
+    <text x="268" y="874" font-size="11.5" fill="#8ea2c9">sees the raw text, decides whether to act</text>
+    <rect x="1050.9" y="836.0" width="125.1" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="1059.9" y="851.0" font-size="10.5" fill="#93a5c7">prints true/false</text>
+    <rect x="980.8" y="836.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="989.8" y="851.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+  </g>
+  <text x="48" y="926" font-family="Inter, Helvetica, Arial, sans-serif" font-size="10.5" letter-spacing="2.4" fill="#ffb703">BEFORE_AGENT_START</text>
+  <line x1="216" y1="922" x2="1192" y2="922" stroke="#ffb703" stroke-opacity="0.18"/>
+  <line x1="182" y1="944" x2="182" y2="983.0" stroke="#ffb703" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="944" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="983.0" r="7" fill="#0a0e1c" stroke="#ffb703" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="983.0" x2="248" y2="983.0" stroke="#ffb703" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="971" font-size="15" font-weight="600" fill="#eaf0ff">calendar-router</text>
+    <text x="268" y="991" font-size="11" fill="#5a6b8c">extensions/calendar-router/index.ts</text>
+    <text x="268" y="1010" font-size="11.5" fill="#8ea2c9">only when the input hook did not already answer: attaches the fallback block</text>
+    <rect x="1113.9" y="972.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="1122.9" y="987.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+    <rect x="968.2" y="972.0" width="137.7" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="977.2" y="987.0" font-size="10.5" fill="#93a5c7">fallback block only</text>
+  </g>
+  <line x1="182" y1="983.0" x2="182" y2="1075.0" stroke="#ffb703" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1036" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1075.0" r="7" fill="#0a0e1c" stroke="#ffb703" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1075.0" x2="248" y2="1075.0" stroke="#ffb703" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1063" font-size="15" font-weight="600" fill="#eaf0ff">input-contains-email</text>
+    <text x="268" y="1083" font-size="11" fill="#5a6b8c">extensions/input-contains-email/index.ts</text>
+    <text x="268" y="1102" font-size="11.5" fill="#8ea2c9">attaches a hidden message (display:false) that the model reads but the screen hides</text>
+    <rect x="1113.9" y="1064.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="1122.9" y="1079.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+    <rect x="943.0" y="1064.0" width="162.9" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="952.0" y="1079.0" font-size="10.5" fill="#7fe3ff">adds inputContainsEmail</text>
+  </g>
+  <line x1="182" y1="1075.0" x2="182" y2="1167.0" stroke="#ffb703" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1128" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1167.0" r="7" fill="#0a0e1c" stroke="#ffb703" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1167.0" x2="248" y2="1167.0" stroke="#ffb703" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1155" font-size="15" font-weight="600" fill="#eaf0ff">input-contains-path</text>
+    <text x="268" y="1175" font-size="11" fill="#5a6b8c">extensions/input-contains-path/index.ts</text>
+    <text x="268" y="1194" font-size="11.5" fill="#8ea2c9">attaches a hidden message (display:false) that the model reads but the screen hides</text>
+    <rect x="1113.9" y="1156.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="1122.9" y="1171.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+    <rect x="949.3" y="1156.0" width="156.6" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="958.3" y="1171.0" font-size="10.5" fill="#7fe3ff">adds inputContainsPath</text>
+  </g>
+  <line x1="182" y1="1167.0" x2="182" y2="1259.0" stroke="#ffb703" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1220" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1259.0" r="7" fill="#0a0e1c" stroke="#ffb703" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1259.0" x2="248" y2="1259.0" stroke="#ffb703" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1247" font-size="15" font-weight="600" fill="#eaf0ff">input-contains-url</text>
+    <text x="268" y="1267" font-size="11" fill="#5a6b8c">extensions/input-contains-url/index.ts</text>
+    <text x="268" y="1286" font-size="11.5" fill="#8ea2c9">attaches a hidden message (display:false) that the model reads but the screen hides</text>
+    <rect x="1113.9" y="1248.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="1122.9" y="1263.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+    <rect x="955.6" y="1248.0" width="150.3" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="964.6" y="1263.0" font-size="10.5" fill="#7fe3ff">adds inputContainsUrl</text>
+  </g>
+  <line x1="182" y1="1259.0" x2="182" y2="1351.0" stroke="#ffb703" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1312" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1351.0" r="7" fill="#0a0e1c" stroke="#ffb703" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1351.0" x2="248" y2="1351.0" stroke="#ffb703" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1339" font-size="15" font-weight="600" fill="#eaf0ff">less-than-input-words</text>
+    <text x="268" y="1359" font-size="11" fill="#5a6b8c">extensions/less-than-input-words/index.ts</text>
+    <text x="268" y="1378" font-size="11.5" fill="#8ea2c9">attaches a hidden message (display:false) that the model reads but the screen hides</text>
+    <rect x="1113.9" y="1340.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="1122.9" y="1355.0" font-size="10.5" fill="#7fe3ff">enabled</text>
+    <rect x="943.0" y="1340.0" width="162.9" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="952.0" y="1355.0" font-size="10.5" fill="#7fe3ff">adds lessThanInputWords</text>
+  </g>
+  <line x1="182" y1="1351.0" x2="182" y2="1443.0" stroke="#ffb703" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1404" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1443.0" r="7" fill="#0a0e1c" stroke="#ffb703" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1443.0" x2="248" y2="1443.0" stroke="#ffb703" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1431" font-size="15" font-weight="600" fill="#eaf0ff">pi-prompt-capture</text>
+    <text x="268" y="1451" font-size="11" fill="#5a6b8c">extensions/pi-prompt-capture.ts</text>
+    <text x="268" y="1470" font-size="11.5" fill="#8ea2c9">observes the assembled prompt and writes a capture file; mutates nothing</text>
+    <rect x="1101.3" y="1432.0" width="74.7" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="1110.3" y="1447.0" font-size="10.5" fill="#93a5c7">read-only</text>
+  </g>
+  <text x="48" y="1522" font-family="Inter, Helvetica, Arial, sans-serif" font-size="10.5" letter-spacing="2.4" fill="#57cc99">REQUEST</text>
+  <line x1="128" y1="1518" x2="1192" y2="1518" stroke="#57cc99" stroke-opacity="0.18"/>
+  <line x1="182" y1="1540" x2="182" y2="1579.0" stroke="#57cc99" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1540" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1579.0" r="7" fill="#0a0e1c" stroke="#57cc99" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1579.0" x2="248" y2="1579.0" stroke="#57cc99" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1567" font-size="15" font-weight="600" fill="#eaf0ff">prompt assembly</text>
+    <text x="268" y="1587" font-size="11" fill="#5a6b8c">pi core: system prompt + AGENTS.md + APPEND_SYSTEM.md + transcript + hidden blocks</text>
+    <text x="268" y="1606" font-size="11.5" fill="#8ea2c9">the classification blocks ride along as messages, not as prompt sections</text>
+    <rect x="1057.2" y="1568.0" width="118.8" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="1066.2" y="1583.0" font-size="10.5" fill="#7fe3ff">+4 hidden blocks</text>
+  </g>
+  <line x1="182" y1="1579.0" x2="182" y2="1671.0" stroke="#57cc99" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1632" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1671.0" r="7" fill="#0a0e1c" stroke="#57cc99" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1671.0" x2="248" y2="1671.0" stroke="#57cc99" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1659" font-size="15" font-weight="600" fill="#eaf0ff">pi-prompt-capture</text>
+    <text x="268" y="1679" font-size="11" fill="#5a6b8c">extensions/pi-prompt-capture.ts</text>
+    <text x="268" y="1698" font-size="11.5" fill="#8ea2c9">observes the assembled payload last, before it leaves the machine</text>
+    <rect x="1101.3" y="1660.0" width="74.7" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
+    <text x="1110.3" y="1675.0" font-size="10.5" fill="#93a5c7">read-only</text>
+  </g>
+  <line x1="182" y1="1671.0" x2="182" y2="1763.0" stroke="#57cc99" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1724" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1763.0" r="7" fill="#0a0e1c" stroke="#57cc99" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1763.0" x2="248" y2="1763.0" stroke="#57cc99" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1751" font-size="15" font-weight="600" fill="#eaf0ff">model request → deepseek/deepseek-flash</text>
+    <text x="268" y="1771" font-size="11" fill="#5a6b8c">settings.json defaultProvider / defaultModel</text>
+    <text x="268" y="1790" font-size="11.5" fill="#8ea2c9">hidden blocks I read: inputContainsEmail · inputContainsPath · inputContainsUrl · lessThanInputWords</text>
+    <rect x="1038.3" y="1752.0" width="137.7" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
+    <text x="1047.3" y="1767.0" font-size="10.5" fill="#7fe3ff">the end of the path</text>
+  </g>
+  <text x="48" y="1842" font-family="Inter, Helvetica, Arial, sans-serif" font-size="10.5" letter-spacing="2.4" fill="#9f7aea">RETURN TRIP</text>
+  <line x1="160" y1="1838" x2="1192" y2="1838" stroke="#9f7aea" stroke-opacity="0.18"/>
+  <line x1="182" y1="1860" x2="182" y2="1899.0" stroke="#9f7aea" stroke-opacity="0.45" stroke-width="2"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="248" y="1860" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
+    <circle cx="182" cy="1899.0" r="7" fill="#0a0e1c" stroke="#9f7aea" stroke-width="2" filter="url(#glow)"/>
+    <line x1="189" y1="1899.0" x2="248" y2="1899.0" stroke="#9f7aea" stroke-opacity="0.55" stroke-width="1.5"/>
+    <text x="268" y="1887" font-size="15" font-weight="600" fill="#eaf0ff">secret-scrubber (tool output)</text>
+    <text x="268" y="1907" font-size="11" fill="#5a6b8c">extensions/secret-scrubber.ts</text>
+    <text x="268" y="1926" font-size="11.5" fill="#8ea2c9">runs after a tool, before its output joins the transcript: secrets are redacted first</text>
+    <rect x="1069.8" y="1888.0" width="106.2" height="22" rx="11" fill="#3a1229" stroke="#ff8fc0" stroke-opacity="0.35"/>
+    <text x="1078.8" y="1903.0" font-size="10.5" fill="#ff8fc0">scrubs secrets</text>
+  </g>
+  <path d="M 177 385.0 L 182 391.0 L 187 385.0" fill="none" stroke="#4cc9f0" stroke-opacity="0.6" stroke-width="1.5"/>
+  <path d="M 177 889.0 L 182 895.0 L 187 889.0" fill="none" stroke="#f72585" stroke-opacity="0.6" stroke-width="1.5"/>
+  <path d="M 177 1485.0 L 182 1491.0 L 187 1485.0" fill="none" stroke="#ffb703" stroke-opacity="0.6" stroke-width="1.5"/>
+  <path d="M 177 1805.0 L 182 1811.0 L 187 1805.0" fill="none" stroke="#57cc99" stroke-opacity="0.6" stroke-width="1.5"/>
+  <g font-family="Inter, Helvetica, Arial, sans-serif" font-size="11.5" fill="#8ea2c9">
+    <circle cx="54" cy="1982" r="5.5" fill="#0a0e1c" stroke="#4cc9f0" stroke-width="2"/>
+    <text x="66" y="1986">entry</text>
+    <circle cx="133" cy="1982" r="5.5" fill="#0a0e1c" stroke="#f72585" stroke-width="2"/>
+    <text x="145" y="1986">input hook</text>
+    <circle cx="247" cy="1982" r="5.5" fill="#0a0e1c" stroke="#ffb703" stroke-width="2"/>
+    <text x="259" y="1986">before_agent_start</text>
+    <circle cx="417" cy="1982" r="5.5" fill="#0a0e1c" stroke="#57cc99" stroke-width="2"/>
+    <text x="429" y="1986">request</text>
+    <circle cx="510" cy="1982" r="5.5" fill="#0a0e1c" stroke="#9f7aea" stroke-width="2"/>
+    <text x="522" y="1986">return trip</text>
+    <rect x="627" y="1975" width="3" height="14" rx="1.5" fill="#f72585"/>
+    <text x="637" y="1986">can end the turn (no model call)</text>
+    <text x="48" y="2016" opacity="0.7">order and flags read from settings.json · /home/pmpmt/.pi/config.json · extension sources</text>
+    <text x="1192" y="2016" text-anchor="end" opacity="0.7">input-path.svg</text>
+  </g>
+</svg>
