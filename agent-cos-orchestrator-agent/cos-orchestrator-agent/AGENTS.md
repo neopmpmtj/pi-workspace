@@ -35,13 +35,13 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 A hook in this home classifies every message before the turn and, on a match, runs the
 `calendar` node (`~/.pi/decision-nodes/calendar/`).
 
-- On local surfaces (TUI, `pi -p`) the extension prints the trace and the outcome itself and
-  swallows the turn: no model runs, and you will not be asked anything about it. Do not
-  repeat its work if a later message refers to it.
-- On Telegram the same run is attached as a hidden `calendar-router` block, because the
-  bridge delivers assistant text. When that block says the event **was created**, relay it
-  and do not run `gog`, the node, or a sibling agent: a second create puts a duplicate
-  event on the calendar. When the write was **skipped**, say why in one line.
+- The hook answers the message itself: on local surfaces the trace and outcome are printed,
+  on Telegram they are sent through the bridge's delivery API. In both cases the turn is
+  swallowed, so **no model runs and you are not asked anything about it**.
+- That only happens when the answer was actually delivered. If Telegram delivery fails, the
+  turn is kept and a hidden `calendar-router` block arrives instead: then relay it, do not
+  run `gog`, the node, or a sibling agent (a second create puts a duplicate event on the
+  calendar), and say why in one line when the write was skipped.
 
 ## Scripts and runbooks
 

@@ -30,11 +30,10 @@
    including whether the event was created, so nothing is claimed falsely.
 5. On no match, or on any classifier failure: nothing is routed and the turn happens
    normally. An unreadable free/busy verdict counts as UNKNOWN, and UNKNOWN never writes.
-6. The hook finishes the work on the surface's own terms: on local surfaces (TUI, `-p`)
-   it prints the trace and the outcome and returns `handled`, so **no model turn runs**;
-   on Telegram it injects a block in `before_agent_start` and the reply relays it, because
-   the bridge only delivers assistant text. The work never runs in a slow `input` handler
-   that could race the start of the run.
+6. The hook finishes the work with no model turn on both surfaces: local runs print the
+   trace and the outcome and return `handled`; a Telegram turn gets the same text through
+   the bridge's delivery API (`active-turn`, then `instance`). If that delivery fails, the
+   turn is **not** swallowed - input continues and a hidden block lets the reply relay it.
 
 ## Check it in one command
 
@@ -63,10 +62,10 @@ Expect `calendar true`, `decision venue_date_time`, and two destinations marked
 | `do:calendar:gog` | one `gog calendar freebusy` call, ~0.3 s, no tokens |
 | field extraction | one `deepseek-flash` JSON request, ~1.5k in / 100 out (~$0.0002), ~2 s, outside the pi ledger |
 | `do:calendar:create` | one `gog calendar events` duplicate check + one `gog calendar create`, ~0.9 s, no tokens |
-| the CoS turn | none on local surfaces (swallowed); one relay turn on Telegram |
+| the CoS turn | none when the answer was delivered (local always, Telegram when the bridge accepts it); a relay turn otherwise |
 
-A match therefore costs about 3-4 s of node work instead of the ~16 s sibling hand-off it
-replaced on 2026-11-04, and on local surfaces it spends no tokens at all.
+A match costs about 3-4 s of node work. On this machine the Telegram fallback is what runs,
+because this home has no `TELEGRAM_BOT_TOKEN` (see below).
 
 ## Log
 
@@ -90,8 +89,14 @@ npm test -- 2>&1 | grep -E "parseRouteOutput|traceLines|contextBlock|runCalendar
 
 Both suites are offline: canned JSON and tiny Python stubs, no TypeSafe, no Google.
 
+## Telegram prerequisite
+
+The Telegram path needs the bridge loaded in the same pi process with a live token:
+`npm:@llblab/pi-telegram` is installed, `telegram.json` points at `$TELEGRAM_BOT_TOKEN`, and
+`~/.pi/agent-cos-orchestrator-agent/.env` must define it. It does not, as of 2026-11-04, so
+the fallback ran in testing (delivery refused, model relayed). Only one instance may poll a
+bot token - decide which pi home owns Telegram before adding it here.
+
 ## Next
 
-- Telegram still pays one relay turn, because the bridge delivers assistant text. A canned
-  `telegram_message` would close it. See `docs/INBOX.md`.
 - Attendees, reminders and recurrence are supported by `gog` and unused here.

@@ -139,8 +139,19 @@ by default; refuses the current Cursor files by name).
       swallow the turn — trace and outcome printed, no model turn, no session entry — while a
       Telegram prompt (prefix `[telegram`) keeps the relay turn because the bridge only
       delivers assistant text. Verified: local run in 9 s with no assistant message.
-- [ ] Telegram still pays one relay turn. A canned `telegram_message` (or a generated control
-      surface) that sends the outcome without a model turn would close it.
+- [x] ~~Telegram still pays one relay turn. A canned `telegram_message` (or a generated
+      control surface) that sends the outcome without a model turn would close it.~~
+      Shipped 2026-11-04: the hook sends the outcome through the bridge's delivery API
+      (`@llblab/pi-telegram/delivery`, scope `active-turn` then `instance`) and returns
+      `handled`. If delivery fails it does **not** swallow - the reply relays as before.
+- [x] ~~**Decide which pi home owns Telegram.**~~ Decided 2026-11-04: the **VPS keeps the
+      bridge only**; the laptop runs no bot and holds no token. The calendar route's Telegram
+      path is therefore exercised on the VPS. Checklist with the state of `neopmpmtj`:
+      `docs/runbooks/calendar-routing-on-vps.md`.
+- [ ] VPS enablement, as found on 2026-11-04: `~/.pi` clone is behind (node + extension +
+      `calendarRouter` arrive with `git -C ~/.pi pull --ff-only`), `gog` is **not installed**
+      (config dirs exist), and `~/.pi/jev-classifier/.env` is missing `TYPESAFE_API_KEY`.
+      Steps and verification commands are in the runbook above.
 - [ ] The duplicate guard matches titles only; a second phrasing of the same event is not
       caught. Consider matching on the window alone, or on title similarity.
 - [ ] Attendees, reminders and recurrence on `do:calendar:create` — `gog` supports all three

@@ -130,15 +130,27 @@ A failed duplicate check does not block the write - the free/busy read already s
 ## The harness hook
 
 `extensions/calendar-router/index.ts` in the CoS home runs this node before every turn,
-prints the trace, and finishes the work on the surface's own terms:
+prints the trace, and finishes the work with no model turn on both surfaces:
 
-| Surface | What happens | Cost |
+| Surface | How the answer reaches you | Cost |
 |---|---|---|
-| local: TUI, `pi -p` | the extension prints the trace **and** the outcome, then returns `handled` — no model turn, no session entry | ~4 s of node work |
-| Telegram (prompt starts `[telegram`) | the node runs in the awaited `before_agent_start` and a hidden block is injected; the reply relays it, because the bridge delivers assistant text and a swallowed turn would send nothing | ~4 s + one chat turn |
+| local: TUI, `pi -p` | trace + outcome printed to stdout, input `handled` | ~4 s of node work |
+| Telegram (`[telegram` prefix) | the same text sent through the bridge's delivery API (`@llblab/pi-telegram/delivery`, scope `active-turn` then `instance`), input `handled` | ~4 s of node work |
 
-It is never both: a handled input does not reach `before_agent_start`. The node's verdict is
-cached per prompt, so a turn that is not swallowed never pays for a second classification.
+**It only swallows when the answer actually went out.** If Telegram delivery fails -
+no bridge bound, no target authorized, runtime unavailable - input continues, the node's
+result is attached as a hidden block in `before_agent_start`, and the model relays it. A
+Telegram turn is never dropped on the floor.
+
+A handled input never reaches `before_agent_start`, so the work happens once. The verdict
+is cached per prompt for the path that does reach it.
+
+> **Telegram runs on the VPS, not here** (decided 2026-11-04). This laptop holds no bot
+> token and runs no bridge; the fallback relay is what a Telegram-shaped prompt gets here.
+> On the VPS the bridge is loaded in the same process, so delivery succeeds and no model
+> turn runs. Enablement checklist, including what `neopmpmtj` was still missing on
+> 2026-11-04 (`gog`, `TYPESAFE_API_KEY`, a `git pull`):
+> `docs/runbooks/calendar-routing-on-vps.md` in the CoS home.
 
 Switched by `~/.pi/config.json`:
 
@@ -205,6 +217,5 @@ Harness side: `npm test` in the CoS home (`test/calendar-router.test.ts`), 15 te
   passes them.
 - **The duplicate guard matches titles only.** A second phrasing of the same event ("Dinner
   with Rita" vs "Rita dinner") is not caught.
-- **Telegram still pays a chat turn.** Unavoidable while the bridge delivers assistant text:
-  the model is the only thing that can speak there. Moving the outcome to a canned
-  `telegram_message` (or a generated control surface) would close it.
+- **Telegram needs a bridge with a token in this process.** Until this home owns one, the
+  relay fallback is what runs. See `docs/INBOX.md`.
