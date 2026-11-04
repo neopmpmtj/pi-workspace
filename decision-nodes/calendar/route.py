@@ -253,6 +253,7 @@ def main() -> int:
         log(row)
 
     row.pop("utterance", None)
+    row.pop("event", None)   # datetimes resolved by the read; the routes report them
     if args.json:
         print(json.dumps(row, ensure_ascii=False))
     else:
