@@ -129,8 +129,17 @@ by default; refuses the current Cursor files by name).
       (parsed, not past, confidence ≥ 0.5, 60 min default), then `gog calendar create primary`.
       Policy: **write immediately**, chosen by the user 2026-11-04. Verified live: an event was
       created on 2026-11-05 15:00 and deleted again. 21 offline node tests + 16 harness tests.
-- [ ] A **canned calendar read** for route 1, in the spirit of `/inbox-new`: a fixed
+- [x] ~~A **canned calendar read** for route 1, in the spirit of `/inbox-new`: a fixed
       `gog calendar freebusy` call that prints FREE/BUSY with no model turn, replacing the
-      ~13 s sibling turn. Home: `~/.pi/decision-nodes/calendar/`.
+      ~13 s sibling turn.~~ Shipped 2026-11-04: `do:calendar:gog` now runs
+      `gog calendar freebusy primary --from --to` on the resolved window, ~0.3 s, no tokens.
+      A match now costs ~3 s of node work instead of ~16 s.
+- [ ] **Decide whether a match should swallow the turn** (`action: "handled"` in
+      `extensions/calendar-router/index.ts`). Today the node does the work and the CoS turn
+      only relays it — tokens spent on a result already in hand, and one model that can still
+      go re-doing it (the duplicate guard makes that harmless, not free). The cost of
+      swallowing is that the extension then owns delivery on every surface, Telegram included.
+- [ ] The duplicate guard matches titles only; a second phrasing of the same event is not
+      caught. Consider matching on the window alone, or on title similarity.
 - [ ] Attendees, reminders and recurrence on `do:calendar:create` — `gog` supports all three
       (`--attendees`, `--reminder`, `--rrule`); nothing in the node passes them yet.

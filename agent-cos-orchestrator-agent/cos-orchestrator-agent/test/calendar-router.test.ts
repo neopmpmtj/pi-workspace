@@ -5,6 +5,7 @@ import path from "node:path";
 import { after, before, describe, it } from "node:test";
 import {
   contextBlock,
+  outcomeLines,
   parseRouteOutput,
   runCalendarRoute,
   traceLines,
@@ -142,6 +143,22 @@ describe("traceLines", () => {
   it("reports a missing verdict as a continuing turn", () => {
     const lines = traceLines({ ...parseRouteOutput(NO_MATCH), ok: false, reason: "timed out" });
     assert.deepEqual(lines, ["[calendar] no verdict: timed out - turn continues"]);
+  });
+});
+
+describe("outcomeLines", () => {
+  it("reports the created event with its time and link", () => {
+    const lines = outcomeLines(parseRouteOutput(MATCH));
+    assert.match(lines[0], /^→ created: Lunch with Marta$/);
+    assert.ok(lines.some((line) => line.includes("2026-11-06T13:00:00+00:00 → 2026-11-06T14:00:00+00:00")));
+    assert.ok(lines.some((line) => line.includes("Cafe Nero")));
+    assert.ok(lines.some((line) => line.includes("calendar.google.com/event?eid=abc123")));
+  });
+
+  it("gives the one reason nothing was created", () => {
+    const lines = outcomeLines(parseRouteOutput(BUSY));
+    assert.equal(lines.length, 1);
+    assert.match(lines[0], /^→ not created: the read said BUSY - refusing to write$/);
   });
 });
 

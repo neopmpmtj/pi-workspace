@@ -19,17 +19,20 @@
    phrase states the intention to make a calendar entry **or** names a venue **and** a
    date **and** a time.
 2. On a match the router returns two destinations, run in order:
-   `do:calendar:gog` (read-only — asks the GOG agent what is already booked; its answer
-   must open `FREE`, `BUSY` or `UNKNOWN`) and `do:calendar:create` (chained — refuses
-   unless the read said `FREE`, extracts the fields, validates them, then runs
-   `gog calendar create primary`).
+   `do:calendar:gog` (resolves the fields, then `gog calendar freebusy` on that window;
+   verdict `FREE`, `BUSY` or `UNKNOWN`) and `do:calendar:create` (chained — refuses
+   unless the read said `FREE`, skips if the same title is already in the window, then
+   runs `gog calendar create primary`).
 3. **Writes are immediate** when the slot is free — the policy chosen 2026-11-04. No
    confirmation step. `GOG_DRY_RUN = True` in `config.py`, or `mode: "dry"` in the hook,
    stops the write without touching anything else.
 4. The trace prints above the reply, and the result is injected so the reply relays it —
    including whether the event was created, so nothing is claimed falsely.
 5. On no match, or on any classifier failure: nothing is routed and the turn happens
-   normally. An unreadable FREE/BUSY answer counts as UNKNOWN, and UNKNOWN never writes.
+   normally. An unreadable free/busy verdict counts as UNKNOWN, and UNKNOWN never writes.
+6. The hook runs in `before_agent_start`, never in `input`: an awaited `input` handler
+   races the start of the run and the injected block can go missing (observed once,
+   2026-11-04).
 
 ## Check it in one command
 
@@ -55,9 +58,13 @@ Expect `calendar true`, `decision venue_date_time`, and two destinations marked
 | Step | Cost |
 |---|---|
 | JEV classification | one request per message, ~300 ms, ~1.1k input + ~140 output tokens at TypeSafe |
-| `do:calendar:gog` | one model turn in the sibling, ~10-15 s. Only on a match, and only in `mode: "route"` |
-| field extraction | one `deepseek-flash` JSON request, ~1.5k in / 100 out (~$0.0002), outside the pi ledger |
-| `do:calendar:create` | one `gog calendar create` call, ~1 s, no tokens |
+| `do:calendar:gog` | one `gog calendar freebusy` call, ~0.3 s, no tokens |
+| field extraction | one `deepseek-flash` JSON request, ~1.5k in / 100 out (~$0.0002), ~2 s, outside the pi ledger |
+| `do:calendar:create` | one `gog calendar events` duplicate check + one `gog calendar create`, ~0.9 s, no tokens |
+| the CoS turn | still runs on a match, only to relay the result |
+
+A match therefore costs about 3 s of node work plus one chat turn, instead of the ~16 s
+sibling hand-off it replaced on 2026-11-04.
 
 ## Log
 
@@ -71,7 +78,7 @@ tail -3 ~/.pi/decision-nodes/calendar/verdicts.jsonl | python3 -m json.tool --js
 ## Tests
 
 ```bash
-# the node: 21 offline tests, no network
+# the node: 30 offline tests, no network
 python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py
 
 # the harness side
@@ -83,6 +90,6 @@ Both suites are offline: canned JSON and tiny Python stubs, no TypeSafe, no Goog
 
 ## Next
 
-- A canned calendar read for route 1 (a fixed `gog calendar freebusy` call, no model
-  turn) would cut the ~13 s sibling turn. See `docs/INBOX.md`.
+- Swallowing the turn on a match (`action: "handled"`) would remove the CoS turn entirely
+  and with it the last way a model can redo work. See `docs/INBOX.md`.
 - Attendees, reminders and recurrence are supported by `gog` and unused here.

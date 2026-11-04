@@ -48,10 +48,10 @@ The first node with a caller: `~/.pi/decision-nodes/calendar/`.
   (`~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-router/index.ts`),
   switched by `calendarRouter` in `~/.pi/config.json`.
 - **Judgment**: the multi CLI's `calendar` class, one request, ~300 ms.
-- **Routing**: deterministic. `config.router()` returns `do:calendar:gog` (live: read-only
-  hand-off to `sm-google-workspace`, answer opens FREE / BUSY / UNKNOWN) and
-  `do:calendar:create` (live, **chained**: writes only on FREE, via one `deepseek-flash`
-  JSON extraction, validation, then `gog calendar create primary`).
+- **Routing**: deterministic. `config.router()` returns `do:calendar:gog` (live: one cheap
+  extraction call, then `gog calendar freebusy` on that window — no chat turn, ~0.3 s) and
+  `do:calendar:create` (live, **chained**: writes only on FREE, skips a duplicate title,
+  then `gog calendar create primary`). A match is ~3 s of node work, not a sibling turn.
 - **Log**: `~/.pi/decision-nodes/calendar/verdicts.jsonl` - metadata only, no phrase text.
 - The `scheduler` node is unchanged and still idle. Its `create` gate answers a different
   question - "is this a request to book?" - and abstains on a bare statement such as

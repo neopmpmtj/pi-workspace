@@ -228,9 +228,30 @@ export function traceLines(verdict: CalendarVerdict): string[] {
 }
 
 /**
+ * The outcome lines for a turn the extension finishes itself: the node already did the
+ * work, so this is the whole reply. Created shows the event and its link; anything else
+ * shows the one reason it was not created.
+ */
+export function outcomeLines(verdict: CalendarVerdict): string[] {
+  const created = verdict.routes.find((route) => route.status === "created");
+  if (created) {
+    const event = created.event ?? {};
+    const lines = [`→ created: ${event.summary ?? created.note ?? "?"}`];
+    if (event.start) lines.push(`  ${event.start} → ${event.end ?? "?"}`);
+    if (event.location) lines.push(`  ${event.location}`);
+    if (event.link) lines.push(`  ${event.link}`);
+    return lines;
+  }
+  const write = verdict.routes.find((route) => route.destination === "do:calendar:create");
+  const read = verdict.routes.find((route) => route.destination === "do:calendar:gog");
+  const reason = write?.note ?? write?.error ?? read?.note ?? read?.error ?? write?.status ?? "not created";
+  return [`→ not created: ${reason}`];
+}
+
+/**
  * The hidden block the model receives after a match. It states that routing already
  * happened, so the turn relays instead of repeating the work - and it forbids
- * claiming a creation that is still a stub.
+ * claiming a creation that did not happen.
  */
 export function contextBlock(verdict: CalendarVerdict): string {
   const lines = [
