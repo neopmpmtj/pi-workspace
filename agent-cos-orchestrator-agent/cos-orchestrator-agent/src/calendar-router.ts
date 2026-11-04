@@ -13,6 +13,8 @@ export interface RouteStatus {
   note?: string;
   error?: string;
   agent?: string;
+  /** What produced the read: "gog calendar freebusy". */
+  source?: string;
   seconds?: number;
   chars?: number;
   answer?: string;
@@ -111,6 +113,7 @@ export function parseRouteOutput(stdout: string): CalendarVerdict {
           note: typeof r.note === "string" ? r.note : undefined,
           error: typeof r.error === "string" ? r.error : undefined,
           agent: typeof r.agent === "string" ? r.agent : undefined,
+          source: typeof r.source === "string" ? r.source : undefined,
           seconds: numberOrNull(r.seconds) ?? undefined,
           chars: numberOrNull(r.chars) ?? undefined,
           answer: typeof r.answer === "string" ? r.answer : undefined,
@@ -214,8 +217,12 @@ export function traceLines(verdict: CalendarVerdict): string[] {
     return lines;
   }
   for (const route of verdict.routes) {
-    const detail = route.note ?? route.error ?? (route.agent ? `${route.agent} ${route.seconds ?? "?"} s` : "");
-    lines.push(`[route] ${route.destination.padEnd(19)} ${route.status}${detail ? `  ${detail}` : ""}`);
+    const bits = [
+      route.note ?? route.error,
+      route.source ?? route.agent,
+      route.seconds === undefined ? undefined : `${route.seconds} s`,
+    ].filter((bit): bit is string => !!bit);
+    lines.push(`[route] ${route.destination.padEnd(19)} ${route.status}${bits.length ? `  ${bits.join(" · ")}` : ""}`);
   }
   return lines;
 }
@@ -233,12 +240,14 @@ export function contextBlock(verdict: CalendarVerdict): string {
     "routes:",
   ];
   for (const route of verdict.routes) {
-    const detail = route.status === "ran"
-      ? `ran - ${route.agent ?? "agent"} in ${route.seconds ?? "?"} s`
-      : route.note ?? route.error ?? route.status;
+    const detail = route.note ?? route.error ??
+      (route.agent ? `ran - ${route.agent} in ${route.seconds ?? "?"} s` : route.status);
     lines.push(`  ${route.destination} -> ${route.status}${detail ? ` (${detail})` : ""}`);
   }
-  lines.push("The hand-off has already happened. Do not call the router or the sibling again.");
+  lines.push(
+    "The node has already run: the slot was checked with gog and the write either happened or",
+    "was skipped for the reason below. Do not run the node, gog, or a sibling agent again.",
+  );
 
   const created = verdict.routes.find((route) => route.status === "created");
   if (created) {
@@ -257,6 +266,6 @@ export function contextBlock(verdict: CalendarVerdict): string {
   }
 
   const answer = verdict.routes.find((route) => route.answer)?.answer;
-  if (answer) lines.push("", "read-only answer:", answer);
+  if (answer) lines.push("", "calendar check:", answer);
   return lines.join("\n");
 }

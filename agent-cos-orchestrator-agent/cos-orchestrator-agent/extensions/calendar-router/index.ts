@@ -1,9 +1,9 @@
 // Classifies each new message as a calendar entry and, on a match, runs the
 // `calendar` node's router before the turn starts:
-//   do:calendar:gog    -> handed to sm-google-workspace (read-only today)
-//   do:calendar:create -> stub, `pass`, next unit
+//   do:calendar:gog    -> `gog calendar freebusy` on the resolved slot (read-only)
+//   do:calendar:create -> writes the event, only when that read said FREE
 // The trace goes on screen; the result is injected so the turn relays it instead of
-// repeating the hand-off. Off unless ~/.pi/config.json has calendarRouter.enabled true.
+// repeating the work. Off unless ~/.pi/config.json has calendarRouter.enabled true.
 import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { readCalendarRouter } from "../../src/global-config.ts";

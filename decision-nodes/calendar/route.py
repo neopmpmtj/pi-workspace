@@ -206,9 +206,10 @@ def print_human(row: dict) -> None:
     if not row["routes"]:
         print("  none - ordinary turn")
     for r in row["routes"]:
-        detail = r.get("note") or r.get("error") or ""
-        if r.get("status") == "ran":
-            detail = f"{r.get('agent')} · {r.get('seconds')} s · {r.get('chars')} chars"
+        bits = [r.get("note") or r.get("error"),
+                r.get("source") or r.get("agent"),
+                f"{r['seconds']} s" if r.get("seconds") is not None else None]
+        detail = " · ".join(str(b) for b in bits if b)
         print(f"  {r['destination']:<21} {r['status']:<8} {detail}".rstrip())
     print()
     print("phrase")
@@ -219,7 +220,7 @@ def print_human(row: dict) -> None:
             print(f"answer from {r['destination']}")
             for line in r["answer"].splitlines():
                 print(f"  {line}")
-        if r.get("event"):
+        if r.get("event") and r.get("status") in ("created", "dry-run"):
             event = r["event"]
             print()
             print(f"event written by {r['destination']}")

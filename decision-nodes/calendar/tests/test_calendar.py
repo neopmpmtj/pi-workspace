@@ -13,6 +13,8 @@ import os
 import sys
 import unittest
 from datetime import datetime, timedelta
+from subprocess import CompletedProcess as Completed
+from unittest import mock
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,25 +32,59 @@ def row_with(status="ran", gate=None, answer=""):
     return {"utterance": "dentist tomorrow at 3pm", "routes": [result]}
 
 
-class GateParser(unittest.TestCase):
-    def test_first_word_wins(self):
-        self.assertEqual(config._gate_of("FREE\nnothing booked"), "FREE")
-        self.assertEqual(config._gate_of("BUSY - standup at 15:00"), "BUSY")
-        self.assertEqual(config._gate_of("UNKNOWN - no date given"), "UNKNOWN")
+class FreebusyVerdict(unittest.TestCase):
+    """The read's JSON -> FREE / BUSY / UNKNOWN. Measured shape, 2026-11-04."""
 
-    def test_markdown_and_punctuation_are_tolerated(self):
-        self.assertEqual(config._gate_of("**FREE**"), "FREE")
-        self.assertEqual(config._gate_of("`FREE:`"), "FREE")
+    def test_an_empty_busy_list_is_free(self):
+        verdict, why = config.freebusy_verdict({"calendars": {"primary": {}}})
+        self.assertEqual((verdict, why), ("FREE", "nothing busy"))
 
-    def test_a_few_lines_of_preamble_are_tolerated(self):
-        self.assertEqual(config._gate_of("Read-only check.\n\nFREE\nsee above"), "FREE")
+    def test_an_empty_array_is_also_free(self):
+        verdict, _ = config.freebusy_verdict({"calendars": {"primary": {"busy": []}}})
+        self.assertEqual(verdict, "FREE")
 
-    def test_prose_without_a_token_is_unknown(self):
-        self.assertEqual(config._gate_of("Thursday is empty"), "UNKNOWN")
-        self.assertEqual(config._gate_of(""), "UNKNOWN")
+    def test_any_busy_block_is_busy(self):
+        payload = {"calendars": {"primary": {"busy": [
+            {"start": "2026-11-09T09:30:00Z", "end": "2026-11-09T10:00:00Z"}]}}}
+        verdict, why = config.freebusy_verdict(payload)
+        self.assertEqual(verdict, "BUSY")
+        self.assertIn("2026-11-09T09:30:00Z", why)
 
-    def test_a_token_after_the_fifth_line_is_not_read(self):
-        self.assertEqual(config._gate_of("\n".join(["-"] * 6 + ["FREE"])), "UNKNOWN")
+    def test_several_blocks_are_counted(self):
+        payload = {"calendars": {"primary": {"busy": [
+            {"start": "a", "end": "b"}, {"start": "c", "end": "d"}]}}}
+        verdict, why = config.freebusy_verdict(payload)
+        self.assertEqual(verdict, "BUSY")
+        self.assertIn("+1 more", why)
+
+    def test_unreadable_json_is_unknown(self):
+        self.assertEqual(config.freebusy_verdict({})[0], "UNKNOWN")
+        self.assertEqual(config.freebusy_verdict({"calendars": {}})[0], "UNKNOWN")
+        self.assertEqual(config.freebusy_verdict({"calendars": {"primary": {"busy": "x"}}})[0], "UNKNOWN")
+
+
+class ReadDestination(unittest.TestCase):
+    """The read resolves the fields first; no fields means no freebusy call at all."""
+
+    def test_no_fields_skips_before_any_calendar_call(self):
+        with mock.patch.object(config, "extract_event", return_value=(None, "no definite date/time")):
+            with mock.patch.object(config.subprocess, "run") as run:
+                result = config.do_calendar_gog({"utterance": "book something sometime"})
+        run.assert_not_called()
+        self.assertEqual(result["status"], "skipped")
+        self.assertEqual(result["gate"], "UNKNOWN")
+        self.assertIn("no definite date", result["note"])
+
+    def test_the_read_stashes_the_fields_for_the_write(self):
+        event = {"summary": "Barber", "location": None,
+                 "start": datetime(2026, 11, 5, 15, 0, tzinfo=ZONE),
+                 "end": datetime(2026, 11, 5, 16, 0, tzinfo=ZONE), "confidence": 0.9}
+        row = {"utterance": "barber tomorrow 3pm"}
+        with mock.patch.object(config, "extract_event", return_value=(event, "")):
+            with mock.patch.object(config.subprocess, "run", return_value=Completed(["gog"], 0, '{"calendars":{"primary":{}}}', "")):
+                result = config.do_calendar_gog(row)
+        self.assertEqual(result["gate"], "FREE")
+        self.assertIs(row["event"], event)
 
 
 class Chain(unittest.TestCase):
@@ -67,11 +103,29 @@ class Chain(unittest.TestCase):
         self.assertEqual(verdict, "UNKNOWN")
         self.assertIn("did not run", why)
 
-    def test_busy_short_circuits_before_any_extraction(self):
-        result = config.do_calendar_create(row_with(gate="BUSY"))
+    def test_busy_short_circuits_before_the_write(self):
+        with mock.patch.object(config, "create_event") as create:
+            result = config.do_calendar_create(row_with(gate="BUSY"))
+        create.assert_not_called()
         self.assertEqual(result["status"], "skipped")
         self.assertIn("BUSY", result["note"])
         self.assertNotIn("event", result)
+
+    def test_free_without_fields_writes_nothing(self):
+        with mock.patch.object(config, "create_event") as create:
+            result = config.do_calendar_create(row_with(gate="FREE"))
+        create.assert_not_called()
+        self.assertEqual(result["status"], "skipped")
+        self.assertIn("no resolved fields", result["note"])
+
+    def test_free_with_fields_writes_them(self):
+        event = {"summary": "Barber", "start": "x", "end": "y"}
+        row = row_with(gate="FREE")
+        row["event"] = event
+        with mock.patch.object(config, "create_event", return_value={"status": "created"}) as create:
+            config.do_calendar_create(row)
+        create.assert_called_once()
+        self.assertIs(create.call_args[0][0], event)
 
 
 class Validation(unittest.TestCase):

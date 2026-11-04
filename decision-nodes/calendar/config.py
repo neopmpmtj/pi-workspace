@@ -3,12 +3,12 @@
 
 One utterance in. One routing decision out. Two destinations, both live:
 
-  do:calendar:gog      the phrase is handed to sm-google-workspace, which reads
-                       Google Calendar and answers. READ-ONLY. Its first token is
-                       FREE, BUSY or UNKNOWN - that token is the gate below.
+  do:calendar:gog      resolves the slot (one cheap model call for the fields) and
+                       checks it with `gog calendar freebusy`. READ-ONLY, no chat
+                       turn. The verdict is FREE, BUSY or UNKNOWN.
   do:calendar:create   CHAINED to the read, not independent: it refuses to write
-                       unless route 1 said FREE, then extracts venue/date/time,
-                       validates them, and runs `gog calendar create` on `primary`.
+                       unless the read said FREE, then runs `gog calendar create`
+                       on `primary` with the fields the read already resolved.
 
 The classifier is NOT re-implemented here. `jev-classifier-multi` already owns the
 calendar question - intention OR venue AND date AND time - and is measured; this
@@ -42,12 +42,10 @@ NODE_VERSION = "0.2.0"
 CLASSIFIER = "~/.pi/jev-classifier/jev-classifier-multi/src/classify.py"
 CLASSIFIER_TIMEOUT_S = 45
 
-# Destination do:calendar:gog. The launcher sources that repo's own .env, so
-# GOG_ACCOUNT and the keyring password never travel through this process.
-GOG_DIR = "~/.pi/agent-gog-workspace-agents/sm-google-workspace"
-GOG_LAUNCHER = "pi-sm-google-workspace"
-GOG_TIMEOUT_S = 240
-GOG_ANSWER_CHARS = 1500
+# Destination do:calendar:gog. A fixed gog call, not a chat turn: the free/busy
+# window is the event's own slot, resolved in the step above it.
+FREEBUSY_TIMEOUT_S = 60
+FREEBUSY_CALENDAR = "primary"
 
 # Fields, not verdicts: one cheap model call. Key comes from this agent's .env.
 EXTRACT_ENV = "~/.pi/agent-cos-orchestrator-agent/.env"
@@ -89,71 +87,76 @@ def router(row: dict) -> list:
 # --------------------------------------------------------------- destinations
 
 def do_calendar_gog(row: dict) -> dict:
-    """Hand the phrase to the Google Workspace agent. READ-ONLY.
+    """Resolve the slot, then ask `gog calendar freebusy`. READ-ONLY, no chat turn.
 
-    Not `gog` directly: the agent holds the account, the keyring and the ledger,
-    and a chat turn there is the contract this repo already publishes. No canned
-    calendar command exists yet (see docs/INBOX.md), so this is one model turn.
+    Two steps, ~2.5 s together instead of a ~13 s model turn:
+      1. `extract_event` - one cheap model call for summary/location/start/end,
+         validated. No fields means no window, so the read stops there.
+      2. `gog calendar freebusy primary --from <start> --to <end>` - a fixed call
+         whose empty `busy` list is the FREE verdict.
 
-    The answer must open with FREE / BUSY / UNKNOWN, because that token is the gate
-    the next destination reads. Prose after it is for the user.
+    The resolved event is stashed on the row as `row["event"]` so the write reuses
+    it instead of paying for a second extraction. That is the chain, in code.
     """
-    phrase = row.get("utterance", "")
-    task = (
-        "Read-only Google Calendar question. Do NOT create, move, or delete anything.\n"
-        f'My message: "{phrase}"\n'
-        "Check my primary calendar for the day and time it names, and whether that slot is free.\n"
-        "Your answer MUST start with exactly ONE of these words: FREE, BUSY, or UNKNOWN - "
-        "FREE when the slot is free, BUSY when something already overlaps it, UNKNOWN when the "
-        "message names no definite date or time or you could not tell. Put that word in the "
-        "first non-empty line, then explain in a few lines."
-    )
+    event, why = extract_event(row.get("utterance", ""))
+    if event is None:
+        return {"destination": "do:calendar:gog", "status": "skipped",
+                "gate": _UNKNOWN, "note": why}
+
+    row["event"] = event
+    when = f"{event['start']:%a %d %b %H:%M} → {event['end']:%H:%M}"
+
+    env = dict(os.environ)
+    env.update(_env_file(GOG_ENV))
+    command = ["gog", "calendar", "freebusy", FREEBUSY_CALENDAR, "-j",
+               "--from", event["start"].isoformat(),
+               "--to", event["end"].isoformat()]
     started = _now()
     try:
-        proc = subprocess.run(
-            [GOG_LAUNCHER, "-p", task],
-            cwd=os.path.expanduser(GOG_DIR),
-            capture_output=True, text=True, timeout=GOG_TIMEOUT_S,
-        )
+        proc = subprocess.run(command, capture_output=True, text=True,
+                              timeout=FREEBUSY_TIMEOUT_S, env=env)
     except subprocess.TimeoutExpired:
-        return {"destination": "do:calendar:gog", "status": "failed",
-                "seconds": round(_now() - started, 1),
-                "error": f"timeout after {GOG_TIMEOUT_S}s"}
+        return {"destination": "do:calendar:gog", "status": "failed", "gate": _UNKNOWN,
+                "note": f"freebusy timed out after {FREEBUSY_TIMEOUT_S}s"}
     except OSError as exc:
-        return {"destination": "do:calendar:gog", "status": "failed",
-                "seconds": round(_now() - started, 1), "error": str(exc)}
+        return {"destination": "do:calendar:gog", "status": "failed", "gate": _UNKNOWN,
+                "note": f"gog not runnable: {exc}"}
 
-    answer = (proc.stdout or "").strip()
-    if proc.returncode != 0 or not answer:
-        return {"destination": "do:calendar:gog", "status": "failed",
-                "seconds": round(_now() - started, 1),
-                "error": (proc.stderr or answer or f"exit {proc.returncode}").strip()[-500:]}
+    seconds = round(_now() - started, 1)
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or f"exit {proc.returncode}").strip()[-300:]
+        return {"destination": "do:calendar:gog", "status": "failed", "gate": _UNKNOWN,
+                "seconds": seconds, "note": f"freebusy failed: {detail}"}
 
-    return {"destination": "do:calendar:gog", "status": "ran", "agent": "sm-google-workspace",
-            "seconds": round(_now() - started, 1), "chars": len(answer),
-            "gate": _gate_of(answer), "answer": answer[-GOG_ANSWER_CHARS:]}
+    try:
+        payload = json.loads(proc.stdout.strip() or "{}")
+    except json.JSONDecodeError:
+        return {"destination": "do:calendar:gog", "status": "failed", "gate": _UNKNOWN,
+                "seconds": seconds, "note": "freebusy returned no JSON"}
+
+    verdict, detail = freebusy_verdict(payload)
+    return {"destination": "do:calendar:gog", "status": "ran", "gate": verdict,
+            "source": "gog calendar freebusy", "seconds": seconds,
+            "note": f"{verdict} · {when} · {detail}",
+            "answer": f"freebusy {FREEBUSY_CALENDAR} {event['start'].isoformat()} "
+                      f"→ {event['end'].isoformat()}: {verdict} ({detail})"}
 
 
 def do_calendar_create(row: dict) -> dict:
-    """The write. CHAINED: route 1's verdict is the permission to write.
+    """The write. CHAINED: the read's verdict is the permission to write.
 
-    Its contract with `route.py`: return a dict, or None for "not implemented".
-    A dict with status "skipped"/"failed"/"created" is the normal vocabulary.
+    Uses `row["event"]`, which the read resolved and validated. Re-extracting here
+    would be a second paid call and could disagree with the window that was checked.
     """
     verdict, why = _gate(row)
     if verdict != "FREE":
         return _skip(why)
 
-    event, why = extract_event(row.get("utterance", ""))
-    if event is None:
-        return _skip(why)
+    event = row.get("event")
+    if not isinstance(event, dict):
+        return _skip("no resolved fields - the read did not complete")
 
     return create_event(event, row)
-
-
-def stub_create(row: dict) -> None:
-    """The shape before this unit existed. Kept out of DESTINATIONS; no caller."""
-    pass
 
 
 # ------------------------------------------------------------------- the gate
@@ -161,28 +164,45 @@ def stub_create(row: dict) -> None:
 _FREE, _BUSY, _UNKNOWN = "FREE", "BUSY", "UNKNOWN"
 
 
-def _gate_of(answer: str) -> str:
-    """The read's verdict, from the first five non-empty lines. UNKNOWN otherwise."""
-    lines = [line.strip() for line in (answer or "").splitlines() if line.strip()][:5]
-    for line in lines:
-        token = line.strip("*`#></ ").upper().split(" ")[0].split(":")[0].strip(".,;!?")
-        if token in (_FREE, _BUSY, _UNKNOWN):
-            return token
-    return _UNKNOWN
+def freebusy_verdict(payload: dict) -> tuple[str, str]:
+    """`gog calendar freebusy` JSON -> (verdict, one-line detail).
+
+    An empty `busy` list is the FREE verdict; anything unreadable is UNKNOWN, which
+    never writes. Structure, measured 2026-11-04:
+        {"calendars": {"primary": {"busy": [{"start": ..., "end": ...}]}}}
+    """
+    calendars = payload.get("calendars")
+    if not isinstance(calendars, dict):
+        return _UNKNOWN, "freebusy returned no calendars"
+    calendar = calendars.get(FREEBUSY_CALENDAR)
+    if not isinstance(calendar, dict):
+        return _UNKNOWN, f"freebusy returned no {FREEBUSY_CALENDAR} calendar"
+    busy = calendar.get("busy") or []
+    if not isinstance(busy, list):
+        return _UNKNOWN, "freebusy returned a malformed busy list"
+    if not busy:
+        return _FREE, "nothing busy"
+
+    first = busy[0] if isinstance(busy[0], dict) else {}
+    detail = f"busy {first.get('start', '?')} → {first.get('end', '?')}"
+    if len(busy) > 1:
+        detail += f" (+{len(busy) - 1} more)"
+    return _BUSY, detail
 
 
 def _gate(row: dict) -> tuple[str, str]:
-    """Read route 1's result out of the row. Never assumes it ran or succeeded."""
+    """Read the read's verdict out of the row. Never assumes it ran or succeeded."""
     for result in row.get("routes") or []:
         if result.get("destination") != "do:calendar:gog":
             continue
         if result.get("status") != "ran":
-            return _UNKNOWN, f"route 1 {result.get('status')} - refusing to write blind"
-        verdict = result.get("gate") or _gate_of(result.get("answer") or "")
+            reason = result.get("note") or result.get("error") or result.get("status")
+            return _UNKNOWN, f"read {result.get('status')} ({reason}) - refusing to write blind"
+        verdict = result.get("gate") or _UNKNOWN
         if verdict == _FREE:
-            return _FREE, "route 1 said FREE"
-        return verdict, f"route 1 said {verdict} - refusing to write"
-    return _UNKNOWN, "route 1 did not run - refusing to write blind"
+            return _FREE, "the read said FREE"
+        return verdict, f"the read said {verdict} - refusing to write"
+    return _UNKNOWN, "the read did not run - refusing to write blind"
 
 
 # ----------------------------------------------------------------- the fields

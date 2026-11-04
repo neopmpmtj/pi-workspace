@@ -10,9 +10,10 @@ import {
   traceLines,
 } from "../src/calendar-router.ts";
 
+/** A match that ended in a write. The live shape, 2026-11-04. */
 const MATCH = JSON.stringify({
   node: "calendar",
-  node_version: "0.1.0",
+  node_version: "0.2.0",
   utterance_chars: 62,
   abstained: false,
   reason: null,
@@ -21,7 +22,7 @@ const MATCH = JSON.stringify({
     confidence: 0.99,
     decision: "venue_date_time",
     threshold: 0.7,
-    rules: { states_intention: 0.17, has_venue: 0.99, has_date: 0.99, has_time: 0.99 },
+    rules: { states_intention: 0.19, has_venue: 0.99, has_date: 0.99, has_time: 0.99 },
   },
   model: "jev-1.14.0",
   latency_ms: 311,
@@ -29,12 +30,42 @@ const MATCH = JSON.stringify({
     {
       destination: "do:calendar:gog",
       status: "ran",
-      agent: "sm-google-workspace",
-      seconds: 19.2,
-      chars: 525,
-      answer: "10:30 is free on both candidate dates.",
+      gate: "FREE",
+      source: "gog calendar freebusy",
+      note: "FREE · Fri 06 Nov 13:00 → 14:00 · nothing busy",
+      seconds: 0.4,
+      answer: "freebusy primary 2026-11-06T13:00:00+00:00 → 2026-11-06T14:00:00+00:00: FREE (nothing busy)",
     },
-    { destination: "do:calendar:create", status: "stub", note: "not implemented - next unit" },
+    {
+      destination: "do:calendar:create",
+      status: "created",
+      note: "Lunch with Marta · Fri 06 Nov 13:00 → 14:00 · Cafe Nero",
+      seconds: 0.6,
+      event: {
+        summary: "Lunch with Marta",
+        location: "Cafe Nero",
+        start: "2026-11-06T13:00:00+00:00",
+        end: "2026-11-06T14:00:00+00:00",
+        id: "abc123",
+        link: "https://calendar.google.com/event?eid=abc123",
+      },
+    },
+  ],
+});
+
+/** A match the read vetoed. */
+const BUSY = JSON.stringify({
+  node: "calendar",
+  abstained: false,
+  reason: null,
+  calendar: { is_match: true, confidence: 0.99, decision: "intention", threshold: 0.7, rules: {} },
+  routes: [
+    { destination: "do:calendar:gog", status: "ran", gate: "BUSY",
+      source: "gog calendar freebusy",
+      note: "BUSY · Mon 09 Nov 09:30 → 10:30 · busy 2026-11-09T09:30:00Z → 2026-11-09T10:00:00Z",
+      seconds: 0.3 },
+    { destination: "do:calendar:create", status: "skipped",
+      note: "the read said BUSY - refusing to write" },
   ],
 });
 
@@ -66,8 +97,10 @@ describe("parseRouteOutput", () => {
     assert.equal(verdict.rules.has_venue, 0.99);
     assert.equal(verdict.routes.length, 2);
     assert.equal(verdict.routes[0].destination, "do:calendar:gog");
-    assert.equal(verdict.routes[0].seconds, 19.2);
-    assert.equal(verdict.routes[1].status, "stub");
+    assert.equal(verdict.routes[0].source, "gog calendar freebusy");
+    assert.equal(verdict.routes[1].status, "created");
+    assert.equal(verdict.routes[1].event?.summary, "Lunch with Marta");
+    assert.equal(verdict.routes[1].event?.link, "https://calendar.google.com/event?eid=abc123");
   });
 
   it("reads a non-match as no destinations", () => {
@@ -95,8 +128,9 @@ describe("traceLines", () => {
   it("shows the judgment and both destinations on a match", () => {
     const lines = traceLines(parseRouteOutput(MATCH));
     assert.match(lines[0], /^\[jev\]   calendar true 0\.990 \(venue_date_time\)/);
-    assert.ok(lines.some((line) => line.includes("do:calendar:gog") && line.includes("ran")));
-    assert.ok(lines.some((line) => line.includes("do:calendar:create") && line.includes("stub")));
+    assert.ok(lines.some((line) => line.includes("do:calendar:gog") && line.includes("FREE")));
+    assert.ok(lines.some((line) => line.includes("gog calendar freebusy")));
+    assert.ok(lines.some((line) => line.includes("do:calendar:create") && line.includes("created")));
   });
 
   it("says nothing was routed on a non-match", () => {
@@ -111,58 +145,23 @@ describe("traceLines", () => {
   });
 });
 
-const CREATED = JSON.stringify({
-  node: "calendar",
-  abstained: false,
-  reason: null,
-  calendar: { is_match: true, confidence: 0.99, decision: "intention", threshold: 0.7, rules: {} },
-  model: "jev-1.14.0",
-  latency_ms: 300,
-  routes: [
-    { destination: "do:calendar:gog", status: "ran", agent: "sm-google-workspace", seconds: 11.2,
-      answer: "FREE\nThursday 5 Nov is empty." },
-    { destination: "do:calendar:create", status: "created",
-      note: "Barber appointment · Thu 05 Nov 15:00 → 16:00",
-      event: { summary: "Barber appointment", location: null,
-               start: "2026-11-05T15:00:00+00:00", end: "2026-11-05T16:00:00+00:00",
-               id: "abc123", link: "https://calendar.google.com/event?eid=abc123" } },
-  ],
-});
-
-const BUSY = JSON.stringify({
-  node: "calendar",
-  abstained: false,
-  reason: null,
-  calendar: { is_match: true, confidence: 0.99, decision: "intention", threshold: 0.7, rules: {} },
-  routes: [
-    { destination: "do:calendar:gog", status: "ran", agent: "sm-google-workspace", seconds: 9.8,
-      gate: "BUSY", answer: "BUSY - standup at 15:00." },
-    { destination: "do:calendar:create", status: "skipped", note: "route 1 said BUSY - refusing to write" },
-  ],
-});
-
 describe("contextBlock", () => {
-  it("reports a stub hand-off without claiming a creation", () => {
-    const block = contextBlock(parseRouteOutput(MATCH));
-    assert.match(block, /already executed/);
-    assert.match(block, /Do not call the router or the sibling again/);
-    assert.match(block, /No event was created - do not claim one was/);
-    assert.match(block, /10:30 is free/);
-    assert.match(block, /do:calendar:create -> stub/);
-  });
-
   it("states that the event was created, with its link", () => {
-    const block = contextBlock(parseRouteOutput(CREATED));
+    const block = contextBlock(parseRouteOutput(MATCH));
+    assert.match(block, /The node has already run/);
+    assert.match(block, /Do not run the node, gog, or a sibling agent again/);
     assert.match(block, /The event WAS created/);
-    assert.match(block, /Barber appointment · 2026-11-05T15:00:00\+00:00/);
+    assert.match(block, /Lunch with Marta · 2026-11-06T13:00:00\+00:00/);
     assert.match(block, /calendar\.google\.com\/event\?eid=abc123/);
     assert.doesNotMatch(block, /No event was created/);
   });
 
   it("says nothing was written when the read said BUSY", () => {
     const block = contextBlock(parseRouteOutput(BUSY));
-    assert.match(block, /do:calendar:create -> skipped \(route 1 said BUSY/);
+    assert.match(block, /do:calendar:gog -> ran \(BUSY/);
+    assert.match(block, /do:calendar:create -> skipped \(the read said BUSY/);
     assert.match(block, /No event was created/);
+    assert.doesNotMatch(block, /The event WAS created/);
   });
 });
 
