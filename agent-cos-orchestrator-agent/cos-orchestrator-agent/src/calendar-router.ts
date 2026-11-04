@@ -16,6 +16,15 @@ export interface RouteStatus {
   seconds?: number;
   chars?: number;
   answer?: string;
+  /** Present when the write ran: what was written, and its id and link. */
+  event?: {
+    summary?: string;
+    location?: string | null;
+    start?: string;
+    end?: string;
+    id?: string | null;
+    link?: string | null;
+  };
 }
 
 /** One verdict from the node, in the shape the extension needs. */
@@ -59,6 +68,24 @@ function numberOrNull(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function textOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" && value ? value : undefined;
+}
+
+/** The written event, when the node reports one. */
+function eventOf(value: unknown): RouteStatus["event"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const event = value as Record<string, unknown>;
+  return {
+    summary: textOrUndefined(event.summary),
+    location: typeof event.location === "string" ? event.location : null,
+    start: textOrUndefined(event.start),
+    end: textOrUndefined(event.end),
+    id: typeof event.id === "string" ? event.id : null,
+    link: typeof event.link === "string" ? event.link : null,
+  };
+}
+
 /**
  * Map the node's JSON to a verdict. Throws when the object cannot be trusted, so a
  * half-written answer is never mistaken for a non-match.
@@ -87,6 +114,7 @@ export function parseRouteOutput(stdout: string): CalendarVerdict {
           seconds: numberOrNull(r.seconds) ?? undefined,
           chars: numberOrNull(r.chars) ?? undefined,
           answer: typeof r.answer === "string" ? r.answer : undefined,
+          event: eventOf(r.event),
         }))
     : [];
 
@@ -207,17 +235,28 @@ export function contextBlock(verdict: CalendarVerdict): string {
   for (const route of verdict.routes) {
     const detail = route.status === "ran"
       ? `ran - ${route.agent ?? "agent"} in ${route.seconds ?? "?"} s`
-      : route.status === "stub"
-        ? "stub - not implemented yet"
-        : route.status;
-    lines.push(`  ${route.destination} -> ${detail}`);
+      : route.note ?? route.error ?? route.status;
+    lines.push(`  ${route.destination} -> ${route.status}${detail ? ` (${detail})` : ""}`);
   }
-  lines.push(
-    "The hand-off has already happened. Do not call the router or the sibling again.",
-    "Relay the answer below in a few lines. Do not claim the event was created: creation is the",
-    "destination that is still a stub.",
-  );
+  lines.push("The hand-off has already happened. Do not call the router or the sibling again.");
+
+  const created = verdict.routes.find((route) => route.status === "created");
+  if (created) {
+    const event = created.event ?? {};
+    lines.push(
+      "The event WAS created. Report it plainly, with its time and its link when present.",
+      `created: ${event.summary ?? "?"} · ${event.start ?? "?"} -> ${event.end ?? "?"}` +
+        (event.location ? ` · ${event.location}` : "") +
+        (event.link ? ` · ${event.link}` : ""),
+    );
+  } else {
+    lines.push(
+      "No event was created - do not claim one was. Say why in one line, using the",
+      "route note above (a BUSY or UNKNOWN read, missing fields, or low confidence).",
+    );
+  }
+
   const answer = verdict.routes.find((route) => route.answer)?.answer;
-  if (answer) lines.push("", "answer:", answer);
+  if (answer) lines.push("", "read-only answer:", answer);
   return lines.join("\n");
 }

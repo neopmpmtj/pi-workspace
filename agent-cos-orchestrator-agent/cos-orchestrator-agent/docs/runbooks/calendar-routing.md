@@ -18,13 +18,18 @@
 1. Every new message is classified by the node's `calendar` class: a match when the
    phrase states the intention to make a calendar entry **or** names a venue **and** a
    date **and** a time.
-2. On a match the router returns two destinations:
-   `do:calendar:gog` (live, read-only — asks the GOG agent what is already booked) and
-   `do:calendar:create` (**stub**, `pass`).
-3. The trace prints above the reply, and the hand-off answer is injected so the reply
-   relays it. No destination ever writes to the calendar yet.
-4. On no match, or on any classifier failure: nothing is routed and the turn happens
-   normally.
+2. On a match the router returns two destinations, run in order:
+   `do:calendar:gog` (read-only — asks the GOG agent what is already booked; its answer
+   must open `FREE`, `BUSY` or `UNKNOWN`) and `do:calendar:create` (chained — refuses
+   unless the read said `FREE`, extracts the fields, validates them, then runs
+   `gog calendar create primary`).
+3. **Writes are immediate** when the slot is free — the policy chosen 2026-11-04. No
+   confirmation step. `GOG_DRY_RUN = True` in `config.py`, or `mode: "dry"` in the hook,
+   stops the write without touching anything else.
+4. The trace prints above the reply, and the result is injected so the reply relays it —
+   including whether the event was created, so nothing is claimed falsely.
+5. On no match, or on any classifier failure: nothing is routed and the turn happens
+   normally. An unreadable FREE/BUSY answer counts as UNKNOWN, and UNKNOWN never writes.
 
 ## Check it in one command
 
@@ -50,8 +55,9 @@ Expect `calendar true`, `decision venue_date_time`, and two destinations marked
 | Step | Cost |
 |---|---|
 | JEV classification | one request per message, ~300 ms, ~1.1k input + ~140 output tokens at TypeSafe |
-| `do:calendar:gog` | one model turn in the sibling, ~20 s. Only on a match, and only in `mode: "route"` |
-| `do:calendar:create` | nothing — it is a stub |
+| `do:calendar:gog` | one model turn in the sibling, ~10-15 s. Only on a match, and only in `mode: "route"` |
+| field extraction | one `deepseek-flash` JSON request, ~1.5k in / 100 out (~$0.0002), outside the pi ledger |
+| `do:calendar:create` | one `gog calendar create` call, ~1 s, no tokens |
 
 ## Log
 
@@ -65,15 +71,18 @@ tail -3 ~/.pi/decision-nodes/calendar/verdicts.jsonl | python3 -m json.tool --js
 ## Tests
 
 ```bash
+# the node: 21 offline tests, no network
+python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py
+
+# the harness side
 cd ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent
 npm test -- 2>&1 | grep -E "parseRouteOutput|traceLines|contextBlock|runCalendarRoute"
 ```
 
-The suite is offline: it parses canned JSON and exercises the fail-open paths with
-tiny Python stubs, so it never calls TypeSafe or Google.
+Both suites are offline: canned JSON and tiny Python stubs, no TypeSafe, no Google.
 
-## Next unit
+## Next
 
-Fill `do:calendar:create` in `~/.pi/decision-nodes/calendar/config.py`: extract
-`venue`, `date`, `time` as fields, validate, then `gog calendar create` on `primary`.
-See `docs/INBOX.md` in this home.
+- A canned calendar read for route 1 (a fixed `gog calendar freebusy` call, no model
+  turn) would cut the ~13 s sibling turn. See `docs/INBOX.md`.
+- Attendees, reminders and recurrence are supported by `gog` and unused here.

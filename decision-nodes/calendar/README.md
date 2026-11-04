@@ -1,7 +1,7 @@
 # Node: `calendar`
 
-> 2026-11-04. First live unit: **classify a calendar entry, route it, run the routes.**
-> One destination is implemented, the second is a stub on purpose.
+> 2026-11-04. Both destinations are live. The write is **chained** to the read: nothing
+> is created unless the calendar check said FREE.
 
 One utterance in. One routing decision out, executed deterministically. No model
 decides the route: JEV answers one question, `config.router()` maps that answer to
@@ -14,8 +14,11 @@ your input
    ├─[2] classify    ONE JEV request through jev-classifier-multi  (~300 ms)
    │                 class `calendar`: intention OR (venue AND date AND time)
    ├─[3] route       config.router(row) -> ["do:calendar:gog", "do:calendar:create"]
-   ├─[4] execute     do:calendar:gog    -> pi-sm-google-workspace, READ-ONLY
-   │                 do:calendar:create -> pass   ← the stub, next unit
+   ├─[4] execute     in order, each destination seeing the ones before it:
+   │                   do:calendar:gog    -> sm-google-workspace, READ-ONLY,
+   │                                        answer must open FREE / BUSY / UNKNOWN
+   │                   do:calendar:create -> refuses unless FREE, extracts the fields,
+   │                                        validates, `gog calendar create`
    └─[5] log         one JSON line in verdicts.jsonl: metadata, never the text
 ```
 
@@ -23,76 +26,106 @@ your input
 
 | Destination | Status | What it does |
 |---|---|---|
-| `do:calendar:gog` | **live** | Hands your phrase to `sm-google-workspace` as a *read-only* question: what is already on the calendar that day and time, is the slot free. It creates nothing. One model turn there, ~20 s. |
-| `do:calendar:create` | **stub** | The write. `pass`. Needs venue, date and time as **fields**, and JEV returns a verdict and a score, not fields - so extraction is the missing piece, not the wiring. Kept in the router so the trace and the log keep showing what is still missing. |
+| `do:calendar:gog` | live | Hands the phrase to `sm-google-workspace` as a *read-only* question. Its first token must be **FREE**, **BUSY** or **UNKNOWN**: that token is the gate for the next destination. One model turn there, ~10-15 s. |
+| `do:calendar:create` | live | Returns `skipped` unless route 1 said FREE. Then one cheap model call extracts `summary`, `location`, `start`, `end`; the node validates them (parsed, not in the past, confidence ≥ 0.5, sane end); then `gog calendar create primary`. Writes immediately - the confirmation policy chosen 2026-11-04. |
 
-Read before write: a false positive costs a calendar read, not a wrong event.
+Read before write, and the read can veto: a busy slot, a failed read, or a read that
+never ran all stop the write. Every skip reason is printed and logged.
 
 ## Run it by hand
 
 ```bash
 cd ~/.pi/decision-nodes/calendar
 
-# classify + route, run nothing (no calendar call, ~0.3 s)
-./route.py --text "Lunch with Marta at Cafe Nero, Rua de Santa Catarina 12, on Friday at 1pm" --dry-run
+# classify + route, run nothing (~0.3 s, no calendar call)
+./route.py --text "Lunch with Marta at Cafe Nero on Friday at 1pm" --dry-run
 
-# the real thing: route 1 runs
-./route.py --text "Dentist appointment at Clinica do Douro, Rua A, on Thursday 12 February at 10:30"
+# the real thing: read, then create if FREE
+./route.py --text "make me a calendar entry for tomorrow at 3 p.m. to go to the barber"
 
 # machine-readable, for the extension
 ./route.py --text "..." --json
 
 # from a pipe
-printf '%s' "Standup at the office on Monday at 9am" | ./route.py --stdin --dry-run
+printf '%s' "Standup at the office on Monday at 9am" | ./route.py --stdin
 ```
+
+`GOG_DRY_RUN = True` at the top of `config.py` sends `--dry-run` to the last step:
+the whole pipeline runs and gog prints what it *would* create. Use it before
+trusting a change.
 
 Exit `0` means a verdict was produced (match or not). Exit `2` means none exists -
 missing key, timeout, unreadable answer - and **nothing was routed**.
 
 ## What you see
 
-A match, with route 1 executed (real transcript, 2026-11-04):
+A match that ended in a write (real run, 2026-11-04; the event was deleted afterwards):
 
 ```
 calendar            true
 confidence          0.990
-decision            venue_date_time
+decision            intention
 threshold           0.7
-rules               states_intention 0.140 · has_venue 0.990 · has_date 0.990 · has_time 0.990 · venue_date_time 0.990
-model               jev-1.14.0   latency 369 ms
+rules               states_intention 0.990 · has_venue 0.470 · has_date 0.990 · has_time 0.990 · venue_date_time 0.470
+model               jev-1.14.0   latency 285 ms
 
 routes
-  do:calendar:gog       ran      sm-google-workspace · 19.2 s · 525 chars
-  do:calendar:create    stub     not implemented - next unit
+  do:calendar:gog       ran      sm-google-workspace · 12.8 s · 624 chars
+  do:calendar:create    created  Barber appointment · Thu 05 Nov 15:00 → 16:00
 
 phrase
-  Dentist appointment at Clinica do Douro, Rua A, on Thursday 12 February at 10:30
+  make me a calendar entry for tomorrow at 3 p.m. to go to the barber
 
 answer from do:calendar:gog
-  Read-only check, nothing created or changed. Primary calendar = `neopmpmtj@gmail.com`.
-  ...
+  FREE
+  - "Tomorrow" = Thursday 2026-11-05 ...
+  - Free/busy for the full local day: empty, so 15:00-16:00 is clear.
+
+event written by do:calendar:create
+  summary   Barber appointment
+  start     2026-11-05T15:00:00+00:00
+  end       2026-11-05T16:00:00+00:00
+  id        ijfa0gll9n8k99dqrhhj4vb7ok
 ```
 
-A non-match - the ordinary case - routes nothing:
+Three statuses are possible for the write: `created`, `skipped` (with the reason),
+`failed` (gog said no). A `skipped` line reads, for example:
+
+```
+  do:calendar:create    skipped  route 1 said BUSY - refusing to write
+```
+
+A non-match - the ordinary case - routes nothing at all:
 
 ```
 calendar            false
-confidence          0.010
-decision            none
 ...
 routes
   none - ordinary turn
 ```
 
-Note `has_date 0.980` in that non-match: JEV saw the date, and the venue and time
-rules still said no, so the class stayed false. That is the AND doing its job.
+## The fields, and the one model call
+
+JEV returns a verdict and a score, not fields. So `extract_event()` makes **one**
+request to `deepseek-flash` (`~/.pi/agent-cos-orchestrator-agent/.env`, key
+`DEEPSEEK_API_KEY`) asking for strict JSON: `summary`, `location`, `start_local`,
+`end_local`, `confidence`, `reason`. Roughly 1.5k in / 100 out per phrase - about
+$0.0002 - and ~1-2 s.
+
+Everything after that call is deterministic: `_validate()` refuses a missing or
+unparsable date, a slot in the past, confidence below 0.5, an empty summary; a bad
+or missing end time becomes exactly 60 minutes; a blank location becomes none.
+`Europe/Lisbon` is attached with `zoneinfo`, so summer and winter offsets are right.
+
+That extraction call is **not** in the pi ledger, because it runs outside a pi turn.
+Its token counts are recorded under `event.extract_usage` in `verdicts.jsonl`.
 
 ## The harness hook
 
 `extensions/calendar-router/index.ts` in the CoS home runs this node on every
-message, before the turn starts, and prints the trace. When it matches, the trace and
-the hand-off answer are injected as a hidden block so the turn relays the result
-instead of repeating it.
+message, before the turn starts, and prints the trace. On a match, the trace and the
+result are injected as a hidden block so the turn relays instead of repeating the
+work - and it says whether the event was created, so nothing is claimed falsely.
 
 Switched by `~/.pi/config.json`:
 
@@ -112,35 +145,50 @@ verdict cannot leak into a later turn - `input` clears it.
 
 ## Fails open
 
-Every failure - no key, HTTP error, timeout, malformed JSON - becomes
+Every classifier failure - no key, HTTP error, timeout, malformed JSON - becomes
 `abstained: true`, the route list holds `escalate` (`no-op`), and exit is `2`. The
 turn then happens as if this node did not exist. A missed calendar entry is silent;
-that is the accepted cost of never routing a false positive into a write.
+that is the accepted cost of never writing on a false positive.
+
+The write is stricter than the read: an unreadable FREE/BUSY answer counts as
+UNKNOWN, and UNKNOWN never writes.
 
 ## Log
 
-`verdicts.jsonl`, one line per verdict, appended by `log()`. Fields: `ts`, `node`,
-`node_version`, `utterance_chars`, `abstained`, `reason`, `calendar` (match,
-confidence, decision, threshold, rules), `model`, `latency_ms`, and the destination
-names with their status. The utterance text is dropped before the line is written.
+`verdicts.jsonl`, one line per verdict. Fields: `ts`, `node`, `node_version`,
+`utterance_chars`, `abstained`, `reason`, `calendar` (match, confidence, decision,
+threshold, rules), `model`, `latency_ms`, and each destination with its status and
+note. The utterance text is dropped before the line is written.
+
+## Tests
+
+```bash
+python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py     # 21 offline tests
+```
+
+Covers the gate parser, the chain (FREE is the only permission, BUSY and failed reads
+short-circuit), the field validator, and the router. No network, no gog.
+
+The harness side has its own suite: `npm test` in the CoS home, `test/calendar-router.test.ts`.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `config.py` | **Variable part.** `router()`, the two destination handlers, the classifier path, the sibling launcher path |
+| `config.py` | **Variable part.** `router()`, both destinations, the gate parser, the extractor, the validator, the gog call |
 | `route.py` | **Invariant part.** clean → classify → verdict → route → execute → log, plus the CLI |
-| `verdicts.jsonl` | The log (created on first run) |
-| `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-router/index.ts` | The hook |
+| `tests/test_calendar.py` | Offline tests |
+| `verdicts.jsonl` | The log (gitignored) |
+| `.../extensions/calendar-router/index.ts` | The hook |
 | `.../src/calendar-router.ts` | Spawns the node, parses the JSON, builds the trace and the hidden block |
-| `.../test/calendar-router.test.ts` | Offline tests: parse, trace, and the fail-open paths |
+| `.../test/calendar-router.test.ts` | Harness-side tests |
 
-## Next unit
+## What is still open
 
-`do:calendar:create` - fill the `pass`. The order that keeps the routing honest:
-
-1. Extract `venue`, `date`, `time` from the phrase (a second JEV question set, or
-   `gog`'s own date parsing) and validate them.
-2. `gog calendar create` on `primary`, with a confirmation line.
-3. Then - and only then - consider making route 1 an agent turn that creates
-   directly, or moving creation into a canned command so it costs no tokens.
+- **No confirmation step.** Decided 2026-11-04: write immediately. If that ever feels
+  too eager, the cheapest change is `mode: "dry"` or the `GOG_DRY_RUN` switch, not a
+  rewrite.
+- **No attendees, reminders, or recurrence.** `gog` supports all three; nothing here
+  passes them.
+- **A canned calendar read** (like `/inbox-new`) would replace route 1's model turn
+  with a fixed `gog calendar freebusy` call. Tracked in `docs/INBOX.md`.

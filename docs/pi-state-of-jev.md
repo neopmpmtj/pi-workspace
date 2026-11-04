@@ -49,7 +49,9 @@ The first node with a caller: `~/.pi/decision-nodes/calendar/`.
   switched by `calendarRouter` in `~/.pi/config.json`.
 - **Judgment**: the multi CLI's `calendar` class, one request, ~300 ms.
 - **Routing**: deterministic. `config.router()` returns `do:calendar:gog` (live: read-only
-  hand-off to `sm-google-workspace`) and `do:calendar:create` (**stub**, `pass`, next unit).
+  hand-off to `sm-google-workspace`, answer opens FREE / BUSY / UNKNOWN) and
+  `do:calendar:create` (live, **chained**: writes only on FREE, via one `deepseek-flash`
+  JSON extraction, validation, then `gog calendar create primary`).
 - **Log**: `~/.pi/decision-nodes/calendar/verdicts.jsonl` - metadata only, no phrase text.
 - The `scheduler` node is unchanged and still idle. Its `create` gate answers a different
   question - "is this a request to book?" - and abstains on a bare statement such as

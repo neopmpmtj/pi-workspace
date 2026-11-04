@@ -123,6 +123,14 @@ by default; refuses the current Cursor files by name).
       `~/.pi/decision-nodes/calendar/` (`config.py` router, `route.py` caller) + hook
       `extensions/calendar-router/index.ts` in this home. Walkthrough:
       `~/.pi/decision-nodes/calendar/README.md`, runbook: `docs/runbooks/calendar-routing.md`.
-- [ ] **Fill `do:calendar:create`** in `~/.pi/decision-nodes/calendar/config.py` — today it is
-      `pass`, printed as `stub`. Needs venue/date/time as fields first (JEV returns a verdict and
-      a score, not fields), then `gog calendar create` on `primary` and a confirmation line.
+- [x] ~~**Fill `do:calendar:create`** in `~/.pi/decision-nodes/calendar/config.py`.~~
+      Shipped 2026-11-04. Shape: **chained** — route 1's answer opens FREE / BUSY / UNKNOWN
+      and only FREE writes. Fields come from one `deepseek-flash` JSON call, then validated
+      (parsed, not past, confidence ≥ 0.5, 60 min default), then `gog calendar create primary`.
+      Policy: **write immediately**, chosen by the user 2026-11-04. Verified live: an event was
+      created on 2026-11-05 15:00 and deleted again. 21 offline node tests + 16 harness tests.
+- [ ] A **canned calendar read** for route 1, in the spirit of `/inbox-new`: a fixed
+      `gog calendar freebusy` call that prints FREE/BUSY with no model turn, replacing the
+      ~13 s sibling turn. Home: `~/.pi/decision-nodes/calendar/`.
+- [ ] Attendees, reminders and recurrence on `do:calendar:create` — `gog` supports all three
+      (`--attendees`, `--reminder`, `--rrule`); nothing in the node passes them yet.

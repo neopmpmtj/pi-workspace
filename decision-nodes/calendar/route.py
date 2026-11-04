@@ -132,7 +132,14 @@ def route(row: dict) -> list:
 
 # ------------------------------------------------------------------ step 5
 def execute(row: dict, destinations: list, dry_run: bool) -> list:
-    results = []
+    """Run the destinations in order. Each one sees the results of those before it.
+
+    That ordering IS the chain: `do:calendar:create` reads `do:calendar:gog`'s answer
+    out of `row["routes"]`, so the read must be listed first and its result must be
+    visible while the write runs. The list is shared, not copied, on purpose.
+    """
+    results: list = []
+    row["routes"] = results
     for name in destinations:
         if name == "escalate":
             results.append({"destination": name, "status": "no-op",
@@ -168,8 +175,9 @@ LOG_KEYS = ("node", "node_version", "utterance_chars", "abstained", "reason",
 def log(row: dict) -> None:
     record = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
     record.update({k: row.get(k) for k in LOG_KEYS})
-    record["routes"] = [{"destination": r.get("destination"), "status": r.get("status")}
-                        for r in row.get("routes") or []]
+    record["routes"] = [{"destination": r.get("destination"), "status": r.get("status"),
+                        "note": (r.get("note") or r.get("error") or "")[:160]}
+                       for r in row.get("routes") or []]
     try:
         with open(VERDICTS, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -211,6 +219,13 @@ def print_human(row: dict) -> None:
             print(f"answer from {r['destination']}")
             for line in r["answer"].splitlines():
                 print(f"  {line}")
+        if r.get("event"):
+            event = r["event"]
+            print()
+            print(f"event written by {r['destination']}")
+            for key in ("summary", "location", "start", "end", "id", "link"):
+                if event.get(key):
+                    print(f"  {key:<9} {event[key]}")
 
 
 def main() -> int:
