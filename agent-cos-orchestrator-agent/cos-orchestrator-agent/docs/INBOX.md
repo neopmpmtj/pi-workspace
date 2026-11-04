@@ -51,11 +51,11 @@ through when it ships, with the date; do not delete it, so the history stays rea
       `scripts/storage.sh use --host <ip>` before anything works again.
 - [ ] Human step outstanding on the server: create the unprivileged user, install
       `~/.ssh/id_ed25519_lan-storage.pub`, mount the real data disk at `remoteRoot`, then
-      harden sshd. Runbook: `docs/SETUP.md` there (origin: `docs/runbooks/lan-file-server-ssh-setup.md`).
+      harden sshd. Runbook: `docs/SETUP.md` there (origin: `docs/runbooks/lan-server-192.168.1.60/lan-file-server-ssh-setup.md`).
 
 ## LAN server as a work machine (agreed 2025-11-03)
 
-Plan: `docs/runbooks/lan-server-full-access-and-local-agent.md`.
+Plan: `docs/runbooks/lan-server-192.168.1.60/lan-server-full-access-and-local-agent.md`.
 
 - [x] ~~Create the `piadmin` admin identity.~~ Rejected by the user 2025-11-03: no third account.
       `pistore` was given blanket `NOPASSWD: ALL` instead (`/etc/sudoers.d/99-pistore-full`), so the
@@ -73,7 +73,7 @@ Plan: `docs/runbooks/lan-server-full-access-and-local-agent.md`.
       MOK / DKMS / nouveau before planning Ollama and a local model.
 - [x] ~~Install pi on the server (user `pmpmt`).~~ 2025-11-03: pi 1.4.0 on node v24.22.2, nvm
       default set, `~/.local/bin/pi` wrapper, PATH/nvm blocks in `.bashrc` and `.profile`. Runbook:
-      `docs/runbooks/server-pi-install.md`. No credentials yet — `~/.pi/agent` does not exist.
+      `docs/runbooks/lan-server-192.168.1.60/server-pi-install.md`. No credentials yet — `~/.pi/agent` does not exist.
 - [x] ~~Decide the server agent's model.~~ 2025-11-03: API keys now, local model later (user
       decision). `/home/pmpmt/.pi/agent/.env` holds the keys (600) and `auth.json` only references
       them via `!$HOME/.pi/agent/key <NAME>` — pi resolves the command per use. All three providers
@@ -95,7 +95,7 @@ Plan: `docs/runbooks/lan-server-full-access-and-local-agent.md`.
 ## LAN server `pmpmt` home, downloads and videos (started 2026-11-03)
 
 Key + access: `ssh lan-pmpmt` → `pmpmt@192.168.1.60` (`~/.ssh/id_ed25519_lan-pmpmt`, installed via
-`pistore`'s NOPASSWD sudo). Runbook: `docs/runbooks/lan-pmpmt-ssh-key.md`.
+`pistore`'s NOPASSWD sudo). Runbook: `docs/runbooks/lan-server-192.168.1.60/lan-pmpmt-ssh-key.md`.
 Inventory + reclaim tools: `scripts/downloads-inventory.sh`, `scripts/downloads-reclaim.sh` (dry-run
 by default; refuses the current Cursor files by name).
 

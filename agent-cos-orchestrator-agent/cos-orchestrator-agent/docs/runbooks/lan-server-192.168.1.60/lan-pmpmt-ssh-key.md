@@ -1,7 +1,7 @@
 # Runbook: SSH key for `pmpmt@192.168.1.60` (LAN file server)
 
 Status: **done 2025-11-03**. Key generated, installed, verified.
-Related: `lan-file-server-ssh-setup.md` (the `pistore`/storage identity), `lan-server-full-access-and-local-agent.md`.
+Related (same folder): `lan-file-server-ssh-setup.md` (the `pistore`/storage identity), `lan-server-full-access-and-local-agent.md`.
 
 ## Why
 
