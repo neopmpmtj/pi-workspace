@@ -8,6 +8,7 @@ import {
   outcomeLines,
   parseRouteOutput,
   runCalendarRoute,
+  telegramReply,
   traceLines,
 } from "../src/calendar-router.ts";
 
@@ -159,6 +160,27 @@ describe("outcomeLines", () => {
     const lines = outcomeLines(parseRouteOutput(BUSY));
     assert.equal(lines.length, 1);
     assert.match(lines[0], /^→ not created: the read said BUSY - refusing to write$/);
+  });
+});
+
+describe("telegramReply", () => {
+  it("leads with the outcome and adds the trace when asked", () => {
+    const lines = telegramReply(parseRouteOutput(MATCH), true).split("\n");
+    assert.equal(lines[0], "created: Lunch with Marta");
+    assert.ok(lines.some((line) => line.includes("Cafe Nero")));
+    assert.ok(lines.some((line) => line.includes("calendar.google.com/event?eid=abc123")));
+    assert.ok(lines.some((line) => line.startsWith("calendar true 0.990 · read FREE")));
+    assert.ok(lines.some((line) => line.includes("write 0.6 s")));
+  });
+
+  it("omits the trace when print is off", () => {
+    const text = telegramReply(parseRouteOutput(MATCH), false);
+    assert.equal(text, "created: Lunch with Marta\n  2026-11-06T13:00:00+00:00 → 2026-11-06T14:00:00+00:00\n  Cafe Nero\n  https://calendar.google.com/event?eid=abc123");
+  });
+
+  it("says plainly when nothing was created", () => {
+    const text = telegramReply(parseRouteOutput(BUSY), true);
+    assert.match(text.split("\n")[0], /^not created: the read said BUSY/);
   });
 });
 

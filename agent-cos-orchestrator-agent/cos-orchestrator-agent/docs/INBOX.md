@@ -134,11 +134,13 @@ by default; refuses the current Cursor files by name).
       ~13 s sibling turn.~~ Shipped 2026-11-04: `do:calendar:gog` now runs
       `gog calendar freebusy primary --from --to` on the resolved window, ~0.3 s, no tokens.
       A match now costs ~3 s of node work instead of ~16 s.
-- [ ] **Decide whether a match should swallow the turn** (`action: "handled"` in
-      `extensions/calendar-router/index.ts`). Today the node does the work and the CoS turn
-      only relays it — tokens spent on a result already in hand, and one model that can still
-      go re-doing it (the duplicate guard makes that harmless, not free). The cost of
-      swallowing is that the extension then owns delivery on every surface, Telegram included.
+- [x] ~~**Decide whether a match should swallow the turn** (`action: "handled"` in
+      `extensions/calendar-router/index.ts`).~~ Shipped 2026-11-04: local surfaces (TUI, `-p`)
+      swallow the turn — trace and outcome printed, no model turn, no session entry — while a
+      Telegram prompt (prefix `[telegram`) keeps the relay turn because the bridge only
+      delivers assistant text. Verified: local run in 9 s with no assistant message.
+- [ ] Telegram still pays one relay turn. A canned `telegram_message` (or a generated control
+      surface) that sends the outcome without a model turn would close it.
 - [ ] The duplicate guard matches titles only; a second phrasing of the same event is not
       caught. Consider matching on the window alone, or on title similarity.
 - [ ] Attendees, reminders and recurrence on `do:calendar:create` — `gog` supports all three

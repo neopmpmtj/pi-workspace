@@ -33,14 +33,15 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 ## Calendar routing
 
 A hook in this home classifies every message before the turn and, on a match, runs the
-`calendar` node (`~/.pi/decision-nodes/calendar/`). Its result arrives as a hidden
-`calendar-router` block.
+`calendar` node (`~/.pi/decision-nodes/calendar/`).
 
-- It names two destinations: `do:calendar:gog` (a `gog calendar freebusy` read) and
-  `do:calendar:create` (the write).
-- When it says the event **was created**, relay it. Do not run `gog`, the node, or a
-  sibling agent: a second create puts a duplicate event on the calendar.
-- When the write was **skipped**, say why in one line and change nothing.
+- On local surfaces (TUI, `pi -p`) the extension prints the trace and the outcome itself and
+  swallows the turn: no model runs, and you will not be asked anything about it. Do not
+  repeat its work if a later message refers to it.
+- On Telegram the same run is attached as a hidden `calendar-router` block, because the
+  bridge delivers assistant text. When that block says the event **was created**, relay it
+  and do not run `gog`, the node, or a sibling agent: a second create puts a duplicate
+  event on the calendar. When the write was **skipped**, say why in one line.
 
 ## Scripts and runbooks
 

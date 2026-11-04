@@ -249,6 +249,25 @@ export function outcomeLines(verdict: CalendarVerdict): string[] {
 }
 
 /**
+ * The whole reply for a Telegram turn the extension finishes itself: the outcome, and
+ * optionally the trace. Plain text, phone-width, no markup to escape.
+ */
+export function telegramReply(verdict: CalendarVerdict, withTrace: boolean): string {
+  const lines = outcomeLines(verdict).map((line) => line.replace(/^→ /, ""));
+  if (!withTrace) return lines.join("\n");
+
+  const read = verdict.routes.find((route) => route.destination === "do:calendar:gog");
+  const write = verdict.routes.find((route) => route.destination === "do:calendar:create");
+  const bits = [
+    `calendar ${verdict.isMatch ? "true" : "false"} ${conf(verdict.confidence)}`,
+    read?.note ? `read ${read.note}` : undefined,
+    write?.seconds === undefined ? undefined : `write ${write.seconds} s`,
+  ].filter((bit): bit is string => !!bit);
+  lines.push("", bits.join(" · "));
+  return lines.join("\n");
+}
+
+/**
  * The hidden block the model receives after a match. It states that routing already
  * happened, so the turn relays instead of repeating the work - and it forbids
  * claiming a creation that did not happen.

@@ -129,9 +129,16 @@ A failed duplicate check does not block the write - the free/busy read already s
 
 ## The harness hook
 
-`extensions/calendar-router/index.ts` in the CoS home runs this node before every turn and
-prints the trace. On a match it injects a hidden block saying what the node did, so the
-turn relays instead of repeating the work.
+`extensions/calendar-router/index.ts` in the CoS home runs this node before every turn,
+prints the trace, and finishes the work on the surface's own terms:
+
+| Surface | What happens | Cost |
+|---|---|---|
+| local: TUI, `pi -p` | the extension prints the trace **and** the outcome, then returns `handled` — no model turn, no session entry | ~4 s of node work |
+| Telegram (prompt starts `[telegram`) | the node runs in the awaited `before_agent_start` and a hidden block is injected; the reply relays it, because the bridge delivers assistant text and a swallowed turn would send nothing | ~4 s + one chat turn |
+
+It is never both: a handled input does not reach `before_agent_start`. The node's verdict is
+cached per prompt, so a turn that is not swallowed never pays for a second classification.
 
 Switched by `~/.pi/config.json`:
 
@@ -145,14 +152,12 @@ Switched by `~/.pi/config.json`:
 | `print` | `false` hides the trace; the routing still happens |
 | `mode` | `"route"` executes destinations; `"dry"` classifies and prints `skipped (dry run)` |
 
-**It runs in `before_agent_start`, not in `input`.** An `input` handler that awaits a
-multi-second route races the start of the run: the verdict can arrive after the block was
-supposed to be attached, and the turn then re-does the work blind. That happened once, on
-2026-11-04 (event created, block missing, model re-ran the node), and it is why the work
-lives in the awaited hook.
-
-The hook never swallows a turn: it always lets the reply happen. It also means a matched
-message costs one CoS turn on top of the ~3 s - see "Still open".
+**The work runs in an awaited hook, never in a slow `input` handler.** An `input` handler
+that awaits a multi-second route used to race the start of the run: the verdict could
+arrive after the block was due, and the turn then re-did the work blind. That happened once
+on 2026-11-04 (event created, block missing, model re-ran the node) and is why the local
+path finishes inside `input` with `handled` and the Telegram path finishes inside
+`before_agent_start`.
 
 ## Fails open
 
@@ -196,12 +201,10 @@ Harness side: `npm test` in the CoS home (`test/calendar-router.test.ts`), 15 te
 
 ## Still open
 
-- **The CoS turn still runs after a match.** The node has already done the work, and the
-  turn only relays it - so it costs tokens and a second or two, and a model that does not
-  trust the block can still go looking (the duplicate guard makes that harmless, not
-  free). Swallowing the turn (`action: "handled"`) would close it; the cost is that the
-  extension then owns delivery on every surface, Telegram included.
 - **No attendees, reminders, or recurrence.** `gog` supports all three; nothing here
   passes them.
 - **The duplicate guard matches titles only.** A second phrasing of the same event ("Dinner
   with Rita" vs "Rita dinner") is not caught.
+- **Telegram still pays a chat turn.** Unavoidable while the bridge delivers assistant text:
+  the model is the only thing that can speak there. Moving the outcome to a canned
+  `telegram_message` (or a generated control surface) would close it.
