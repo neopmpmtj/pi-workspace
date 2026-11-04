@@ -4,10 +4,15 @@
 //   do:calendar:create -> writes the event, only when that read said FREE
 // The trace goes on screen; the result is injected so the turn relays it instead of
 // repeating the work. Off unless ~/.pi/config.json has calendarRouter.enabled true.
+//
+// Everything happens in `before_agent_start`, not in `input`. An `input` handler that
+// awaits a four-second route races the run start: the verdict can arrive after the
+// block was supposed to be attached, leaving the turn blind to work already done.
+// `before_agent_start` is awaited before the model request, so the block always lands.
 import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { readCalendarRouter } from "../../src/global-config.ts";
-import { type CalendarVerdict, contextBlock, runCalendarRoute, traceLines } from "../../src/calendar-router.ts";
+import { contextBlock, runCalendarRoute, traceLines } from "../../src/calendar-router.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
   if (ctx.hasUI) ctx.ui.notify(answer);
@@ -15,33 +20,21 @@ function show(ctx: ExtensionContext, answer: string): void {
 }
 
 export default function registerCalendarRouter(pi: ExtensionAPI): void {
-  // Set by `input`, consumed by the run it belongs to. Cleared on every input, so a
-  // verdict can never leak into a later turn.
-  let pending: CalendarVerdict | null = null;
+  pi.on("before_agent_start", async (event, ctx) => {
+    if (event.messageType !== "user") return;
 
-  pi.on("input", async (event, ctx) => {
-    pending = null;
-    if (event.source === "extension") return { action: "continue" };
-
-    const text = event.text.trim();
-    if (!text || text.startsWith("/")) return { action: "continue" };
+    const text = event.prompt.trim();
+    if (!text) return;
 
     const setting = await readCalendarRouter();
-    if (!setting) return { action: "continue" };
+    if (!setting) return;
 
     const verdict = await runCalendarRoute(text, { dryRun: !setting.route });
     if (setting.print) show(ctx, traceLines(verdict).join("\n"));
 
-    // Only a real, executed match is handed to the turn; a dry run stays on screen.
-    if (setting.route && verdict.ok && !verdict.abstained && verdict.isMatch) pending = verdict;
-    return { action: "continue" };
-  });
+    // A dry run writes nothing, so there is nothing to hand to the turn.
+    if (!setting.route || !verdict.ok || verdict.abstained || !verdict.isMatch) return;
 
-  pi.on("before_agent_start", async (event) => {
-    if (event.messageType !== "user") return;
-    const verdict = pending;
-    pending = null;
-    if (!verdict) return;
     return {
       message: {
         customType: "calendar-router",
