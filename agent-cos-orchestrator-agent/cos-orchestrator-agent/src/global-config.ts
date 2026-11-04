@@ -48,6 +48,24 @@ export async function readInputContainsEmail(env: NodeJS.ProcessEnv = process.en
   return readGate("inputContainsEmail", env);
 }
 
+/** The calendar router: classify, then run the node's destinations. */
+export interface CalendarRouter {
+  /** Screen trace. Missing or non-boolean values stay true. */
+  print: boolean;
+  /** False only when mode is "dry": classify and route, run nothing. */
+  route: boolean;
+}
+
+/**
+ * The calendarRouter section, or null when the hook stays off.
+ * mode defaults to routing; "dry" prints the same trace and executes nothing.
+ */
+export async function readCalendarRouter(env: NodeJS.ProcessEnv = process.env): Promise<CalendarRouter | null> {
+  const record = await readEnabledSection("calendarRouter", env);
+  if (!record) return null;
+  return { print: record.print !== false, route: record.mode !== "dry" };
+}
+
 async function readGate(name: string, env: NodeJS.ProcessEnv): Promise<InputGate | null> {
   const record = await readEnabledSection(name, env);
   if (!record) return null;

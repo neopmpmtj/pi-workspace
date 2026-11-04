@@ -40,12 +40,27 @@ The test uses fake answers and does not call the API.
 
 ---
 
+## What's Wired
+
+The first node with a caller: `~/.pi/decision-nodes/calendar/`.
+
+- **Input**: every CoS message, before the turn starts
+  (`~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-router/index.ts`),
+  switched by `calendarRouter` in `~/.pi/config.json`.
+- **Judgment**: the multi CLI's `calendar` class, one request, ~300 ms.
+- **Routing**: deterministic. `config.router()` returns `do:calendar:gog` (live: read-only
+  hand-off to `sm-google-workspace`) and `do:calendar:create` (**stub**, `pass`, next unit).
+- **Log**: `~/.pi/decision-nodes/calendar/verdicts.jsonl` - metadata only, no phrase text.
+- The `scheduler` node is unchanged and still idle. Its `create` gate answers a different
+  question - "is this a request to book?" - and abstains on a bare statement such as
+  "Lunch at Cafe Nero on Friday at 1pm" (measured 2026-11-04: `other`, 0.10).
+
 ## What's Present and Idle
 
 Each of these is on disk and has no caller in the current setup. The phrase classifier to run is the multi CLI above.
 
 - **intake sweep and its destinations** — `~/.pi/decision-nodes/intake/`. The sweeper reads `~/.pi/dbs/user-inputs.sqlite`, which is not on this machine, and `router()` names destinations (`do:<topic>`, `file:<topic>`, `answer`, `continue`, `drop`, `escalate`). Nothing follows them.
-- **scheduler sweep and `judge.py`** — `~/.pi/decision-nodes/scheduler/`. The unit files in `scheduler/systemd/` are not installed. `judge.py` still answers `create` or `other` for one utterance if you run it by hand. The calendar question to run is the multi CLI's calendar class.
+- **scheduler sweep and `judge.py`** — `~/.pi/decision-nodes/scheduler/`. The unit files in `scheduler/systemd/` are not installed. `judge.py` still answers `create` or `other` for one utterance if you run it by hand. The calendar question to run is the multi CLI's calendar class, which is what the live `calendar` node calls.
 - **`topic_schedule`** — still a facet on intake, and it still fires on a bare date such as "on the 15th of September". The split question (intention, or venue and date and time) is the multi CLI.
 - **Cloudflare Clef** — still listed in each copied node's `ENDPOINTS`. Calls go to TypeSafe.
 - **`jev-classifier-unit/`** — the earlier calendar-only CLI. It is still on disk. The CLI to run is `jev-classifier-multi/`.

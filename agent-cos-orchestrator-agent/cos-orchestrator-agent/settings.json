@@ -14,14 +14,13 @@
     "showTerminalProgress": true
   },
   "steeringMode": "one-at-a-time",
-
   "hideThinkingBlock": false,
   "followUpMode": "one-at-a-time",
   "httpIdleTimeoutMs": 120000,
   "treeFilterMode": "all",
   "warnings": {
     "anthropicExtraUsage": true
-  },  
+  },
   "defaultTools": [
     "read",
     "bash",
@@ -35,6 +34,7 @@
     "+extensions/auto-sync.ts",
     "+extensions/chat/index.ts",
     "+extensions/archive/index.ts",
+    "+extensions/calendar-router/index.ts",
     "+extensions/input-contains-email/index.ts",
     "+extensions/input-contains-path/index.ts",
     "+extensions/input-contains-url/index.ts",

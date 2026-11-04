@@ -15,5 +15,10 @@
   "inputContainsEmail": {
     "enabled": true,
     "print": true
+  },
+  "calendarRouter": {
+    "enabled": true,
+    "print": true,
+    "mode": "route"
   }
 }

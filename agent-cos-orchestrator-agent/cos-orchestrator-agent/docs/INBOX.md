@@ -116,3 +116,13 @@ by default; refuses the current Cursor files by name).
 ## JEV
 
 - Current state of the classifiers: `~/.pi/docs/pi-state-of-jev.md`.
+
+## Calendar routing (first live node, 2026-11-04)
+
+- [x] ~~Classify a definite calendar entry and route it to the calendar agent.~~ Live:
+      `~/.pi/decision-nodes/calendar/` (`config.py` router, `route.py` caller) + hook
+      `extensions/calendar-router/index.ts` in this home. Walkthrough:
+      `~/.pi/decision-nodes/calendar/README.md`, runbook: `docs/runbooks/calendar-routing.md`.
+- [ ] **Fill `do:calendar:create`** in `~/.pi/decision-nodes/calendar/config.py` — today it is
+      `pass`, printed as `stub`. Needs venue/date/time as fields first (JEV returns a verdict and
+      a score, not fields), then `gog calendar create` on `primary` and a confirmation line.
