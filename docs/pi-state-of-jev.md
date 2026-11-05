@@ -1,6 +1,6 @@
 # Pi State of JEV
 
-> *Last updated: 2026-11-04*
+> *Last updated: 2026-11-05*
 > *Living document — reflects current state, not history.*
 
 ---
@@ -35,8 +35,33 @@ The test uses fake answers and does not call the API.
 - **calendar** — a match when the phrase states the intention to create a calendar entry, or when it has a venue and a date and a time. `confidence` is the higher of the intention score and the lowest of venue, date, and time. `decision` is `intention`, `venue_date_time`, `intention+venue_date_time`, or `none`.
 - **financial** — a match when the phrase reports money spent, paid, received, earned, or owed. A price mentioned only inside a plan is not enough. `decision` is `intention` or `none`.
 - **plan** — a match when the phrase states a future action or says the speaker is planning. Something already done is not a plan. The word "plan" used for an object (a floor plan, a site plan) is not enough. `decision` is `intention` or `none`.
+- **reminder** — the speaker asks to be reminded (remind me to, lembra-me de, não me deixes esquecer). Not: someone else reminding them, "this reminds me of", asking to be told a fact now, code about reminders, adding to an inbox or list.
+- **reminder_done** — the speaker reports a reminded task as finished (I bought the milk, done: X, já paguei, podes riscar).
+- **vetoes** — `is_past_report`, `is_question` (a polite request phrased as a question is not one), `about_someone_else`, `is_change_or_cancel`. They only block; they never pick a class.
 
-`calendar_likeness` is requested and printed. It does not vote.
+Every question carries the same language note: English, Portuguese, or a mix. Classes auto-load: any module in `classes/` with `QUESTIONS` and `decide` is one class.
+
+`calendar_likeness` now votes: it is the fourth component of the venue-date-time path (`min(venue, date, time, likeness)`, likeness = 1 - P(level 0)), so a bare time and place that does not read like an event no longer acts.
+
+### Arbiter
+
+`jev-classifier-multi/src/arbiter.py`, returned as `winner` by `classify.py --json`.
+
+- Priority `reminder_done` > `reminder` > `calendar`, except that a lower class at `act` beats a higher one at `hint` when it is more than `0.2` more confident.
+- Bands: `act` >= 0.85 writes; `hint` >= 0.6 writes nothing and asks the user; below is an ordinary turn.
+- Vetoes: >= 0.7 blocks, >= 0.5 caps at `hint`. `reminder_done` listens to `is_question` only; `reminder` to question, change/cancel, someone else; `calendar` to all four.
+- After the arbiter, each node's extractor is a second opinion (`kind`, `is_past`); disagreement downgrades the write to a hint.
+
+### Eval
+
+`~/.pi/jev-classifier/eval/`: `jev-golden.jsonl` (149 EN/PT/mixed phrases, ~60% hard negatives), `jev-eval.py` (cached, parallel), `baseline-2026-11-05.json`, `results-2026-11-05.json`. Gate for any change: **false acts = 0**.
+
+| 2026-11-05 | calendar P / R | reminder P / R | reminder_done P / R | false acts | questions | tokens in / out |
+|---|---|---|---|---|---|---|
+| before (calendar class only) | 0.54 / 1.00 | - / 0 | - / 0 | 24 | 7 | 1037 / 136 |
+| after | 1.00 / 0.93 | 1.00 / 1.00 | 1.00 / 0.92 | 0 | 13 | 2091 / 266 |
+
+Latency per call is unchanged at ~0.2-0.5 s (still one request per message; measured 207 ms in the eval, 0.3-0.55 s live).
 
 ---
 
@@ -53,6 +78,9 @@ The first node with a caller: `~/.pi/decision-nodes/calendar/`.
   `do:calendar:create` (live, **chained**: writes only on FREE, skips a duplicate title,
   then `gog calendar create primary`). A match is ~3 s of node work, not a sibling turn.
 - **Log**: `~/.pi/decision-nodes/calendar/verdicts.jsonl` - metadata only, no phrase text.
+- The second node, `~/.pi/decision-nodes/reminder/`, reads the same classification (the
+  harness classifies once per message, `src/jev-classify.ts`) and owns the `reminder` and
+  `reminder_done` winners. Runbook: `docs/runbooks/reminder-routing.md` in the CoS home.
 - The `scheduler` node is unchanged and still idle. Its `create` gate answers a different
   question - "is this a request to book?" - and abstains on a bare statement such as
   "Lunch at Cafe Nero on Friday at 1pm" (measured 2026-11-04: `other`, 0.10).

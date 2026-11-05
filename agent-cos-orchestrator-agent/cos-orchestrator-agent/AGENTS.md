@@ -42,6 +42,25 @@ A hook in this home classifies every message before the turn and, on a match, ru
   turn is kept and a hidden `calendar-node` block arrives instead: then relay it, do not
   run `gog`, the node, or a sibling agent (a second create puts a duplicate event on the
   calendar), and say why in one line when the write was skipped.
+- When the classifier is unsure (band `hint`, or the extractor disagreed), nothing is written
+  and a hidden `calendar-node` hint arrives. Ask the user one short question before creating
+  anything; do not create the event on your own reading.
+
+## Reminder routing
+
+The same classification also feeds the `reminder` node (`~/.pi/decision-nodes/reminder/`).
+"Remind me to...", "lembra-me de..." are logged in `reminders.jsonl` with a pending status and
+get a 15-minute calendar event (no date means tomorrow, no time means 06:00). "I bought the
+milk", "já paguei a luz" mark the matching pending reminder done.
+
+- It behaves like calendar routing: the hook answers the message itself and the turn is
+  swallowed. On a failed Telegram delivery a hidden `reminder-node` block arrives: relay it,
+  do not log the reminder again or create its event by hand.
+- A `reminder-node` hint (unsure, or a "done" with no clear match) means nothing was written.
+  Ask the user, then point to `/reminder-done <id>` or let them restate it.
+- Reminders are not inbox items: never add them to `docs/INBOX.md`.
+- Commands: `/reminders [--all]`, `/reminder-done <id>`, `/reminder-undo`, `/calendar-undo`,
+  `/jev-wrong <label>` (files the last message into the classifier's test set).
 
 ## Scripts and runbooks
 

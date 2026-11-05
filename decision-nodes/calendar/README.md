@@ -33,6 +33,24 @@ your input
 The read is the gate for the write: a busy slot, a failed read, or a read that never ran
 all stop it, and the reason is printed and logged.
 
+## Winner, band, second opinion, undo (2026-11-05)
+
+- **The router reads the arbiter's `winner`**, not the raw class. A message that a reminder
+  class also claims goes to the reminder node; the calendar node runs only when the winner is
+  `calendar`. Vetoes (`is_past_report`, `is_question`, `about_someone_else`,
+  `is_change_or_cancel`) are applied by `arbiter.py` before the band is set.
+- **Bands.** `act` (>= 0.85) routes to `do:calendar:gog` + `do:calendar:create`. `hint`
+  (>= 0.6) routes to `hint:calendar`, which writes nothing and asks the agent to check with
+  the user. Below that it is an ordinary turn.
+- **Second opinion.** The extractor also returns `kind` and `is_past`. If it reads the message
+  as something other than a new calendar request, `do:calendar:gog` returns `downgraded` and
+  nothing is written; the harness treats it like a hint.
+- **Undo.** `./route.py --undo` (or `/calendar-undo`) deletes the newest event this node
+  created, found through `event_id` in `verdicts.jsonl`, and logs an `undo` row so it is
+  never deleted twice.
+- `--classifier-json FILE` reuses a classification the harness already made, so one message
+  is one JEV call however many nodes read it.
+
 ## Run it by hand
 
 ```bash

@@ -176,8 +176,9 @@ by default; refuses the current Cursor files by name).
 - [ ] A new decision node lives in `~/.pi/decision-nodes/<name>/` and reads its own slice of
       the JSON `classify.py` already returns, so one message stays one JEV call. The node
       stays out of `jev-classifier-multi/src`.
-- [ ] When a fourth class is added, change `classes/__init__.py` so it loads every module in
+- [x] ~~When a fourth class is added, change `classes/__init__.py` so it loads every module in
       `classes/` instead of the three handwritten imports. Adding a class is then one file.
-      Home: `~/.pi/jev-classifier/jev-classifier-multi/src/classes/`.
+      Home: `~/.pi/jev-classifier/jev-classifier-multi/src/classes/`.~~
+      Done 2026-11-05 with the `reminder`, `reminder_done` and `vetoes` modules.
 - [ ] Leave `classes/calendar.py` as one file until its questions and `decide` no longer fit
       there. A `classes/calendar/` package waits for that.

@@ -51,6 +51,26 @@
     {
       "name": "/archive",
       "description": "Move a file or folder into the archive: /archive <path> · /archive --undo"
+    },
+    {
+      "name": "/reminders",
+      "description": "List pending reminders: /reminders · /reminders --all"
+    },
+    {
+      "name": "/reminder-done",
+      "description": "Mark a reminder done and delete its future event: /reminder-done <id>"
+    },
+    {
+      "name": "/reminder-undo",
+      "description": "Withdraw the newest pending reminder and delete its future event"
+    },
+    {
+      "name": "/calendar-undo",
+      "description": "Delete the last event the calendar node created"
+    },
+    {
+      "name": "/jev-wrong",
+      "description": "Say the last message was misread: /jev-wrong calendar|reminder|reminder_done|none"
     }
   ]
 }
