@@ -152,10 +152,16 @@ by default; refuses the current Cursor files by name).
       `calendarNode` arrive with `git -C ~/.pi pull --ff-only`), `gog` is **not installed**
       (config dirs exist), and `~/.pi/jev-classifier/.env` is missing `TYPESAFE_API_KEY`.
       Steps and verification commands are in the runbook above.
-- [ ] The duplicate guard matches titles only; a second phrasing of the same event is not
-      caught. Consider matching on the window alone, or on title similarity.
-- [ ] Attendees, reminders and recurrence on `do:calendar:create` — `gog` supports all three
-      (`--attendees`, `--reminder`, `--rrule`); nothing in the node passes them yet.
+- [ ] **On hold** (2026-11-05). The duplicate guard matches titles only; a second phrasing
+      of the same event ("Dinner with Rita" vs "Rita dinner") is not caught. Leave the
+      title check as it is. Matching on the window, or on title similarity, waits.
+- [x] ~~Attendees, reminders and recurrence on `do:calendar:create` — `gog` supports all three
+      (`--attendees`, `--reminder`, `--rrule`); nothing in the node passes them yet.~~
+      Shipped 2026-11-05. The extractor may return emails, `popup:30m` / `email:1d`
+      reminders, and one `FREQ=` rule. Invalid values are dropped. The write passes
+      `--attendees`, `--reminder`, and `--rrule`.
+- [x] ~~Telegram on this laptop.~~ Decided 2026-11-05: this laptop does not use Telegram.
+      The bridge stays on the VPS; the laptop item is not open work.
 
 ## Skills
 

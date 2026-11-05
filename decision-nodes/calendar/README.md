@@ -105,13 +105,17 @@ event written by do:calendar:create
 
 JEV returns a verdict and a score, not fields. So the read first makes **one** request to
 `deepseek-flash` (`~/.pi/agent-cos-orchestrator-agent/.env`, `DEEPSEEK_API_KEY`) for strict
-JSON: `summary`, `location`, `start_local`, `end_local`, `confidence`, `reason`. About
+JSON: `summary`, `location`, `start_local`, `end_local`, `confidence`, `reason`, and,
+when the phrase names them, `attendees`, `reminders`, and `rrule`. About
 1.5k in / 100 out - roughly $0.0002 - and ~2 s.
 
 Everything after that is deterministic: `_validate()` refuses a missing or unparsable
 date, a slot in the past, confidence below 0.5, an empty summary; a bad end time becomes
-exactly 60 minutes; a blank location becomes none. `Europe/Lisbon` goes on with
-`zoneinfo`, so summer and winter offsets are right.
+exactly 60 minutes; a blank location becomes none. An email is kept, a reminder must
+look like `popup:30m` or `email:1d`, and a repeat must be one `FREQ=` rule. Anything
+else in those three fields is dropped and the event is still written. `Europe/Lisbon`
+goes on with `zoneinfo`, so summer and winter offsets are right. The write passes
+`--attendees`, one `--reminder` per reminder, and `--rrule` when those fields survived.
 
 The resolved event is stashed on the row (`row["event"]`) and the write reuses it: one
 extraction, one agreement between the window that was checked and the window that is
@@ -135,7 +139,7 @@ prints the trace, and finishes the work with no model turn on both surfaces:
 | Surface | How the answer reaches you | Cost |
 |---|---|---|
 | local: TUI, `pi -p` | trace + outcome printed to stdout, input `handled` | ~4 s of node work |
-| Telegram (`[telegram` prefix) | the same text sent through the bridge's delivery API (`@llblab/pi-telegram/delivery`, scope `active-turn` then `instance`), input `handled` | ~4 s of node work |
+| Telegram (`[telegram` prefix) | the same text sent through the bridge's delivery API (`@llblab/pi-telegram/delivery`, scope `active-turn` then `instance`), input `handled`. This laptop does not use Telegram; that path is for the VPS. | ~4 s of node work |
 
 **It only swallows when the answer actually went out.** If Telegram delivery fails -
 no bridge bound, no target authorized, runtime unavailable - input continues, the node's
@@ -191,7 +195,7 @@ The utterance text never reaches the file.
 ## Tests
 
 ```bash
-python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py     # 30 offline tests
+python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py     # 33 offline tests
 ```
 
 Covers the free/busy parser, the chain (FREE is the only permission), the field
@@ -213,9 +217,5 @@ Harness side: `npm test` in the CoS home (`test/calendar-node.test.ts`), 15 test
 
 ## Still open
 
-- **No attendees, reminders, or recurrence.** `gog` supports all three; nothing here
-  passes them.
-- **The duplicate guard matches titles only.** A second phrasing of the same event ("Dinner
-  with Rita" vs "Rita dinner") is not caught.
-- **Telegram needs a bridge with a token in this process.** Until this home owns one, the
-  relay fallback is what runs. See `docs/INBOX.md`.
+- **The duplicate guard is on hold** (2026-11-05). It still matches titles only. A second
+  phrasing of the same event is not caught, and that change waits. See `docs/INBOX.md`.

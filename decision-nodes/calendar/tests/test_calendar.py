@@ -177,6 +177,22 @@ class Validation(unittest.TestCase):
         event, _ = self.ok(location="   ")
         self.assertIsNone(event["location"])
 
+    def test_named_emails_reminders_and_a_repeat_are_kept(self):
+        event, why = self.ok(
+            attendees=["Rita <rita@example.com>", "not-an-email", "rita@example.com"],
+            reminders="popup:30m, email:1d, tomorrow",
+            rrule="FREQ=WEEKLY;BYDAY=MO",
+        )
+        self.assertIsNotNone(event, why)
+        self.assertEqual(event["attendees"], ["rita@example.com"])
+        self.assertEqual(event["reminders"], ["popup:30m", "email:1d"])
+        self.assertEqual(event["rrule"], "RRULE:FREQ=WEEKLY;BYDAY=MO")
+
+    def test_a_malformed_repeat_is_dropped(self):
+        event, why = self.ok(rrule="every week forever")
+        self.assertIsNotNone(event, why)
+        self.assertNotIn("rrule", event)
+
 
 class Write(unittest.TestCase):
     """The write is idempotent: the same title in the same window never lands twice."""
@@ -219,6 +235,25 @@ class Write(unittest.TestCase):
         with mock.patch.object(config.subprocess, "run", side_effect=[check, created]):
             result = config.create_event(self.event, self.row)
         self.assertEqual(result["status"], "created")
+
+    def test_the_write_passes_attendees_reminders_and_recurrence(self):
+        self.event["attendees"] = ["rita@example.com"]
+        self.event["reminders"] = ["popup:30m"]
+        self.event["rrule"] = "RRULE:FREQ=WEEKLY"
+        check = Completed(["gog"], 0, '{"events": []}', "")
+        created = Completed(["gog"], 0, '{"id": "new"}', "")
+        with mock.patch.object(config.subprocess, "run", side_effect=[check, created]) as run:
+            result = config.create_event(self.event, self.row)
+        command = run.call_args_list[1].args[0]
+        self.assertIn("--attendees", command)
+        self.assertIn("rita@example.com", command)
+        self.assertIn("--reminder", command)
+        self.assertIn("popup:30m", command)
+        self.assertIn("--rrule", command)
+        self.assertIn("RRULE:FREQ=WEEKLY", command)
+        self.assertEqual(result["event"]["attendees"], "rita@example.com")
+        self.assertEqual(result["event"]["reminders"], "popup:30m")
+        self.assertEqual(result["event"]["rrule"], "RRULE:FREQ=WEEKLY")
 
     def test_a_gog_failure_is_reported_not_raised(self):
         check = Completed(["gog"], 0, '{"events": []}', "")

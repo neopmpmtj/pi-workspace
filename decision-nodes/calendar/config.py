@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import time
 import urllib.error
@@ -214,6 +215,9 @@ _SYSTEM = (
     "Schema:\n"
     '{{"summary": "short event title", "location": "venue or null", '
     '"start_local": "YYYY-MM-DDTHH:MM", "end_local": "YYYY-MM-DDTHH:MM", '
+    '"attendees": ["name@example.com"] or null, '
+    '"reminders": ["popup:30m"] or null, '
+    '"rrule": "FREQ=WEEKLY" or null, '
     '"confidence": 0.0, "reason": "one short sentence"}}\n\n'
     "Rules:\n"
     "- start_local and end_local are local wall-clock times, no offset.\n"
@@ -221,6 +225,11 @@ _SYSTEM = (
     "- If no duration is stated, use exactly {minutes} minutes.\n"
     "- summary is a title only: no dates, no times, no 'remind me'.\n"
     "- location is the venue named in the message, or null.\n"
+    "- attendees is only email addresses the message names. Otherwise null.\n"
+    "- reminders is only when the message asks to be reminded. Each item is "
+    "popup or email, then a colon, then a number and m, h, or d. Otherwise null.\n"
+    "- rrule is one rule when the message says the event repeats, with no RRULE: "
+    "prefix, such as FREQ=WEEKLY or FREQ=MONTHLY;BYMONTHDAY=11. Otherwise null.\n"
     "- If the message has no definite date or no definite time, set start_local to "
     "null and say why in reason.\n"
 )
@@ -288,13 +297,71 @@ def _validate(parsed: dict, now: datetime) -> tuple[dict | None, str]:
         return None, f"{start_local:%Y-%m-%d %H:%M} is in the past"
 
     location = parsed.get("location")
-    return {
+    event = {
         "summary": summary,
         "location": location.strip()[:200] if isinstance(location, str) and location.strip() else None,
         "start": start_local,
         "end": end_local,
         "confidence": float(confidence),
-    }, ""
+    }
+    attendees = _attendees(parsed.get("attendees"))
+    reminders = _reminders(parsed.get("reminders"))
+    rrule = _rrule(parsed.get("rrule"))
+    if attendees:
+        event["attendees"] = attendees
+    if reminders:
+        event["reminders"] = reminders
+    if rrule:
+        event["rrule"] = rrule
+    return event, ""
+
+
+_EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_REMINDER = re.compile(r"^(popup|email):[1-9]\d*[mhd]$", re.I)
+_RRULE = re.compile(
+    r"^FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)(;[A-Z][A-Z0-9]*=[A-Z0-9,+-]+)*$"
+)
+
+
+def _as_list(value: object) -> list[str]:
+    if value is None or value == "":
+        return []
+    if isinstance(value, str):
+        return [part.strip() for part in value.split(",") if part.strip()]
+    if isinstance(value, list):
+        return [str(part).strip() for part in value if str(part).strip()]
+    return []
+
+
+def _attendees(value: object) -> list[str]:
+    found: list[str] = []
+    for item in _as_list(value):
+        match = _EMAIL.search(item)
+        if match and match.group(0) not in found:
+            found.append(match.group(0))
+    return found[:20]
+
+
+def _reminders(value: object) -> list[str]:
+    found: list[str] = []
+    for item in _as_list(value):
+        if _REMINDER.match(item):
+            normalized = item.lower()
+            if normalized not in found:
+                found.append(normalized)
+    return found[:5]
+
+
+def _rrule(value: object) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    if text.upper().startswith("RRULE:"):
+        text = text[6:]
+    text = text.upper()
+    if not _RRULE.match(text):
+        return None
+    return "RRULE:" + text
 
 
 def _parse_local(value: str) -> datetime | None:
@@ -335,6 +402,12 @@ def create_event(event: dict, row: dict) -> dict:
                "--description", (row.get("utterance") or "")[:1000]]
     if event.get("location"):
         command += ["--location", event["location"]]
+    if event.get("attendees"):
+        command += ["--attendees", ",".join(event["attendees"])]
+    for reminder in event.get("reminders") or []:
+        command += ["--reminder", reminder]
+    if event.get("rrule"):
+        command += ["--rrule", event["rrule"]]
     if GOG_DRY_RUN:
         command.append("--dry-run")
 
@@ -352,22 +425,29 @@ def create_event(event: dict, row: dict) -> dict:
 
     created_id, link = _parse_created(proc.stdout)
     when = f"{event['start']:%a %d %b %H:%M} → {event['end']:%H:%M}"
+    written = {
+        "summary": event["summary"],
+        "location": event.get("location"),
+        "start": event["start"].isoformat(),
+        "end": event["end"].isoformat(),
+        "timezone": TIMEZONE,
+        "id": created_id,
+        "link": link,
+        "confidence": event.get("confidence"),
+        "extract_usage": event.get("usage"),
+    }
+    if event.get("attendees"):
+        written["attendees"] = ", ".join(event["attendees"])
+    if event.get("reminders"):
+        written["reminders"] = ", ".join(event["reminders"])
+    if event.get("rrule"):
+        written["rrule"] = event["rrule"]
     return {
         "destination": "do:calendar:create",
         "status": "created" if not GOG_DRY_RUN else "dry-run",
         "seconds": round(_now() - started, 1),
         "note": f"{event['summary']} · {when}" + (f" · {event['location']}" if event.get("location") else ""),
-        "event": {
-            "summary": event["summary"],
-            "location": event.get("location"),
-            "start": event["start"].isoformat(),
-            "end": event["end"].isoformat(),
-            "timezone": TIMEZONE,
-            "id": created_id,
-            "link": link,
-            "confidence": event.get("confidence"),
-            "extract_usage": event.get("usage"),
-        },
+        "event": written,
     }
 
 

@@ -26,6 +26,9 @@ export interface RouteStatus {
     end?: string;
     id?: string | null;
     link?: string | null;
+    attendees?: string;
+    reminders?: string;
+    rrule?: string;
   };
 }
 
@@ -85,6 +88,9 @@ function eventOf(value: unknown): RouteStatus["event"] {
     end: textOrUndefined(event.end),
     id: typeof event.id === "string" ? event.id : null,
     link: typeof event.link === "string" ? event.link : null,
+    attendees: textOrUndefined(event.attendees),
+    reminders: textOrUndefined(event.reminders),
+    rrule: textOrUndefined(event.rrule),
   };
 }
 
@@ -239,6 +245,9 @@ export function outcomeLines(verdict: CalendarVerdict): string[] {
     const lines = [`→ created: ${event.summary ?? created.note ?? "?"}`];
     if (event.start) lines.push(`  ${event.start} → ${event.end ?? "?"}`);
     if (event.location) lines.push(`  ${event.location}`);
+    if (event.attendees) lines.push(`  ${event.attendees}`);
+    if (event.reminders) lines.push(`  ${event.reminders}`);
+    if (event.rrule) lines.push(`  ${event.rrule}`);
     if (event.link) lines.push(`  ${event.link}`);
     return lines;
   }

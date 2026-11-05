@@ -64,8 +64,8 @@ Expect `calendar true`, `decision venue_date_time`, and two destinations marked
 | `do:calendar:create` | one `gog calendar events` duplicate check + one `gog calendar create`, ~0.9 s, no tokens |
 | the CoS turn | none when the answer was delivered (local always, Telegram when the bridge accepts it); a relay turn otherwise |
 
-A match costs about 3-4 s of node work. On this machine the Telegram fallback is what runs,
-because this home has no `TELEGRAM_BOT_TOKEN` (see below).
+A match costs about 3-4 s of node work. This laptop does not use Telegram. The bridge
+stays on the VPS (see below).
 
 ## Log
 
@@ -79,7 +79,7 @@ tail -3 ~/.pi/decision-nodes/calendar/verdicts.jsonl | python3 -m json.tool --js
 ## Tests
 
 ```bash
-# the node: 30 offline tests, no network
+# the node: 33 offline tests, no network
 python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py
 
 # the harness side

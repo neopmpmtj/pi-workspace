@@ -224,7 +224,7 @@ def print_human(row: dict) -> None:
             event = r["event"]
             print()
             print(f"event written by {r['destination']}")
-            for key in ("summary", "location", "start", "end", "id", "link"):
+            for key in ("summary", "location", "start", "end", "attendees", "reminders", "rrule", "id", "link"):
                 if event.get(key):
                     print(f"  {key:<9} {event[key]}")
 
