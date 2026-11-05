@@ -20,5 +20,10 @@
     "enabled": true,
     "print": true,
     "mode": "route"
+  },
+  "reminderNode": {
+    "enabled": true,
+    "print": true,
+    "mode": "route"
   }
 }

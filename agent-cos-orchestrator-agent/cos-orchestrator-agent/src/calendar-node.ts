@@ -1,8 +1,8 @@
 // Runs the `calendar` decision node from the harness and parses what it prints.
 //
-// The node owns the judgment (JEV's calendar class) and the destinations; this file
-// only starts it, reads one JSON object, and fails open when anything goes wrong.
-// Nothing here decides whether a message is a calendar entry.
+// The classifier's arbiter owns the judgment and the node owns the destinations; this
+// file only starts the node, reads one JSON object, and fails open when anything goes
+// wrong. Nothing here decides whether a message is a calendar entry.
 import { spawn } from "node:child_process";
 import path from "node:path";
 
@@ -44,6 +44,9 @@ export interface CalendarVerdict {
   model: string | null;
   latencyMs: number | null;
   routes: RouteStatus[];
+  /** The arbiter's winner class and band, when the node reported them. */
+  winner: string | null;
+  band: string | null;
 }
 
 /** The caller script: `~/.pi/decision-nodes/calendar/route.py`. */
@@ -62,6 +65,8 @@ const EMPTY: CalendarVerdict = {
   model: null,
   latencyMs: null,
   routes: [],
+  winner: null,
+  band: null,
 };
 
 /** A verdict that routed nothing. Every failure path returns this. */
@@ -131,8 +136,11 @@ export function parseRouteOutput(stdout: string): CalendarVerdict {
   for (const [name, value] of Object.entries((calendar?.rules ?? {}) as Record<string, unknown>)) {
     rules[name] = numberOrNull(value);
   }
+  const winner = (row.winner ?? null) as Record<string, unknown> | null;
 
   return {
+    winner: typeof winner?.class === "string" ? winner.class : null,
+    band: typeof winner?.band === "string" ? winner.band : null,
     ok: true,
     reason: typeof row.reason === "string" ? row.reason : null,
     abstained: row.abstained,
@@ -148,6 +156,8 @@ export function parseRouteOutput(stdout: string): CalendarVerdict {
 
 export interface RunOptions {
   dryRun?: boolean;
+  /** classify.py --json output already fetched for this text (src/jev-classify.ts). */
+  classifierJson?: string;
   timeoutMs?: number;
   env?: NodeJS.ProcessEnv;
   script?: string;
@@ -166,6 +176,7 @@ export function runCalendarNode(text: string, options: RunOptions = {}): Promise
   const timeoutMs = options.timeoutMs ?? 330_000;
   const args = [script, "--text", text, "--json"];
   if (options.dryRun) args.push("--dry-run");
+  if (options.classifierJson) args.push("--classifier-json", options.classifierJson);
 
   return new Promise((resolve) => {
     const child = spawn(python, args, { env: options.env ?? process.env, stdio: ["ignore", "pipe", "pipe"] });
@@ -274,6 +285,25 @@ export function telegramReply(verdict: CalendarVerdict, withTrace: boolean): str
   ].filter((bit): bit is string => !!bit);
   lines.push("", bits.join(" · "));
   return lines.join("\n");
+}
+
+/**
+ * True when the node wrote nothing because it was unsure: the arbiter's hint band, or
+ * the extractor disagreeing with the classifier. The turn then runs with hintBlock.
+ */
+export function isUnsure(verdict: CalendarVerdict): boolean {
+  return verdict.routes.some((route) => route.status === "hint" || route.status === "downgraded");
+}
+
+/** The hidden block for an unsure verdict: nothing was written, ask before writing. */
+export function hintBlock(verdict: CalendarVerdict): string {
+  const why = verdict.routes.find((route) => route.status === "hint" || route.status === "downgraded");
+  return [
+    "calendarNode - unsure, nothing was written",
+    `reason: ${why?.note ?? "low confidence"}`,
+    "This message may be asking for a new calendar event. Do not create one yourself.",
+    "If it is a request, ask the user to confirm the title, day and time; otherwise answer normally.",
+  ].join("\n");
 }
 
 /**

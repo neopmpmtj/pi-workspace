@@ -1,76 +1,54 @@
-// Calls the calendar node on every new message before the turn starts.
-// The node classifies and, on a match, runs its destinations:
+// Calls the calendar node when the arbiter's winner for a message is `calendar`.
+// One classification per message is shared with the other decision-node hooks
+// (src/jev-classify.ts); this hook never classifies on its own.
+//
+// Band act: the node runs its destinations:
 //   do:calendar:gog    -> `gog calendar freebusy` on the resolved slot (read-only)
 //   do:calendar:create -> writes the event, only when that read said FREE
-//
-// A matched message finishes inside this extension, with no model turn:
+// and the message finishes inside this extension, with no model turn:
 //   * local (TUI, `-p`): the trace and the outcome go to stdout, input is "handled".
-//   * Telegram: the same text is sent through the bridge's delivery API to the current
-//     turn's target, then input is "handled".
-// If Telegram delivery fails - bridge not running, no bound target - the turn is NOT
-// swallowed: input continues and `before_agent_start` attaches the hidden block so the
-// reply still reaches the user.
+//   * Telegram: the same text is sent through the bridge's delivery API, then "handled".
+// If Telegram delivery fails the turn is NOT swallowed: `before_agent_start` attaches
+// the hidden block so the reply still reaches the user.
 //
-// It is never both: a handled input does not reach before_agent_start.
+// Band hint, or the extractor disagreed: nothing is written, the turn runs, and the
+// model gets a hidden hint to ask before anything is created.
+//
 // Off unless ~/.pi/config.json has calendarNode.enabled true.
 import { writeSync } from "node:fs";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { readCalendarNode } from "../../src/global-config.ts";
 import {
   type CalendarVerdict,
   contextBlock,
+  hintBlock,
+  isUnsure,
   outcomeLines,
   runCalendarNode,
   telegramReply,
   traceLines,
 } from "../../src/calendar-node.ts";
-
-/** Telegram prompts carry a surface prefix; only those go through the bridge. */
-const TELEGRAM = /^\s*\[telegram/i;
+import { claimAnnouncement, classifyPrompt, type JevClassification, winnerLine } from "../../src/jev-classify.ts";
+import { sendTelegram, TELEGRAM } from "../../src/telegram-delivery.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
   if (ctx.hasUI) ctx.ui.notify(answer);
   else writeSync(1, `${answer}\n`);
 }
 
-/** The bridge's public delivery entry, installed under this agent home. */
-function deliveryModule(env: NodeJS.ProcessEnv = process.env): string {
-  const override = env.PI_TELEGRAM_DELIVERY?.trim();
-  if (override) return override;
-  return path.join(env.HOME ?? "", ".pi", "agent-cos-orchestrator-agent", "cos-orchestrator-agent",
-    "npm", "node_modules", "@llblab", "pi-telegram", "dist", "api", "delivery.js");
-}
-
-type SendView = (
-  view: { text: string; parseMode?: string },
-  options: { scope: { kind: string } },
-) => Promise<{ ok: boolean; reason?: string }>;
-
-/**
- * Deliver text to the Telegram surface this session is bound to. Tries the exact turn
- * target first, then the instance's assigned thread or paired chat. Returns false when
- * the bridge is absent or refuses - the caller then keeps the model turn.
- */
-export async function sendTelegram(text: string, env: NodeJS.ProcessEnv = process.env): Promise<boolean> {
-  try {
-    const module = (await import(pathToFileURL(deliveryModule(env)).href)) as { sendTelegramView?: SendView };
-    const send = module.sendTelegramView;
-    if (typeof send !== "function") return false;
-    for (const kind of ["active-turn", "instance"]) {
-      const sent = await send({ text }, { scope: { kind } });
-      if (sent?.ok) return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
+/** Classify once (shared), print the winner line once, and run the node when calendar won. */
+async function judge(text: string, ctx: ExtensionContext, print: boolean, route: boolean):
+  Promise<{ jev: JevClassification; verdict: CalendarVerdict | null }> {
+  const jev = await classifyPrompt(text);
+  if (print && claimAnnouncement(text)) show(ctx, winnerLine(jev));
+  if (!jev.ok || jev.winner?.class !== "calendar" || jev.winner.band === "none") return { jev, verdict: null };
+  const verdict = await runCalendarNode(text, { dryRun: !route, classifierJson: jev.file });
+  return { jev, verdict };
 }
 
 export default function registerCalendarNode(pi: ExtensionAPI): void {
   // One verdict per prompt, so a turn that was not swallowed never re-runs the node.
-  let last: { text: string; verdict: CalendarVerdict; shown: boolean } | null = null;
+  let last: { text: string; verdict: CalendarVerdict | null; shown: boolean } | null = null;
 
   pi.on("input", async (event, ctx) => {
     if (event.source === "extension") return { action: "continue" };
@@ -81,9 +59,12 @@ export default function registerCalendarNode(pi: ExtensionAPI): void {
     const setting = await readCalendarNode();
     if (!setting) return { action: "continue" };
 
-    const verdict = await runCalendarNode(text, { dryRun: !setting.route });
+    const { verdict } = await judge(text, ctx, setting.print, setting.route);
     last = { text, verdict, shown: false };
-    const executed = setting.route && verdict.ok && !verdict.abstained && verdict.isMatch;
+    if (!verdict) return { action: "continue" };
+
+    const executed = setting.route && verdict.ok && !verdict.abstained && !isUnsure(verdict) &&
+      verdict.routes.some((route) => route.destination === "do:calendar:create");
 
     if (TELEGRAM.test(text)) {
       if (!executed) return { action: "continue" };
@@ -117,12 +98,17 @@ export default function registerCalendarNode(pi: ExtensionAPI): void {
     }
 
     const cached = last && last.text === text ? last : null;
-    const verdict = cached?.verdict ?? (await runCalendarNode(text, { dryRun: !setting.route }));
+    const verdict = cached ? cached.verdict : (await judge(text, ctx, setting.print, setting.route)).verdict;
     last = null;
+    if (!verdict) return;
 
     if (setting.print && !cached?.shown) show(ctx, traceLines(verdict).join("\n"));
+    if (!verdict.ok || verdict.abstained) return;
 
-    if (!setting.route || !verdict.ok || verdict.abstained || !verdict.isMatch) return;
+    if (isUnsure(verdict)) {
+      return { message: { customType: "calendar-node", content: hintBlock(verdict), display: false } };
+    }
+    if (!setting.route) return;
 
     return {
       message: {

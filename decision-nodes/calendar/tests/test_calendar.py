@@ -134,7 +134,8 @@ class Validation(unittest.TestCase):
 
     def ok(self, **overrides):
         base = {"summary": "Barber", "location": None, "start_local": "2026-11-05T15:00",
-                "end_local": "2026-11-05T16:00", "confidence": 0.9, "reason": "clear"}
+                "end_local": "2026-11-05T16:00", "confidence": 0.9, "reason": "clear",
+                "kind": "calendar_request", "is_past": False}
         base.update(overrides)
         return config._validate(base, self.now)
 
@@ -192,6 +193,23 @@ class Validation(unittest.TestCase):
         event, why = self.ok(rrule="every week forever")
         self.assertIsNotNone(event, why)
         self.assertNotIn("rrule", event)
+
+    def test_the_extractor_must_agree_it_is_a_calendar_request(self):
+        for kind in ("reminder_request", "other", None):
+            event, why = self.ok(kind=kind)
+            self.assertIsNone(event)
+            self.assertTrue(why.startswith(config.SECOND_OPINION), why)
+
+    def test_the_extractor_must_not_read_a_past_event(self):
+        event, why = self.ok(is_past=True)
+        self.assertIsNone(event)
+        self.assertIn("past event", why)
+
+    def test_a_disagreement_downgrades_the_read(self):
+        with mock.patch.object(config, "extract_event",
+                               return_value=(None, f"{config.SECOND_OPINION}: the extractor read it as other")):
+            result = config.do_calendar_gog({"utterance": "is the concert on Friday at 9?"})
+        self.assertEqual(result["status"], "downgraded")
 
 
 class Write(unittest.TestCase):
@@ -264,20 +282,61 @@ class Write(unittest.TestCase):
         self.assertIn("quota exceeded", result["note"])
 
 
-class Routing(unittest.TestCase):
-    def test_a_match_returns_both_destinations_in_order(self):
-        row = {"abstained": False, "calendar": {"is_match": True}}
-        self.assertEqual(config.router(row), ["do:calendar:gog", "do:calendar:create"])
+def won(cls="calendar", band="act", confidence=0.95, **extra):
+    return {"abstained": False, "calendar": {"is_match": True},
+            "winner": {"class": cls, "band": band, "confidence": confidence, **extra}}
 
-    def test_a_non_match_routes_nothing(self):
-        self.assertEqual(config.router({"abstained": False, "calendar": {"is_match": False}}), [])
+
+class Routing(unittest.TestCase):
+    def test_an_act_win_returns_both_destinations_in_order(self):
+        self.assertEqual(config.router(won()), ["do:calendar:gog", "do:calendar:create"])
+
+    def test_a_hint_win_runs_nothing_but_the_hint(self):
+        self.assertEqual(config.router(won(band="hint", confidence=0.7)), ["hint:calendar"])
+
+    def test_another_winner_routes_nothing(self):
+        self.assertEqual(config.router(won(cls="reminder")), [])
+        self.assertEqual(config.router(won(cls="none", band="none")), [])
 
     def test_an_abstain_fails_open(self):
         self.assertEqual(config.router({"abstained": True}), ["escalate"])
 
     def test_every_router_name_has_a_handler(self):
-        for name in config.router({"abstained": False, "calendar": {"is_match": True}}):
-            self.assertIn(name, config.DESTINATIONS)
+        for row in (won(), won(band="hint")):
+            for name in config.router(row):
+                self.assertIn(name, config.DESTINATIONS)
+
+    def test_the_hint_says_why_and_writes_nothing(self):
+        result = config.hint_calendar(won(band="hint", confidence=0.72, capped_by=["about_someone_else"]))
+        self.assertEqual(result["status"], "hint")
+        self.assertIn("0.72", result["note"])
+        self.assertIn("about_someone_else", result["note"])
+
+
+class Undo(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        self.dir = tempfile.mkdtemp()
+        self.log = os.path.join(self.dir, "verdicts.jsonl")
+
+    def write(self, *records):
+        import json
+        with open(self.log, "a", encoding="utf-8") as fh:
+            for record in records:
+                fh.write(json.dumps(record) + "\n")
+
+    def test_undo_deletes_the_last_created_event_once(self):
+        self.write({"routes": [{"destination": "do:calendar:create", "status": "created", "event_id": "a"}]},
+                   {"routes": [{"destination": "do:calendar:create", "status": "created", "event_id": "b"}]})
+        with mock.patch.object(config.subprocess, "run", return_value=Completed(["gog"], 0, "{}", "")) as run:
+            first = config.undo_last_event(self.log)
+            second = config.undo_last_event(self.log)
+        self.assertEqual((first["status"], first["event_id"]), ("deleted", "b"))
+        self.assertEqual((second["status"], second["event_id"]), ("deleted", "a"))
+        self.assertEqual(run.call_args_list[0].args[0][:5], ["gog", "calendar", "delete", "primary", "b"])
+
+    def test_nothing_to_undo(self):
+        self.assertEqual(config.undo_last_event(self.log)["status"], "nothing")
 
 
 if __name__ == "__main__":

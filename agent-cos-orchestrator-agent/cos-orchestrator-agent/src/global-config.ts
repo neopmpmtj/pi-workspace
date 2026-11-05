@@ -66,6 +66,19 @@ export async function readCalendarNode(env: NodeJS.ProcessEnv = process.env): Pr
   return { print: record.print !== false, route: record.mode !== "dry" };
 }
 
+/** The reminder-node hook. Same fields and defaults as calendarNode. */
+export type ReminderNode = CalendarNode;
+
+/**
+ * The reminderNode section, or null when the hook stays off.
+ * mode defaults to routing; "dry" prints the same trace and executes nothing.
+ */
+export async function readReminderNode(env: NodeJS.ProcessEnv = process.env): Promise<ReminderNode | null> {
+  const record = await readEnabledSection("reminderNode", env);
+  if (!record) return null;
+  return { print: record.print !== false, route: record.mode !== "dry" };
+}
+
 async function readGate(name: string, env: NodeJS.ProcessEnv): Promise<InputGate | null> {
   const record = await readEnabledSection(name, env);
   if (!record) return null;

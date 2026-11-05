@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
 import {
   contextBlock,
+  hintBlock,
+  isUnsure,
   outcomeLines,
   parseRouteOutput,
   runCalendarNode,
@@ -204,6 +206,46 @@ describe("contextBlock", () => {
   });
 });
 
+describe("arbiter bands", () => {
+  const HINT = JSON.stringify({
+    node: "calendar", abstained: false, reason: null,
+    calendar: { is_match: true, confidence: 0.72, decision: "venue_date_time", threshold: 0.7, rules: {} },
+    winner: { class: "calendar", band: "hint", confidence: 0.72, vetoed_by: [], capped_by: ["about_someone_else"] },
+    routes: [{ destination: "hint:calendar", status: "hint",
+      note: "maybe a calendar entry (0.72) · capped by about_someone_else - ask before writing" }],
+  });
+  const DOWNGRADED = JSON.stringify({
+    node: "calendar", abstained: false, reason: null,
+    calendar: { is_match: true, confidence: 0.95, decision: "intention", threshold: 0.7, rules: {} },
+    winner: { class: "calendar", band: "act", confidence: 0.95 },
+    routes: [
+      { destination: "do:calendar:gog", status: "downgraded", note: "second opinion: the extractor read it as other, not calendar_request" },
+      { destination: "do:calendar:create", status: "skipped", note: "the read did not run - refusing to write blind" },
+    ],
+  });
+
+  it("reads the winner and the band", () => {
+    const verdict = parseRouteOutput(HINT);
+    assert.equal(verdict.winner, "calendar");
+    assert.equal(verdict.band, "hint");
+    assert.equal(parseRouteOutput(MATCH).winner, null);
+  });
+
+  it("treats a hint and an extractor disagreement as unsure", () => {
+    assert.equal(isUnsure(parseRouteOutput(HINT)), true);
+    assert.equal(isUnsure(parseRouteOutput(DOWNGRADED)), true);
+    assert.equal(isUnsure(parseRouteOutput(MATCH)), false);
+    assert.equal(isUnsure(parseRouteOutput(BUSY)), false);
+  });
+
+  it("tells the model nothing was written and to ask first", () => {
+    const block = hintBlock(parseRouteOutput(DOWNGRADED));
+    assert.match(block, /nothing was written/);
+    assert.match(block, /second opinion/);
+    assert.match(block, /Do not create one yourself/);
+  });
+});
+
 describe("runCalendarNode", () => {
   let dir = "";
   before(async () => {
@@ -219,6 +261,14 @@ describe("runCalendarNode", () => {
     const verdict = await runCalendarNode("lunch at Cafe Nero on Friday at 1pm", { script });
     assert.equal(verdict.ok, true);
     assert.equal(verdict.isMatch, true);
+  });
+
+  it("passes the shared classification to the node", async () => {
+    const script = path.join(dir, "argv.py");
+    const seen = path.join(dir, "argv");
+    await writeFile(script, `import sys\nopen(${JSON.stringify(seen)}, "w").write(" ".join(sys.argv[1:]))\nprint(${JSON.stringify(MATCH)})\n`, "utf8");
+    await runCalendarNode("lunch", { script, classifierJson: "/tmp/payload.json" });
+    assert.match(await readFile(seen, "utf8"), /--classifier-json \/tmp\/payload\.json/);
   });
 
   it("fails open when the node exits 2", async () => {

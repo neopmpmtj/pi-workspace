@@ -36,7 +36,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 NODE_NAME = "calendar"
-NODE_VERSION = "0.2.0"
+NODE_VERSION = "0.3.0"
 
 # The classifier this node asks. One HTTP call, ~250 ms, key in
 # ~/.pi/jev-classifier/.env, which that CLI loads for itself.
@@ -54,6 +54,8 @@ EXTRACT_URL = "https://api.deepseek.com/chat/completions"
 EXTRACT_MODEL = "deepseek-flash"
 EXTRACT_TIMEOUT_S = 30
 EXTRACT_MIN_CONFIDENCE = 0.5
+# Prefix of every extractor-disagreement note; the harness treats those as the hint band.
+SECOND_OPINION = "second opinion"
 
 # Destination do:calendar:create. Called directly, so this process needs the
 # account and the keyring password that the sibling's launcher normally provides.
@@ -80,9 +82,25 @@ def router(row: dict) -> list:
     """
     if row.get("abstained"):
         return ["escalate"]
-    if not (row.get("calendar") or {}).get("is_match"):
+    winner = row.get("winner") or {}
+    if winner.get("class") != NODE_NAME:
+        return []
+    if winner.get("band") == "hint":
+        return ["hint:calendar"]
+    if winner.get("band") != "act":
         return []
     return ["do:calendar:gog", "do:calendar:create"]
+
+
+def hint_calendar(row: dict) -> dict:
+    """The unsure band: nothing runs, the model is told to ask before anything is written."""
+    winner = row.get("winner") or {}
+    confidence = winner.get("confidence")
+    stopped = (winner.get("vetoed_by") or []) + (winner.get("capped_by") or [])
+    note = f"maybe a calendar entry ({confidence:.2f})" if isinstance(confidence, float) else "maybe a calendar entry"
+    if stopped:
+        note += f" · capped by {', '.join(stopped)}"
+    return {"destination": "hint:calendar", "status": "hint", "note": note + " - ask before writing"}
 
 
 # --------------------------------------------------------------- destinations
@@ -101,7 +119,8 @@ def do_calendar_gog(row: dict) -> dict:
     """
     event, why = extract_event(row.get("utterance", ""))
     if event is None:
-        return {"destination": "do:calendar:gog", "status": "skipped",
+        status = "downgraded" if why.startswith(SECOND_OPINION) else "skipped"
+        return {"destination": "do:calendar:gog", "status": status,
                 "gate": _UNKNOWN, "note": why}
 
     row["event"] = event
@@ -218,8 +237,15 @@ _SYSTEM = (
     '"attendees": ["name@example.com"] or null, '
     '"reminders": ["popup:30m"] or null, '
     '"rrule": "FREQ=WEEKLY" or null, '
+    '"kind": "calendar_request", "is_past": false, '
     '"confidence": 0.0, "reason": "one short sentence"}}\n\n'
     "Rules:\n"
+    "- The message may be in English, Portuguese, or a mix.\n"
+    "- kind is calendar_request when the message asks for, or states, a new event on the "
+    "speaker's own calendar; reminder_request when it asks to be reminded of something; "
+    "other for anything else (a question, a past event, someone else's schedule, a "
+    "change or cancellation).\n"
+    "- is_past is true when the event described has already happened.\n"
     "- start_local and end_local are local wall-clock times, no offset.\n"
     "- Resolve relative dates against today. A weekday alone means the next such day.\n"
     "- If no duration is stated, use exactly {minutes} minutes.\n"
@@ -268,9 +294,22 @@ def extract_event(text: str) -> tuple[dict | None, str]:
     return event, ""
 
 
+def second_opinion(parsed: dict, wanted: str) -> str | None:
+    """Why the extractor disagrees with the classifier, or None when it agrees."""
+    kind = parsed.get("kind")
+    if kind != wanted:
+        return f"{SECOND_OPINION}: the extractor read it as {kind or 'nothing'}, not {wanted}"
+    if parsed.get("is_past") is True:
+        return f"{SECOND_OPINION}: the extractor read it as a past event"
+    return None
+
+
 def _validate(parsed: dict, now: datetime) -> tuple[dict | None, str]:
     if not isinstance(parsed, dict):
         return None, "extraction returned no object"
+    disagreement = second_opinion(parsed, "calendar_request")
+    if disagreement:
+        return None, disagreement
 
     start_raw = parsed.get("start_local")
     if not isinstance(start_raw, str) or not start_raw:
@@ -487,6 +526,58 @@ def _parse_created(stdout: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+# ------------------------------------------------------------------- undo
+
+def delete_event(event_id: str) -> tuple[bool, str]:
+    """`gog calendar delete` one event. (ok, detail). Never raises."""
+    env = dict(os.environ)
+    env.update(_env_file(GOG_ENV))
+    command = ["gog", "calendar", "delete", GOG_CALENDAR, event_id, "--force", "-j"]
+    if GOG_DRY_RUN:
+        command.append("--dry-run")
+    try:
+        proc = subprocess.run(command, capture_output=True, text=True, timeout=60, env=env)
+    except (subprocess.SubprocessError, OSError) as exc:
+        return False, f"gog delete not runnable: {exc}"
+    if proc.returncode != 0:
+        return False, (proc.stderr or proc.stdout or f"exit {proc.returncode}").strip()[-300:]
+    return True, "dry-run" if GOG_DRY_RUN else "deleted"
+
+
+def undo_last_event(log_path: str) -> dict:
+    """Delete the newest event this node created that was not undone yet, and log it."""
+    created: list[str] = []
+    undone: set[str] = set()
+    try:
+        with open(log_path, encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(record.get("undo"), dict) and record["undo"].get("status") == "deleted":
+                    undone.add(record["undo"].get("event_id"))
+                for route in record.get("routes") or []:
+                    if route.get("status") == "created" and route.get("event_id"):
+                        created.append(route["event_id"])
+    except OSError:
+        pass
+
+    target = next((event_id for event_id in reversed(created) if event_id not in undone), None)
+    if target is None:
+        return {"status": "nothing", "note": "no event created by this node is left to undo"}
+    ok, detail = delete_event(target)
+    result = {"status": "deleted" if ok and detail == "deleted" else ("dry-run" if ok else "failed"),
+              "event_id": target, "note": detail}
+    try:
+        with open(log_path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "node": NODE_NAME,
+                                 "undo": result}) + "\n")
+    except OSError:
+        pass
+    return result
+
+
 # ------------------------------------------------------------------- helpers
 
 def _skip(reason: str, status: str = "skipped") -> dict:
@@ -523,6 +614,7 @@ def _post_json(url: str, body: dict, key: str, timeout: int) -> tuple[str, dict]
 
 
 DESTINATIONS = {
+    "hint:calendar": hint_calendar,
     "do:calendar:gog": do_calendar_gog,
     "do:calendar:create": do_calendar_create,
 }

@@ -1,0 +1,3 @@
+# The reminders table is append-only and written on both the laptop and the VPS.
+# A union merge keeps every line from both sides instead of stopping auto-sync's rebase.
+decision-nodes/reminder/reminders.jsonl merge=union

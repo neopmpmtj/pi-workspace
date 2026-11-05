@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
-import { sendTelegram } from "../extensions/calendar-node/index.ts";
+import { sendTelegram } from "../src/telegram-delivery.ts";
 
 // `sendTelegram` takes the bridge module from PI_TELEGRAM_DELIVERY when set, so the
 // delivery contract can be exercised without a live bot.

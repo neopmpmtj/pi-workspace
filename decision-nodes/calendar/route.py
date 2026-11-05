@@ -4,9 +4,10 @@
 One function per step, in the order they run:
 
   clean()      strip the harness markup pi adds ([telegram], [time], [voice])
-  classify()   ONE JEV request through the jev-classifier-multi CLI
-  verdict()    that JSON -> this node's row
-  route()      config.router(row) -> destination names
+  classify()   ONE JEV request through the jev-classifier-multi CLI, or the
+               payload the harness already fetched (--classifier-json)
+  verdict()    that JSON -> this node's row, including the arbiter's winner
+  route()      config.router(row) -> destination names (act, hint, or nothing)
   execute()    call each destination's handler from config.DESTINATIONS
   log()        append metadata to verdicts.jsonl (never the text)
 
@@ -20,6 +21,8 @@ Usage
   route.py --text "Lunch at Cafe Nero on Friday at 1pm"     classify, route, run
   route.py --text "..." --dry-run                           stop after routing
   route.py --text "..." --json                              one JSON object
+  route.py --text "..." --classifier-json payload.json      reuse one classification
+  route.py --undo                                           delete the last event created
   printf '%s' "..." | route.py --stdin
 
 Exit 0 when a verdict was produced (match or not); 2 when none exists.
@@ -86,6 +89,19 @@ def classify(text: str) -> tuple[dict | None, str | None, int | None]:
     return payload, None, elapsed
 
 
+def read_classification(path: str) -> tuple[dict | None, str | None, int | None]:
+    """The same payload `classify()` returns, read from a file the harness wrote."""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        return None, f"classifier JSON unreadable: {exc}", None
+    if not isinstance(payload, dict) or "classes" not in payload:
+        return None, "classifier JSON has no classes", None
+    latency = payload.get("latency_ms")
+    return payload, None, latency if isinstance(latency, int) else None
+
+
 # ------------------------------------------------------------------ step 3
 def verdict(text: str, payload: dict | None, error: str | None,
             latency_ms: int | None = None) -> dict:
@@ -97,6 +113,7 @@ def verdict(text: str, payload: dict | None, error: str | None,
         "abstained": True,
         "reason": None,
         "calendar": None,
+        "winner": None,
         "model": None,
         "latency_ms": None,
         "usage": None,
@@ -110,8 +127,13 @@ def verdict(text: str, payload: dict | None, error: str | None,
     if "is_match" not in block:
         row["reason"] = "classifier JSON has no calendar class"
         return row
+    winner = payload.get("winner")
+    if not isinstance(winner, dict) or "class" not in winner:
+        row["reason"] = "classifier JSON has no winner"
+        return row
 
     row["abstained"] = False
+    row["winner"] = {key: winner.get(key) for key in ("class", "confidence", "band", "vetoed_by", "capped_by")}
     row["calendar"] = {
         "is_match": bool(block.get("is_match")),
         "confidence": block.get("confidence"),
@@ -169,14 +191,16 @@ def execute(row: dict, destinations: list, dry_run: bool) -> list:
 
 # ------------------------------------------------------------------ step 6
 LOG_KEYS = ("node", "node_version", "utterance_chars", "abstained", "reason",
-            "calendar", "model", "latency_ms", "routes")
+            "calendar", "winner", "model", "latency_ms", "routes")
 
 
 def log(row: dict) -> None:
     record = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
     record.update({k: row.get(k) for k in LOG_KEYS})
     record["routes"] = [{"destination": r.get("destination"), "status": r.get("status"),
-                        "note": (r.get("note") or r.get("error") or "")[:160]}
+                        "note": (r.get("note") or r.get("error") or "")[:160],
+                        **({"event_id": r["event"]["id"]} if r.get("status") == "created"
+                           and isinstance(r.get("event"), dict) and r["event"].get("id") else {})}
                        for r in row.get("routes") or []]
     try:
         with open(VERDICTS, "a", encoding="utf-8") as fh:
@@ -194,6 +218,10 @@ def print_human(row: dict) -> None:
         return
 
     nums = calendar.get("rules") or {}
+    winner = row.get("winner") or {}
+    print(f"winner              {winner.get('class')}  band {winner.get('band')}"
+          + (f"  vetoes {', '.join((winner.get('vetoed_by') or []) + (winner.get('capped_by') or []))}"
+             if (winner.get("vetoed_by") or winner.get("capped_by")) else ""))
     print(f"calendar            {'true' if calendar['is_match'] else 'false'}")
     print(f"confidence          {calendar['confidence']:.3f}")
     print(f"decision            {calendar['decision']}")
@@ -236,7 +264,19 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="classify and route, run nothing")
     ap.add_argument("--json", action="store_true", help="print the row instead of the report")
     ap.add_argument("--no-log", action="store_true")
+    ap.add_argument("--classifier-json", default=None,
+                    help="classify.py --json output already fetched for this text; skips the request")
+    ap.add_argument("--undo", action="store_true", help="delete the last event this node created")
     args = ap.parse_args()
+
+    if args.undo:
+        result = config.undo_last_event(VERDICTS)
+        if args.json:
+            print(json.dumps(result, ensure_ascii=False))
+        else:
+            print(f"undo {result['status']}" + (f" {result['event_id']}" if result.get("event_id") else "")
+                  + f" · {result['note']}")
+        return 0 if result["status"] in ("deleted", "dry-run", "nothing") else 1
 
     raw = sys.stdin.read() if (args.stdin or args.text is None) else args.text
     text = clean(raw)
@@ -245,7 +285,10 @@ def main() -> int:
         print("error: empty utterance", file=sys.stderr)
         return 2
 
-    payload, error, latency_ms = classify(text)
+    if args.classifier_json:
+        payload, error, latency_ms = read_classification(args.classifier_json)
+    else:
+        payload, error, latency_ms = classify(text)
     row = verdict(text, payload, error, latency_ms)
     row["routes"] = execute(row, route(row) if not row["abstained"] else ["escalate"],
                             dry_run=args.dry_run)
