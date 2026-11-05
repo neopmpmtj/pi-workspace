@@ -100,6 +100,10 @@ agent/telegram.json
 
 # Prompt-capture runtime state (rewritten every turn)
 agent/state/prompt-capture/
+# CoS agent state/ — runtime only (prompt-capture, per-turn churn). Nested, so the
+# anchored rule above never matched it. NB: apps-scripts/**/text_to_speech/state/
+# is Python source and must stay tracked.
+agent-cos-orchestrator-agent/cos-orchestrator-agent/state/
 
 # Per-machine model catalog cache, at any depth (agent dirs, sub-agents)
 models-store.json
