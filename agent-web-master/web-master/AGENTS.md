@@ -13,7 +13,7 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 - Every turn is billed in full again: the system prompt, this file, the environment notes, and
   the whole conversation so far are re-sent each time.
 - Context is the budget. Long conversations cost more than long answers.
-- `/ask` sends one request straight to a provider with no chat turn. It is a command, not a tool.
+- `/ask` looks the question up on the configured web route, then sends one request straight to a provider. It is a command, not a chat turn.
 - A message that is not a slash command is a chat turn. That turn loads this file and the environment notes, and can use the web tools. Use that turn when the user asked for advanced search, deep search, or research.
 
 ## Web access

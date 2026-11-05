@@ -4,7 +4,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import type { Api, AssistantMessage, AssistantMessageEventStream, Model } from "@earendil-works/pi-ai";
-import { resolveModel, runAsk, type RegistryLike } from "../src/ask.ts";
+import { resolveModel, runAsk, type AskDeps, type RegistryLike } from "../src/ask.ts";
+import { formatAskWebResults, questionWithWebResults, type AskWebFindings } from "../src/ask-web-search.ts";
+import { readToolCalls } from "../ledger/tool-store.ts";
 import { parseRateCard, versionOf } from "../ledger/rates.ts";
 import { openLedger, readCalls } from "../ledger/store.ts";
 
@@ -20,7 +22,17 @@ const OTHER = {
   name: "GPT-5.4",
 } as unknown as Model<Api>;
 
-function registry(options: { message?: AssistantMessage; throws?: Error; auth?: boolean; seen?: { prompt?: string } } = {}): RegistryLike {
+const OFFLINE: AskWebFindings = {
+  text: "",
+  provider: null,
+  results: 0,
+  fetches: 0,
+  status: "ok",
+  failure: null,
+  durationMs: 0,
+};
+
+function registry(options: { message?: AssistantMessage; throws?: Error; auth?: boolean; seen?: { prompt?: string; user?: string } } = {}): RegistryLike {
   return {
     find(provider, id) {
       return [MODEL, OTHER].find((model) => model.provider === provider && model.id === id);
@@ -28,7 +40,11 @@ function registry(options: { message?: AssistantMessage; throws?: Error; auth?: 
     getAvailable: () => [MODEL, OTHER],
     hasConfiguredAuth: () => options.auth ?? true,
     streamSimple(_model, context) {
-      if (options.seen) options.seen.prompt = context.systemPrompt;
+      if (options.seen) {
+        options.seen.prompt = context.systemPrompt;
+        const first = context.messages[0];
+        options.seen.user = first && "content" in first && typeof first.content === "string" ? first.content : "";
+      }
       return {
         async result() {
           if (options.throws) throw options.throws;
@@ -90,12 +106,49 @@ async function withLedger<T>(run: (ledger: ReturnType<typeof openLedger>, env: N
   }
 }
 
+function askDeps(
+  ledger: ReturnType<typeof openLedger>,
+  env: NodeJS.ProcessEnv,
+  extra: Partial<AskDeps> = {},
+): AskDeps {
+  return {
+    registry: extra.registry ?? registry(),
+    ledger,
+    rates,
+    env,
+    webSearch: extra.webSearch ?? (async () => OFFLINE),
+    ...extra,
+  };
+}
+
+describe("questionWithWebResults", () => {
+  it("leaves the question alone when the lookup found nothing", () => {
+    assert.equal(questionWithWebResults("say pong", OFFLINE), "say pong");
+  });
+
+  it("attaches the formatted results", () => {
+    const text = formatAskWebResults(
+      "duckduckgo",
+      [{ title: "Vila Real", url: "https://example.test/vila", snippet: "1 °C" }],
+      null,
+    );
+    const asked = questionWithWebResults("temperature", { ...OFFLINE, text, provider: "duckduckgo", results: 1 });
+    assert.match(asked, /temperature\n\nWeb results \(duckduckgo\)/);
+    assert.match(asked, /1 °C/);
+  });
+
+  it("says the lookup failed instead of dropping the question", () => {
+    const asked = questionWithWebResults("temperature", { ...OFFLINE, status: "failed", failure: "network down" });
+    assert.match(asked, /Web lookup failed: network down/);
+  });
+});
+
 describe("runAsk", () => {
   it("records a priced call with tokens, both cost figures, and the rate version", async () => {
     await withLedger(async (ledger, env) => {
       const outcome = await runAsk(
         { question: "say pong", model: "deepseek-flash", effort: "low" },
-        { registry: registry(), ledger, rates, env },
+        askDeps(ledger, env),
       );
       assert.equal(outcome.status, "ok");
       assert.equal(outcome.text, "pong");
@@ -127,7 +180,7 @@ describe("runAsk", () => {
     await withLedger(async (ledger, env) => {
       const outcome = await runAsk(
         { question: "first line\nsecond line", model: "deepseek-flash" },
-        { registry: registry(), ledger, rates, env },
+        askDeps(ledger, env),
       );
       const row = ledger.db.prepare("SELECT label FROM runs WHERE run_id = ?").get(outcome.runId) as { label: string };
       assert.equal(row.label, "first line");
@@ -138,7 +191,7 @@ describe("runAsk", () => {
     await withLedger(async (ledger, env) => {
       const outcome = await runAsk(
         { question: "say pong", model: "deepseek-flash" },
-        { registry: registry({ throws: new Error("connection reset") }), ledger, rates, env },
+        askDeps(ledger, env, { registry: registry({ throws: new Error("connection reset") }) }),
       );
       assert.equal(outcome.status, "failed");
       assert.equal(outcome.failure, "connection reset");
@@ -152,11 +205,22 @@ describe("runAsk", () => {
 
   it("refuses to run without a configured key, and records nothing", async () => {
     await withLedger(async (ledger, env) => {
+      let searched = false;
       await assert.rejects(
-        runAsk({ question: "hi", model: "deepseek-flash" }, { registry: registry({ auth: false }), ledger, rates, env }),
+        runAsk(
+          { question: "hi", model: "deepseek-flash" },
+          askDeps(ledger, env, {
+            registry: registry({ auth: false }),
+            webSearch: async () => {
+              searched = true;
+              return OFFLINE;
+            },
+          }),
+        ),
         /No API key configured/,
       );
       assert.equal(readCalls(ledger).length, 0);
+      assert.equal(searched, false);
     });
   });
 
@@ -164,12 +228,9 @@ describe("runAsk", () => {
     await withLedger(async (ledger, env) => {
       const outcome = await runAsk(
         { question: "hi", model: "deepseek-flash" },
-        {
+        askDeps(ledger, env, {
           registry: registry({ message: message({ stopReason: "error", errorMessage: "rate limited" }) }),
-          ledger,
-          rates,
-          env,
-        },
+        }),
       );
       assert.equal(outcome.status, "failed");
       assert.equal(outcome.failure, "rate limited");
@@ -181,9 +242,36 @@ describe("runAsk", () => {
       const seen: { prompt?: string } = {};
       await runAsk(
         { question: "hi", model: "deepseek-flash", prompt: "Answer in one sentence." },
-        { registry: registry({ seen }), ledger, rates, env },
+        askDeps(ledger, env, { registry: registry({ seen }) }),
       );
       assert.equal(seen.prompt, "Answer in one sentence.");
+    });
+  });
+
+  it("sends the web lookup with the question and records the search", async () => {
+    await withLedger(async (ledger, env) => {
+      const seen: { user?: string } = {};
+      const found: AskWebFindings = {
+        ...OFFLINE,
+        text: formatAskWebResults("duckduckgo", [{ title: "Vila Real", url: "https://example.test/vila", snippet: "1 °C and sunny" }], null),
+        provider: "duckduckgo",
+        results: 1,
+        fetches: 1,
+        durationMs: 40,
+      };
+      const outcome = await runAsk(
+        { question: "temperature in Vila Real", model: "deepseek-flash" },
+        askDeps(ledger, env, { registry: registry({ seen }), webSearch: async () => found }),
+      );
+      assert.match(seen.user ?? "", /temperature in Vila Real/);
+      assert.match(seen.user ?? "", /1 °C and sunny/);
+      assert.equal(outcome.webProvider, "duckduckgo");
+      const tools = readToolCalls(ledger, { source: "built-in", updatedAt: null, version: "builtin", providers: {}, fetch: { perUrl: 0 } });
+      assert.equal(tools.length, 2);
+      assert.equal(tools[0].tool, "web_search");
+      assert.equal(tools[0].providerCounts.duckduckgo, 1);
+      assert.equal(tools[1].tool, "fetch_content");
+      assert.equal(tools[1].urls, 1);
     });
   });
 
@@ -191,7 +279,7 @@ describe("runAsk", () => {
     await withLedger(async (ledger, env) => {
       const outcome = await runAsk(
         { question: "hi", model: "gpt-5.4" },
-        { registry: registry({ message: message({ provider: "openai", model: "gpt-5.4" }) }), ledger, rates, env },
+        askDeps(ledger, env, { registry: registry({ message: message({ provider: "openai", model: "gpt-5.4" }) }) }),
       );
       assert.equal(outcome.costEstimated, null);
       assert.equal(outcome.costPi, 0.0003222);

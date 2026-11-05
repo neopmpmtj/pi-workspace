@@ -13,6 +13,9 @@ import { labelOf } from "../ledger/labels.ts";
 import type { RatesSnapshot } from "../ledger/rate-table.ts";
 import type { Ledger } from "../ledger/store.ts";
 import { estimateCost, tokensOf, type TokenTotals } from "../ledger/tokens.ts";
+import { readToolRates } from "../ledger/tool-rates.ts";
+import { ensureToolTables, insertToolCall } from "../ledger/tool-store.ts";
+import { questionWithWebResults, searchWebForAsk, type AskWebFindings } from "./ask-web-search.ts";
 import { readAskSystemPrompt } from "./prompt.ts";
 
 /** The slice of Pi's ModelRegistry this agent needs. Tests pass a stand-in. */
@@ -33,6 +36,7 @@ export interface AskInput {
   /** This run only. Wins over prompts.json and the built-in line. */
   prompt?: string;
   sessionId?: string;
+  sessionFile?: string;
 }
 
 export interface AskOutcome {
@@ -54,6 +58,8 @@ export interface AskOutcome {
   ratesVersion: string;
   ratesSource: RatesSnapshot["source"];
   startedAt: string;
+  /** Search route that supplied the lookup. Null when no search ran. */
+  webProvider: string | null;
 }
 
 export interface AskDeps {
@@ -64,6 +70,8 @@ export interface AskDeps {
   signal?: AbortSignal;
   now?: () => Date;
   newId?: () => string;
+  /** Stand-in for tests. The default is one search on the configured route. */
+  webSearch?: (query: string, signal?: AbortSignal) => Promise<AskWebFindings>;
 }
 
 const THINKING: readonly string[] = ["minimal", "low", "medium", "high", "xhigh", "max"];
@@ -80,11 +88,13 @@ export async function runAsk(input: AskInput, deps: AskDeps): Promise<AskOutcome
   }
 
   const systemPrompt = await readAskSystemPrompt(deps.env, input.prompt);
+  const signal = signalFor(input.timeoutSeconds, deps.signal);
+  const findings = await lookup(input.question, signal, deps);
   const context: Context = {
     systemPrompt,
-    messages: [{ role: "user", content: input.question, timestamp: started.getTime() }],
+    messages: [{ role: "user", content: questionWithWebResults(input.question, findings), timestamp: started.getTime() }],
   };
-  const options: SimpleStreamOptions = { signal: signalFor(input.timeoutSeconds, deps.signal) };
+  const options: SimpleStreamOptions = { signal };
   const reasoning = thinkingLevel(input.effort);
   if (reasoning) options.reasoning = reasoning;
 
@@ -97,6 +107,7 @@ export async function runAsk(input: AskInput, deps: AskDeps): Promise<AskOutcome
     provider: model.provider,
     model: model.id,
   });
+  await recordLookup(runId, input, findings, deps);
 
   let message: AssistantMessage | null = null;
   let failure: string | null = null;
@@ -162,7 +173,67 @@ export async function runAsk(input: AskInput, deps: AskDeps): Promise<AskOutcome
     ratesVersion: deps.rates.version,
     ratesSource: deps.rates.source,
     startedAt: started.toISOString(),
+    webProvider: findings.provider,
   };
+}
+
+/** A missing key must not search. Tests pass `webSearch` so this stays offline. */
+async function lookup(question: string, signal: AbortSignal | undefined, deps: AskDeps): Promise<AskWebFindings> {
+  const search = deps.webSearch ?? searchWebForAsk;
+  try {
+    return await search(question, signal);
+  } catch (error) {
+    return {
+      text: "",
+      provider: null,
+      results: 0,
+      fetches: 0,
+      status: "failed",
+      failure: error instanceof Error ? error.message : String(error),
+      durationMs: 0,
+    };
+  }
+}
+
+async function recordLookup(runId: string, input: AskInput, findings: AskWebFindings, deps: AskDeps): Promise<void> {
+  if (findings.provider === null && findings.status !== "failed") return;
+  const toolRates = await readToolRates(deps.env);
+  ensureToolTables(deps.ledger);
+  const startedAt = new Date().toISOString();
+  insertToolCall(deps.ledger, {
+    callId: `${runId}-search`,
+    runId,
+    sessionId: input.sessionId ?? null,
+    sessionFile: input.sessionFile ?? "",
+    startedAt,
+    tool: "web_search",
+    kind: "search",
+    searches: findings.provider ? 1 : 0,
+    urls: 0,
+    results: findings.results,
+    durationMs: findings.durationMs,
+    providerCounts: findings.provider ? { [findings.provider]: 1 } : {},
+    status: findings.status,
+    ratesVersion: toolRates.version,
+  });
+  if (findings.fetches > 0) {
+    insertToolCall(deps.ledger, {
+      callId: `${runId}-fetch`,
+      runId,
+      sessionId: input.sessionId ?? null,
+      sessionFile: input.sessionFile ?? "",
+      startedAt,
+      tool: "fetch_content",
+      kind: "fetch",
+      searches: 0,
+      urls: findings.fetches,
+      results: 0,
+      durationMs: null,
+      providerCounts: {},
+      status: "ok",
+      ratesVersion: toolRates.version,
+    });
+  }
 }
 
 /** `provider/id`, an explicit provider, or a bare id that is unique in the catalog. */

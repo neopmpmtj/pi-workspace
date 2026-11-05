@@ -8,7 +8,7 @@ For another agent calling this one from the shell. Human reference: [CHEATSHEET.
 cd ~/.pi/agent-web-master/web-master && pi-web-master -p "/ask <question>"
 ```
 
-This is the call whenever you delegate to web-master, including a question about the web. `/ask` is one provider call. It does not load the chat bootstrap.
+This is the call whenever you delegate to web-master, including a question about the web. `/ask` looks the question up on the configured web route, then makes one provider call. It does not load the chat bootstrap.
 
 ## Research call
 
@@ -56,12 +56,14 @@ With no selector, /usage shows the last run.
 
 ### /ask
 
-One request, no chat turn: /ask "question". /ask --help lists the flags.
+One web lookup, then one request, no chat turn: /ask "question". /ask --help lists the flags.
 
 ```text
 /ask "question" [--web-master-model ID] [--web-master-provider ID] [--web-master-effort LEVEL] [--web-master-prompt TEXT] [--web-master-timeout SECONDS]
 /ask --set-default-web-master-provider ID | --set-default-web-master-model ID | --set-default-web-master-effort LEVEL
 /ask --help
+
+Looks the question up on the configured web route, then sends one provider request. No chat turn.
 
 Prints this text and does not call a provider or write a file.
 

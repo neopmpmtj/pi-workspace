@@ -25,6 +25,8 @@ export const ASK_HELP = `/ask "question" [--web-master-model ID] [--web-master-p
 /ask --set-default-web-master-provider ID | --set-default-web-master-model ID | --set-default-web-master-effort LEVEL
 /ask --help
 
+Looks the question up on the configured web route, then sends one provider request. No chat turn.
+
 Prints this text and does not call a provider or write a file.
 
 --web-master-model ID                  Model id, or provider/id. This run only. A bare id does not keep the saved provider.

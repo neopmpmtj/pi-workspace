@@ -29,6 +29,7 @@ export function formatFooter(outcome: AskOutcome): string {
     formatTokens(outcome.tokens),
     `est ${formatMoney(outcome.costEstimated)}`,
   ];
+  if (outcome.webProvider) parts.push(`web ${outcome.webProvider}`);
   if (outcome.costPi !== null) parts.push(`pi ${formatMoney(outcome.costPi)}`);
   if (outcome.effortEffective) parts.push(`effort ${outcome.effortEffective}`);
   if (outcome.durationMs !== null) parts.push(`${(outcome.durationMs / 1000).toFixed(2)}s`);

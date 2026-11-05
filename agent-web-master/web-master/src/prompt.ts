@@ -6,7 +6,7 @@ import { promptsPath } from "../ledger/env.ts";
  * purpose: a comparison that changes the prompt per provider measures nothing.
  */
 export const DEFAULT_ASK_SYSTEM =
-  "You are a helpful assistant. Answer the question directly and concisely. No preamble, no restating the question.";
+  "You are a helpful assistant. Answer the question directly and concisely. No preamble, no restating the question. A web lookup is attached to the question. Use it for current facts and cite the source title and URL. When the lookup has no answer, say the lookup did not include it.";
 
 /** The built-in instruction lives in this module. `prompts.json` is only an override. */
 export const DEFAULT_ASK_SYSTEM_PATH = import.meta.filename;

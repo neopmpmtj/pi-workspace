@@ -35,7 +35,7 @@ settings, and web search with its own meter.
 
 ```bash
 pi-web-master                                            # chat in the TUI
-pi-web-master -p '/ask "What is a vector database?"'      # one provider call, no chat turn
+pi-web-master -p '/ask "What is a vector database?"'      # web lookup, then one provider call
 pi-web-master -p "What is the current Node.js LTS?"       # chat turn, web tools
 pi-web-master -p "/ask --help"                            # flag list
 ```
@@ -55,7 +55,7 @@ Run flags: `--web-master-model`, `--web-master-provider`,
 `--set-default-web-master-effort`. A model named on the command line brings no provider with it;
 the provider is inferred from the model. `/ask --help` and `/usage --help` print the flags and stop.
 
-`/ask` is one provider call and does not load the bootstrap files. A prompt with no slash starts a chat turn, loads the bootstrap files, and can use web search. Use that prompt when the question is an advanced search, a deep search, or research.
+`/ask` looks the question up on the configured web route, then makes one provider call. It does not load the bootstrap files. A prompt with no slash starts a chat turn, loads the bootstrap files, and can use web search itself. Use that prompt when the question is an advanced search, a deep search, or research.
 
 Pi patches `console` to write to stderr in print mode, so the answer is written to file
 descriptor 1 directly. A failure prints `[FAIL] <reason>` on stderr, records a failed row with

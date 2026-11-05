@@ -1,9 +1,9 @@
 // Pi extension for the web-master agent.
 //
-// `/ask` sends one request straight to a provider through Pi's own model
-// registry: same catalog, same credentials, same pricing as a chat turn, but
-// no chat model turn is started. A prompt that is not a slash command is the
-// chat, and that turn can use the web tools.
+// `/ask` looks the question up on the configured web route, then sends one
+// request through Pi's model registry. Same catalog and credentials as a chat
+// turn, and no chat turn is started. A prompt that is not a slash command is
+// the research chat, and that turn can call the web tools itself.
 import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { ASK_HELP, commandHelp, hasStandingSave, parseAskArgs, parseUsageArgs, USAGE_HELP, type AskRequest } from "../../src/args.ts";
@@ -21,7 +21,7 @@ import { openLedger, type Ledger } from "../../ledger/store.ts";
 import { formatFooter } from "../../src/report.ts";
 import { recordCommandIfUnsaved, slashCommand } from "../../src/session-command.ts";
 
-const DESCRIPTION = 'One request, no chat turn: /ask "question". /ask --help lists the flags.';
+const DESCRIPTION = 'One web lookup, then one request, no chat turn: /ask "question". /ask --help lists the flags.';
 
 /** Published into docs/CALLING.md by scripts/publish.ts. Keys are the command names. */
 export const HELP: Record<string, string> = { ask: ASK_HELP, usage: USAGE_HELP };
@@ -154,6 +154,7 @@ export default function registerChat(pi: ExtensionAPI): void {
             prompt: parsed.prompt,
             timeoutSeconds: parsed.timeoutSeconds,
             sessionId: ctx.sessionManager.getSessionId().trim() || undefined,
+            sessionFile: ctx.sessionManager.getSessionFile() || undefined,
           },
           {
             registry: ctx.modelRegistry as unknown as RegistryLike,
@@ -241,6 +242,7 @@ function details(outcome: AskOutcome) {
     status: outcome.status,
     provider: outcome.provider,
     model: outcome.modelRequested,
+    webProvider: outcome.webProvider,
     tokens: outcome.tokens,
     costEstimated: outcome.costEstimated,
     costPi: outcome.costPi,

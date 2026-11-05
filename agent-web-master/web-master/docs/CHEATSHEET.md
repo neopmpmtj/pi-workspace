@@ -31,7 +31,7 @@ A plain chat agent on Pi with a token ledger. Two ways to spend money, one place
 
 ```bash
 pi-web-master                              # TUI
-pi-web-master -p '/ask "your question"'    # one provider call, no chat turn
+pi-web-master -p '/ask "your question"'    # web lookup, then one provider call
 pi-web-master -p "your question"           # chat turn, web tools
 pi-web-master -p "/ask --help"
 cd ~/.pi/agent-web-master/web-master && npm run dashboard   # http://127.0.0.1:8789
@@ -81,7 +81,7 @@ for all three providers**, so a comparison measures the model and not the instru
 is deliberately not a tool: a tool would let the model call another model and blur the
 attribution.
 
-`/ask` is one provider call with the `/ask` prompt. A prompt with no slash starts a chat turn, so
+`/ask` looks the question up on the configured web route, then makes one provider call with the `/ask` prompt. A prompt with no slash starts a chat turn, so
 `AGENTS.md` and `APPEND_SYSTEM.md` load and the web tools are available. Use that prompt for
 advanced search, deep search, or research.
 

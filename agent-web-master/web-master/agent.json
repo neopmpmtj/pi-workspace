@@ -12,7 +12,7 @@
     },
     {
       "name": "/ask",
-      "description": "One request, no chat turn: /ask \"question\". /ask --help lists the flags."
+      "description": "One web lookup, then one request, no chat turn: /ask \"question\". /ask --help lists the flags."
     }
   ],
   "tools": []
