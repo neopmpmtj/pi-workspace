@@ -16,7 +16,7 @@
     "enabled": true,
     "print": true
   },
-  "calendarRouter": {
+  "calendarNode": {
     "enabled": true,
     "print": true,
     "mode": "route"

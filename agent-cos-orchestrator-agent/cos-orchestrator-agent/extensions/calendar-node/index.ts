@@ -1,5 +1,5 @@
-// Classifies each new message as a calendar entry and, on a match, runs the
-// `calendar` node's router before the turn starts:
+// Calls the calendar node on every new message before the turn starts.
+// The node classifies and, on a match, runs its destinations:
 //   do:calendar:gog    -> `gog calendar freebusy` on the resolved slot (read-only)
 //   do:calendar:create -> writes the event, only when that read said FREE
 //
@@ -12,20 +12,20 @@
 // reply still reaches the user.
 //
 // It is never both: a handled input does not reach before_agent_start.
-// Off unless ~/.pi/config.json has calendarRouter.enabled true.
+// Off unless ~/.pi/config.json has calendarNode.enabled true.
 import { writeSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { readCalendarRouter } from "../../src/global-config.ts";
+import { readCalendarNode } from "../../src/global-config.ts";
 import {
   type CalendarVerdict,
   contextBlock,
   outcomeLines,
-  runCalendarRoute,
+  runCalendarNode,
   telegramReply,
   traceLines,
-} from "../../src/calendar-router.ts";
+} from "../../src/calendar-node.ts";
 
 /** Telegram prompts carry a surface prefix; only those go through the bridge. */
 const TELEGRAM = /^\s*\[telegram/i;
@@ -68,7 +68,7 @@ export async function sendTelegram(text: string, env: NodeJS.ProcessEnv = proces
   }
 }
 
-export default function registerCalendarRouter(pi: ExtensionAPI): void {
+export default function registerCalendarNode(pi: ExtensionAPI): void {
   // One verdict per prompt, so a turn that was not swallowed never re-runs the node.
   let last: { text: string; verdict: CalendarVerdict; shown: boolean } | null = null;
 
@@ -78,10 +78,10 @@ export default function registerCalendarRouter(pi: ExtensionAPI): void {
     const text = event.text.trim();
     if (!text || text.startsWith("/")) return { action: "continue" };
 
-    const setting = await readCalendarRouter();
+    const setting = await readCalendarNode();
     if (!setting) return { action: "continue" };
 
-    const verdict = await runCalendarRoute(text, { dryRun: !setting.route });
+    const verdict = await runCalendarNode(text, { dryRun: !setting.route });
     last = { text, verdict, shown: false };
     const executed = setting.route && verdict.ok && !verdict.abstained && verdict.isMatch;
 
@@ -110,14 +110,14 @@ export default function registerCalendarRouter(pi: ExtensionAPI): void {
     const text = event.prompt.trim();
     if (!text) return;
 
-    const setting = await readCalendarRouter();
+    const setting = await readCalendarNode();
     if (!setting) {
       last = null;
       return;
     }
 
     const cached = last && last.text === text ? last : null;
-    const verdict = cached?.verdict ?? (await runCalendarRoute(text, { dryRun: !setting.route }));
+    const verdict = cached?.verdict ?? (await runCalendarNode(text, { dryRun: !setting.route }));
     last = null;
 
     if (setting.print && !cached?.shown) show(ctx, traceLines(verdict).join("\n"));
@@ -126,7 +126,7 @@ export default function registerCalendarRouter(pi: ExtensionAPI): void {
 
     return {
       message: {
-        customType: "calendar-router",
+        customType: "calendar-node",
         content: contextBlock(verdict),
         display: false,
       },

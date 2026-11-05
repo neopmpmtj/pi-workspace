@@ -121,7 +121,7 @@ by default; refuses the current Cursor files by name).
 
 - [x] ~~Classify a definite calendar entry and route it to the calendar agent.~~ Live:
       `~/.pi/decision-nodes/calendar/` (`config.py` router, `route.py` caller) + hook
-      `extensions/calendar-router/index.ts` in this home. Walkthrough:
+      `extensions/calendar-node/index.ts` in this home. Walkthrough:
       `~/.pi/decision-nodes/calendar/README.md`, runbook: `docs/runbooks/calendar-routing.md`.
 - [x] ~~**Fill `do:calendar:create`** in `~/.pi/decision-nodes/calendar/config.py`.~~
       Shipped 2026-11-04. Shape: **chained** — route 1's answer opens FREE / BUSY / UNKNOWN
@@ -135,7 +135,7 @@ by default; refuses the current Cursor files by name).
       `gog calendar freebusy primary --from --to` on the resolved window, ~0.3 s, no tokens.
       A match now costs ~3 s of node work instead of ~16 s.
 - [x] ~~**Decide whether a match should swallow the turn** (`action: "handled"` in
-      `extensions/calendar-router/index.ts`).~~ Shipped 2026-11-04: local surfaces (TUI, `-p`)
+      `extensions/calendar-node/index.ts`).~~ Shipped 2026-11-04: local surfaces (TUI, `-p`)
       swallow the turn — trace and outcome printed, no model turn, no session entry — while a
       Telegram prompt (prefix `[telegram`) keeps the relay turn because the bridge only
       delivers assistant text. Verified: local run in 9 s with no assistant message.
@@ -149,7 +149,7 @@ by default; refuses the current Cursor files by name).
       path is therefore exercised on the VPS. Checklist with the state of `neopmpmtj`:
       `docs/runbooks/calendar-routing-on-vps.md`.
 - [ ] VPS enablement, as found on 2026-11-04: `~/.pi` clone is behind (node + extension +
-      `calendarRouter` arrive with `git -C ~/.pi pull --ff-only`), `gog` is **not installed**
+      `calendarNode` arrive with `git -C ~/.pi pull --ff-only`), `gog` is **not installed**
       (config dirs exist), and `~/.pi/jev-classifier/.env` is missing `TYPESAFE_API_KEY`.
       Steps and verification commands are in the runbook above.
 - [ ] The duplicate guard matches titles only; a second phrasing of the same event is not
@@ -164,3 +164,14 @@ by default; refuses the current Cursor files by name).
       `skills/svg-photo-convert/evals/evals.json` never ran as with-skill/baseline pairs, and
       the description was not optimised against trigger queries. Both need a harness with
       subagents; the measured self-test results are in `evals/README.md`.
+
+## Next decision nodes (agreed 2026-11-05)
+
+- [ ] A new decision node lives in `~/.pi/decision-nodes/<name>/` and reads its own slice of
+      the JSON `classify.py` already returns, so one message stays one JEV call. The node
+      stays out of `jev-classifier-multi/src`.
+- [ ] When a fourth class is added, change `classes/__init__.py` so it loads every module in
+      `classes/` instead of the three handwritten imports. Adding a class is then one file.
+      Home: `~/.pi/jev-classifier/jev-classifier-multi/src/classes/`.
+- [ ] Leave `classes/calendar.py` as one file until its questions and `decide` no longer fit
+      there. A `classes/calendar/` package waits for that.

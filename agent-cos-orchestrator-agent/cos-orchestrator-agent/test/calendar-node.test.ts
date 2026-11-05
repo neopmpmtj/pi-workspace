@@ -7,10 +7,10 @@ import {
   contextBlock,
   outcomeLines,
   parseRouteOutput,
-  runCalendarRoute,
+  runCalendarNode,
   telegramReply,
   traceLines,
-} from "../src/calendar-router.ts";
+} from "../src/calendar-node.ts";
 
 /** A match that ended in a write. The live shape, 2026-11-04. */
 const MATCH = JSON.stringify({
@@ -204,10 +204,10 @@ describe("contextBlock", () => {
   });
 });
 
-describe("runCalendarRoute", () => {
+describe("runCalendarNode", () => {
   let dir = "";
   before(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), "calendar-router-"));
+    dir = await mkdtemp(path.join(tmpdir(), "calendar-node-"));
   });
   after(async () => {
     if (dir) await rm(dir, { recursive: true, force: true });
@@ -216,7 +216,7 @@ describe("runCalendarRoute", () => {
   it("returns the verdict from a script that answers", async () => {
     const script = path.join(dir, "ok.py");
     await writeFile(script, `print(${JSON.stringify(MATCH)})\n`, "utf8");
-    const verdict = await runCalendarRoute("lunch at Cafe Nero on Friday at 1pm", { script });
+    const verdict = await runCalendarNode("lunch at Cafe Nero on Friday at 1pm", { script });
     assert.equal(verdict.ok, true);
     assert.equal(verdict.isMatch, true);
   });
@@ -224,14 +224,14 @@ describe("runCalendarRoute", () => {
   it("fails open when the node exits 2", async () => {
     const script = path.join(dir, "fail.py");
     await writeFile(script, `import sys\nprint("classifier timeout", file=sys.stderr)\nsys.exit(2)\n`, "utf8");
-    const verdict = await runCalendarRoute("anything", { script });
+    const verdict = await runCalendarNode("anything", { script });
     assert.equal(verdict.ok, false);
     assert.match(verdict.reason ?? "", /classifier timeout/);
     assert.deepEqual(traceLines(verdict).length, 1);
   });
 
   it("fails open when the script is missing", async () => {
-    const verdict = await runCalendarRoute("anything", { script: path.join(dir, "missing.py") });
+    const verdict = await runCalendarNode("anything", { script: path.join(dir, "missing.py") });
     assert.equal(verdict.ok, false);
     assert.match(verdict.reason ?? "", /not runnable|no such file/i);
   });
@@ -239,7 +239,7 @@ describe("runCalendarRoute", () => {
   it("fails open when the output is not a verdict", async () => {
     const script = path.join(dir, "junk.py");
     await writeFile(script, `print("hello")\n`, "utf8");
-    const verdict = await runCalendarRoute("anything", { script });
+    const verdict = await runCalendarNode("anything", { script });
     assert.equal(verdict.ok, false);
     assert.match(verdict.reason ?? "", /unreadable/);
   });

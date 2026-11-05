@@ -51,9 +51,9 @@
     <rect x="248" y="450" width="3" height="58" rx="1.5" fill="#f72585" opacity="0.9"/>
     <circle cx="182" cy="479.0" r="7" fill="#0a0e1c" stroke="#f72585" stroke-width="2" filter="url(#glow)"/>
     <line x1="189" y1="479.0" x2="248" y2="479.0" stroke="#f72585" stroke-opacity="0.55" stroke-width="1.5"/>
-    <text x="268" y="467" font-size="15" font-weight="600" fill="#eaf0ff">calendar-router</text>
-    <text x="268" y="487" font-size="11" fill="#5a6b8c">extensions/calendar-router/index.ts</text>
-    <text x="268" y="506" font-size="11.5" fill="#8ea2c9">sees the raw text, decides whether to act · config.json: calendarRouter.mode = route</text>
+    <text x="268" y="467" font-size="15" font-weight="600" fill="#eaf0ff">calendar-node</text>
+    <text x="268" y="487" font-size="11" fill="#5a6b8c">extensions/calendar-node/index.ts</text>
+    <text x="268" y="506" font-size="11.5" fill="#8ea2c9">sees the raw text, decides whether to act · config.json: calendarNode.mode = route</text>
     <rect x="1057.2" y="468.0" width="118.8" height="22" rx="11" fill="#3a1229" stroke="#ff8fc0" stroke-opacity="0.35"/>
     <text x="1066.2" y="483.0" font-size="10.5" fill="#ff8fc0">can end the turn</text>
     <rect x="924.1" y="468.0" width="125.1" height="22" rx="11" fill="#1a2338" stroke="#93a5c7" stroke-opacity="0.35"/>
@@ -120,8 +120,8 @@
     <rect x="248" y="944" width="944" height="78" rx="12" fill="#111a31" stroke="#22314f" stroke-opacity="1"/>
     <circle cx="182" cy="983.0" r="7" fill="#0a0e1c" stroke="#ffb703" stroke-width="2" filter="url(#glow)"/>
     <line x1="189" y1="983.0" x2="248" y2="983.0" stroke="#ffb703" stroke-opacity="0.55" stroke-width="1.5"/>
-    <text x="268" y="971" font-size="15" font-weight="600" fill="#eaf0ff">calendar-router</text>
-    <text x="268" y="991" font-size="11" fill="#5a6b8c">extensions/calendar-router/index.ts</text>
+    <text x="268" y="971" font-size="15" font-weight="600" fill="#eaf0ff">calendar-node</text>
+    <text x="268" y="991" font-size="11" fill="#5a6b8c">extensions/calendar-node/index.ts</text>
     <text x="268" y="1010" font-size="11.5" fill="#8ea2c9">only when the input hook did not already answer: attaches the fallback block</text>
     <rect x="1113.9" y="972.0" width="62.1" height="22" rx="11" fill="#12303a" stroke="#7fe3ff" stroke-opacity="0.35"/>
     <text x="1122.9" y="987.0" font-size="10.5" fill="#7fe3ff">enabled</text>

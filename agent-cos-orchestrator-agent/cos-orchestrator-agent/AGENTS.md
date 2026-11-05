@@ -39,7 +39,7 @@ A hook in this home classifies every message before the turn and, on a match, ru
   on Telegram they are sent through the bridge's delivery API. In both cases the turn is
   swallowed, so **no model runs and you are not asked anything about it**.
 - That only happens when the answer was actually delivered. If Telegram delivery fails, the
-  turn is kept and a hidden `calendar-router` block arrives instead: then relay it, do not
+  turn is kept and a hidden `calendar-node` block arrives instead: then relay it, do not
   run `gog`, the node, or a sibling agent (a second create puts a duplicate event on the
   calendar), and say why in one line when the write was skipped.
 

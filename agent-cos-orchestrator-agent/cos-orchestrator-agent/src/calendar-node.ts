@@ -154,7 +154,7 @@ export interface RunOptions {
  * unparsable output comes back as `ok: false` with a reason, which the caller must
  * treat as "route nothing and let the turn happen".
  */
-export function runCalendarRoute(text: string, options: RunOptions = {}): Promise<CalendarVerdict> {
+export function runCalendarNode(text: string, options: RunOptions = {}): Promise<CalendarVerdict> {
   const script = options.script ?? routeScript(options.env);
   const python = options.python ?? "python3";
   const timeoutMs = options.timeoutMs ?? 330_000;
@@ -274,7 +274,7 @@ export function telegramReply(verdict: CalendarVerdict, withTrace: boolean): str
  */
 export function contextBlock(verdict: CalendarVerdict): string {
   const lines = [
-    "calendarRouter - deterministic, already executed before this turn",
+    "calendarNode - deterministic, already executed before this turn",
     `judgment: calendar ${verdict.isMatch ? "true" : "false"}, confidence ${conf(verdict.confidence)}, ` +
       `decision ${verdict.decision ?? "?"}, model ${verdict.model ?? "?"}`,
     "routes:",

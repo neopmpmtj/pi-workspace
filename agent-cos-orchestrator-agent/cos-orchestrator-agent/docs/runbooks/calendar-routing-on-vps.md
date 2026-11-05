@@ -11,7 +11,7 @@
 |---|---|
 | `~/.pi` clone | present, at `f28c6dc` — **behind** the laptop (`79cd36b`) |
 | `~/.pi/decision-nodes/calendar/` | **missing** (arrives with the pull) |
-| `~/.pi/config.json` with `calendarRouter` | **missing** (arrives with the pull) |
+| `~/.pi/config.json` with `calendarNode` | **missing** (arrives with the pull) |
 | python3 | 3.12.3, fine (`zoneinfo` available) |
 | `gog` binary | **missing** — but `~/.config/gogcli` and `~/.local/share/gogcli` exist |
 | gog agent `.env` | present (5 keys) |
@@ -22,13 +22,13 @@
 
 Run as the `pmpmt` user on the VPS.
 
-1. **Pull the repository** (brings the node, the extension, and the `calendarRouter` section
+1. **Pull the repository** (brings the node, the extension, and the `calendarNode` section
    of `~/.pi/config.json`):
 
    ```bash
    git -C ~/.pi pull --ff-only
    ls ~/.pi/decision-nodes/calendar/          # config.py route.py README.md tests/
-   grep -c calendarRouter ~/.pi/config.json   # 1
+   grep -c calendarNode ~/.pi/config.json   # 1
    ```
 
 2. **Install `gog`** so the read and the write can run. The config and data dirs already
@@ -63,7 +63,7 @@ Run as the `pmpmt` user on the VPS.
      imports still resolve:
 
      ```json
-     "extensions": ["+~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-router/index.ts"]
+     "extensions": ["+~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-node/index.ts"]
      ```
 
      The delivery module is resolved as
@@ -99,4 +99,4 @@ extension through the bridge's delivery API, and the input is swallowed.
 | reply appears, `/usage` shows a turn | delivery was refused → fallback relay (bridge not bound, target unauthorized, or the delivery module path is wrong) |
 | `not created: the read failed … refusing to write blind` | `gog` missing or unauthenticated on the VPS |
 | `not created: no definite date/time` | extraction ran but found no resolvable slot |
-| nothing at all | the hook is off: `calendarRouter.enabled` in `~/.pi/config.json`, or the extension is not registered in the bridge's home |
+| nothing at all | the hook is off: `calendarNode.enabled` in `~/.pi/config.json`, or the extension is not registered in the bridge's home |

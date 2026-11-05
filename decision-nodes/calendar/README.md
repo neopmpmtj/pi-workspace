@@ -129,7 +129,7 @@ A failed duplicate check does not block the write - the free/busy read already s
 
 ## The harness hook
 
-`extensions/calendar-router/index.ts` in the CoS home runs this node before every turn,
+`extensions/calendar-node/index.ts` in the CoS home runs this node before every turn,
 prints the trace, and finishes the work with no model turn on both surfaces:
 
 | Surface | How the answer reaches you | Cost |
@@ -155,7 +155,7 @@ is cached per prompt for the path that does reach it.
 Switched by `~/.pi/config.json`:
 
 ```json
-"calendarRouter": { "enabled": true, "print": true, "mode": "route" }
+"calendarNode": { "enabled": true, "print": true, "mode": "route" }
 ```
 
 | Field | Effect |
@@ -197,7 +197,7 @@ python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py     # 30 offline te
 Covers the free/busy parser, the chain (FREE is the only permission), the field
 validator, the duplicate guard, and the router. No network, no gog.
 
-Harness side: `npm test` in the CoS home (`test/calendar-router.test.ts`), 15 tests.
+Harness side: `npm test` in the CoS home (`test/calendar-node.test.ts`), 15 tests.
 
 ## Files
 
@@ -207,9 +207,9 @@ Harness side: `npm test` in the CoS home (`test/calendar-router.test.ts`), 15 te
 | `route.py` | **Invariant part.** clean → classify → verdict → route → execute → log, plus the CLI |
 | `tests/test_calendar.py` | Offline tests |
 | `verdicts.jsonl` | The log (gitignored) |
-| `.../extensions/calendar-router/index.ts` | The hook |
-| `.../src/calendar-router.ts` | Spawns the node, parses the JSON, builds the trace and the hidden block |
-| `.../test/calendar-router.test.ts` | Harness-side tests |
+| `.../extensions/calendar-node/index.ts` | The hook |
+| `.../src/calendar-node.ts` | Spawns the node, parses the JSON, builds the trace and the hidden block |
+| `.../test/calendar-node.test.ts` | Harness-side tests |
 
 ## Still open
 

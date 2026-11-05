@@ -8,8 +8,8 @@
 | Piece | Path |
 |---|---|
 | Decision node (router + destinations) | `~/.pi/decision-nodes/calendar/` (`config.py`, `route.py`) |
-| Hook that fires it on every message | `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-router/index.ts` |
-| Settings switches | `~/.pi/config.json` → `calendarRouter` |
+| Hook that fires it on every message | `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-node/index.ts` |
+| Settings switches | `~/.pi/config.json` → `calendarNode` |
 | Classifier | `~/.pi/jev-classifier/jev-classifier-multi/src/classify.py` (calendar class) |
 | Calendar side | `sm-google-workspace` via `gog calendar` (v0.34.0, `calendar` scope granted) |
 
@@ -48,7 +48,7 @@ Expect `calendar true`, `decision venue_date_time`, and two destinations marked
 
 ```json
 // ~/.pi/config.json
-"calendarRouter": { "enabled": true, "print": true, "mode": "route" }
+"calendarNode": { "enabled": true, "print": true, "mode": "route" }
 ```
 
 - `mode: "dry"` — classify and print, execute nothing. Use this when testing wording.
@@ -84,7 +84,7 @@ python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py
 
 # the harness side
 cd ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent
-npm test -- 2>&1 | grep -E "parseRouteOutput|traceLines|contextBlock|runCalendarRoute"
+npm test -- 2>&1 | grep -E "parseRouteOutput|traceLines|contextBlock|runCalendarNode"
 ```
 
 Both suites are offline: canned JSON and tiny Python stubs, no TypeSafe, no Google.

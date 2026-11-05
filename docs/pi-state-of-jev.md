@@ -45,8 +45,8 @@ The test uses fake answers and does not call the API.
 The first node with a caller: `~/.pi/decision-nodes/calendar/`.
 
 - **Input**: every CoS message, before the turn starts
-  (`~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-router/index.ts`),
-  switched by `calendarRouter` in `~/.pi/config.json`.
+  (`~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-node/index.ts`),
+  switched by `calendarNode` in `~/.pi/config.json`.
 - **Judgment**: the multi CLI's `calendar` class, one request, ~300 ms.
 - **Routing**: deterministic. `config.router()` returns `do:calendar:gog` (live: one cheap
   extraction call, then `gog calendar freebusy` on that window — no chat turn, ~0.3 s) and

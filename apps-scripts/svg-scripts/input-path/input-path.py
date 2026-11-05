@@ -238,7 +238,7 @@ def build_stations(agent_home: Path, config: dict, settings: dict) -> list[Stati
         chips = []
         skip = {"archive", "cos-orchestrator-agent", "cos-orchestrator-agent-usage"}
         hidden = [ct for ct in info["custom_types"] if ct not in skip]
-        if hidden and hidden[0] == "calendar-router":
+        if hidden and hidden[0] == "calendar-node":
             chips.append(("fallback block only", "muted"))
         elif hidden:
             chips.append((f"adds {camel(hidden[0])}", "ok"))

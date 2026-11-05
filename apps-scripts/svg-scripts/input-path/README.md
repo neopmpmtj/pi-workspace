@@ -29,18 +29,18 @@ and it is drawn switched off.
 
    | Hook | Reads | Prints | Can end the turn |
    | --- | --- | --- | --- |
-   | `calendar-router` | `calendarRouter` (`mode: route`) | trace lines | **yes** |
+   | `calendar-node` | `calendarNode` (`mode: route`) | trace lines | **yes** |
    | `input-contains-email` | `inputContainsEmail` | `true`/`false` | no |
    | `input-contains-path` | `inputContainsPath` | `true`/`false` | no |
    | `input-contains-url` | `inputContainsUrl` | `true`/`false` | no |
    | `less-than-input-words` | `lessThanInputWords` (`words: 6`) | `true`/`false` | no |
 
-   Only `calendar-router` can stop the path: on a match it runs the `calendar` node, delivers
+   Only `calendar-node` can stop the path: on a match it runs the `calendar` node, delivers
    the answer itself (stdout on local surfaces, the bridge's delivery API on Telegram), and
    returns `handled` — no model turn happens. If Telegram delivery fails it returns `continue`
    instead, and the turn survives.
 4. **`before_agent_start`** — the second pass, same extensions again, in the same order:
-   - `calendar-router` attaches its hidden block **only** when the input hook did not already
+   - `calendar-node` attaches its hidden block **only** when the input hook did not already
      answer (the delivery-failed case).
    - `input-contains-email`, `input-contains-path`, `input-contains-url`,
      `less-than-input-words` each attach a hidden message (`display: false`) whose text starts
