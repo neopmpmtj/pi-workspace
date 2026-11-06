@@ -289,17 +289,35 @@ by default; refuses the current Cursor files by name).
       file now records where to copy it back). `pi-telegram` fails closed with no token, and the
       VPS CoS home `.env` is the only copy left, so `pi-cos.service` is the single polling owner.
       Swept both hosts: no other agent `.env` holds a token.
-- [ ] `gog-token-keepalive.service` on the VPS has failed every morning since 2026-11-02
-      (`status=203/EXEC`): its `ExecStart=/home/pmpmt/.pi/agent/scripts/gog-token-keepalive.sh`
-      does not exist, and the unit file's own header still says "STAGED — NOT INSTALLED". So
-      neither host runs a gog health probe today (the laptop's is a Pi cron job that only fires
-      while pi is open). Decide: disable the timer until the script exists, write the script, or
-      move the two laptop cron jobs to systemd timers with `Persistent=true` so they catch up
-      after downtime instead of depending on pi being open at 08:00.
-- [ ] Two cron jobs are overdue since 2026-11-03 (Daily Laptop Backup, gog-token-keepalive);
-      they were unreachable because the store path moved with the rename and now resolve again,
-      so they will fire on the next laptop start. The backup job's last recorded run failed
-      (`exit code 1`); its `main.py` path exists today, but decide: run, reschedule, or disable
-      before starting.
+- [ ] `gog-token-keepalive` is broken on both hosts, for different reasons. **VPS:** the unit
+      and timer are installed and enabled (`OnCalendar=08:00 Europe/Lisbon`, `Persistent=true`),
+      but the service exits `203/EXEC` every morning since 2026-11-02 because
+      `ExecStart=/home/pmpmt/.pi/agent/scripts/gog-token-keepalive.sh` was never written (the
+      unit's own header still says "STAGED — NOT INSTALLED"). Only that script is missing:
+      `gog` v0.34.0 is at `~/.pi/agent/bin/gog` (not on `PATH`, which is why it looked absent),
+      `~/.pi/agent/.env` already carries `GOG_ACCOUNT` and `GOG_KEYRING_PASSWORD`, and a live
+      `gog drive ls` succeeded through it on 2026-11-06. **Laptop:** the Pi cron job
+      `gog-token-keepalive` (`0 8 * * *`) runs `gog drive ls` with no `--account`, and the CoS
+      `.env` has neither `GOG_ACCOUNT` nor `GOG_KEYRING_PASSWORD`, so it fails with
+      "missing --account" while the identical command succeeds under the sibling
+      sm-google-workspace env. Both are two-line fixes at the env level.
+      Decide: write the script and keep the systemd route (recommended — independent of pi, and
+      `Persistent=true` catches up after downtime), or drop the probe and let `gog` refresh on use.
+- [x] ~~Two cron jobs are overdue since 2026-11-03 (Daily Laptop Backup, gog-token-keepalive),
+      so they will fire on the next laptop start.~~ **That was wrong** (2026-11-06):
+      `recomputeAllNextRuns()` writes the next *future* occurrence — `computeNextRunAtMs` verified
+      at 16:41 local returning 2026-11-07T08:20Z — so overdue jobs never catch up, and both only
+      ever ran while pi happened to be open. The backup job was then removed (next item).
+- [ ] **Parked: the laptop backup.** The `Daily Laptop Backup` Pi cron job
+      (`cron-mrolh92n-gwmn6q`) was removed from `~/.pi/cron/jobs.json` on 2026-11-06, completely;
+      that store now holds only `gog-token-keepalive`. Removed definition, for recreating it:
+      `{"name":"Daily Laptop Backup","schedule":{"kind":"cron","expr":"20 8 * * *","tz":"Europe/Lisbon"},"payload":{"kind":"agentTurn","message":"Run the backup script: cd /home/pmpmt/.pi/apps-scripts/backup_laptop_tool/src/backup_PC_tool && python main.py. Report the result - whether it succeeded or failed and any relevant output."},"delivery":{"mode":"log"},"enabled":true}`.
+      A better route already ships with the tool and is **not installed**:
+      `~/.pi/apps-scripts/backup_laptop_tool/my_PC_backup.{service,timer}` — `OnBootSec=2min`,
+      `OnUnitActiveSec=24h`, `Persistent=true`, oneshot, `ProtectSystem=full`, its own venv. Two
+      defects to fix first: the service's `[Install] WantedBy=multi-user.target` must be
+      `default.target` in a **user** unit, and `User=`/`Group=` are ignored in user units.
+      Decide when revisited: install that timer, or re-add the cron job accepting that it only
+      runs while pi is open.
 - [ ] `~/.pi/z.old` is 226 MB across two archive runs. Everything tracked is in git and the
       runtime state was recovered, so it can be pruned — on request only.

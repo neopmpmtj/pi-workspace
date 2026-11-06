@@ -471,9 +471,12 @@ Deliberately **not** changed, needing a decision (also recorded in `docs/INBOX.m
    today — but that is only because the laptop's home was gutted. After the restore, the next
    laptop session loads the package and contends for the same bot (`409` conflicts, dropped
    messages). Options: blank the token on the laptop, or give it a second bot.
-2. **Two overdue cron jobs.** They will fire on the next laptop start (backup + `gog` keepalive,
-   overdue since 2026-11-03). The backup command's path resolves today (`main.py` present) but its
-   last recorded run failed — run them, reschedule, or disable first.
+2. **Overdue cron jobs do not catch up.** ~~They will fire on the next laptop start.~~ Wrong:
+   `recomputeAllNextRuns()` writes the next *future* occurrence, so the frozen 2026-11-03 values are
+   simply replaced (verified at 16:41 local → 2026-11-07T08:20Z). Both jobs only ever ran while pi
+   was open. Follow-up, 2026-11-06: the backup job was removed from `~/.pi/cron/jobs.json`
+   (definition parked in `docs/INBOX.md`, together with the backup tool's own uninstalled
+   `my_PC_backup.timer`); the `gog` keepalive remains and needs `GOG_ACCOUNT` in the CoS env.
 3. **`~/.pi/z.old` is 226 MB** and holds two archive runs, now provably redundant with git plus the
    recovered runtime state. Safe to prune on request.
 
