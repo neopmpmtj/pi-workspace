@@ -21,6 +21,37 @@ cd ~/.pi/agent-keep-agent/keep-agent && pi-keep-agent -p "<task in plain languag
 There are no slash commands in this home: no `/ask`, `/usage`, `/cron`, `/archive`, `/commit`,
 `/sync`, `/reminders`. A `-p` turn is the only way in. Per-run overrides: `--model`, `--thinking`.
 
+## Keep CLI (`keep-cli`)
+
+A bash command in this home that reads Google Keep (personal account, via the internal
+`notes/v1` API). Source: `scripts/keep_cli.py`; command on PATH: `~/.local/bin/keep-cli`
+(symlink into this home, so editing the script changes the command).
+
+| Command | Does |
+| --- | --- |
+| `keep-cli --read-all-items` | print every entry: title, body or checkboxes, labels, pinned/archived/trashed, links, attachment types, newest first |
+| `keep-cli --read-all-items --json` | the same as JSON (`{"account", "count", "entries"}`) |
+| `--include-trashed` · `--no-archived` · `--limit N` | filters (archived shown by default) |
+| `keep-cli --get=#2` | one entry by position or node id (quote or `=` the `#`, else bash eats it as a comment) |
+| `keep-cli --search milk` | case-insensitive search in titles, bodies and list rows |
+| `keep-cli --add "call the plumber" --title T [--color yellow] [--pin]` | create a note; body goes to a child row the way Keep stores it |
+| `keep-cli --add-list --title Groceries --item milk --item eggs` | create a list, one `--item` per row |
+| `keep-cli --rows [--list Groceries]` | list checkbox rows with `#entry:row` addresses and row ids |
+| `keep-cli --item-add "butter" --list Groceries` | append rows to an existing list (`--item-add` repeatable) |
+| `keep-cli --check=#1:2` / `--uncheck=Groceries:2` | tick / untick one row: `#entry:row`, `ListTitle:row`, row id, or bare `#entry` for row 1 |
+| `keep-cli --trash=#2` / `keep-cli --restore=#2` | move an entry into or out of the bin (reversible; nothing is destroyed) |
+| `keep-cli --add ... --dry-run` | print the exact API payload, send nothing |
+| `keep-cli --count` (alias `--status`) | entry count only — this was `--check` before rows took that flag |
+| `keep-cli --self-test` | offline test of parser and write payloads (29 checks), no network, no credentials |
+| `keep-cli --login` · `--web-token <oauth2_4/...>` | store a master token (not needed: a token for `neopmpmtj@gmail.com` is already stored) |
+
+Credentials: `~/.config/keep-cli/credentials.json`, mode 600, holding `email`, `master_token`
+(`aas_et/…`, full account access), `android_id` and a cached access token (~1 h). It is kept
+outside this home on purpose: rebuilding the agent home does not lose the login.
+
+Full details (endpoints, payloads, token routes, troubleshooting):
+`~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/docs/runbooks/google-keep-read-all.md`.
+
 ## Usage tracking, from conversation 1 onward
 
 Every turn is recorded, including the ones that happened before the tracker was switched on.

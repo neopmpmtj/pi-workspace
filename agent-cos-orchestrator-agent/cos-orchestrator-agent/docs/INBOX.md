@@ -211,12 +211,13 @@ by default; refuses the current Cursor files by name).
 - [ ] The reminder path should have three destinations, in this order: (1) the calendar event,
       today's custom path, behind `reminderNode.writes`; (2) a Google Keep note, the new
       option; (3) the fallback, an ordinary model turn with nothing written. Config chooses
-      one, the other, or both in sequence. Blocker found 2026-11-06: the Keep API is Workspace
-      only — `gog keep` (v0.34.0: list, get, search, create --title/--text/--item, delete,
-      attachment) is listed by `gog auth add` under "Workspace service-account-only services"
-      and this host's only account is the personal `neopmpmtj@gmail.com`. Needs a Workspace
-      domain + service account with domain-wide delegation and the Keep scope, or the
-      unofficial `gkeepapi` route (not installed, token-based, breaks on client changes).
+      one, the other, or both in sequence. Blocker found 2026-11-06: the official Keep API is
+      Workspace only — `gog keep` (v0.34.0: list, get, search, create --title/--text/--item,
+      delete, attachment) sits under "Workspace service-account-only services" and this host's
+      only account is the personal `neopmpmtj@gmail.com`. **Resolved the same day, differently:**
+      the internal `notes/v1` API works for personal accounts with a master token, and it now
+      exists as `keep-cli` in keep-agent (`--add`, `--item-add`, `--check`), so destination (2)
+      is unblocked — the node can shell out to `keep-cli` instead of `gog keep`.
       Home: `extensions/reminder-node/index.ts`, `~/.pi/decision-nodes/reminder/config.py`.
 - [ ] `keep-agent` (built 2026-11-06, home `~/.pi/agent-keep-agent/keep-agent`, launcher
       `pi-keep-agent`): a functional copy of this agent whose `AGENTS.md` says only that
@@ -229,3 +230,31 @@ by default; refuses the current Cursor files by name).
       Its `auto-sync.ts` is `.disabled`: two processes pushing the same `~/.pi` repo is the
       hazard that actually bit during verification. Its dashboard defaults to `8788`.
       Contract: `~/.pi/agent-keep-agent/keep-agent/docs/CALLING.md`.
+
+## Google Keep via `keep-cli` (2026-11-06)
+- [x] ~~`keep-cli --read-all-items` — read every Keep entry.~~ Shipped 2026-11-06 as
+      `keep-agent`'s own tool (`~/.pi/agent-keep-agent/keep-agent/scripts/keep_cli.py`, command
+      `~/.local/bin/keep-cli`); personal account `neopmpmtj@gmail.com` authenticated with a
+      stored master token, `--login`/`--web-token` for re-auth. Docs:
+      `docs/runbooks/google-keep-read-all.md` here.
+- [x] ~~Create notes and lists (`--add`, `--add-list`), bin them (`--trash`, `--restore`).~~
+      Shipped 2026-11-06 after the payload diff against real `gkeepapi` node serialisation
+      (`superListItemId` must be null, `parentServerId` null for a new row, `userEdited`
+      required).
+- [x] ~~Edit rows in place: append to an existing list, tick and untick.~~ Shipped 2026-11-06
+      (`--item-add TEXT --list NAME`, `--check=#1:2`, `--uncheck=#1:2`, `--rows`). Appended rows
+      carry the **list's** `serverId` as `parentServerId`; ticking bumps `updated`+`userEdited`.
+- [ ] Telegram capture: a message starting `keep:` files a note or appends a row
+      (`keep-cli --item-add`) with no model turn. Needs a canned command in the bridge
+      extension and a target list per chat.
+- [ ] Morning brief that acts: cron 07:00 — unchecked rows of "Today", rows untouched for
+      >7 days, plus `gog` calendar, in one Telegram message. Uses `keep-cli --rows --json`.
+- [ ] Sunday reset: uncheck every row of a list, move checked rows into a "Bought <week>" note,
+      archive it. Needs a `--checked-rows` output mode and `--item-add` loops over `--json`.
+- [ ] Write-back sinks for other tools: `yt-dlp` download log, LAN storage inventory,
+      image-describer receipt totals → `keep-cli --add`. One line per tool, no new API.
+- [ ] Searchable memory for the orchestrator: `keep-cli --search <term>` instead of reading
+      old screenshots; decide whether the CoS agent should call it directly (it is another
+      agent's tool) or route through `pi-keep-agent`.
+- [ ] Tasks bridge: unchecked Keep rows → `gog tasks` entries, completed → back as ticked rows.
+      Needs idempotency (a row→task id map) before it can be scheduled.
