@@ -1,0 +1,296 @@
+import assert from "node:assert/strict";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { after, before, describe, it } from "node:test";
+import {
+  contextBlock,
+  hintBlock,
+  isUnsure,
+  outcomeLines,
+  parseRouteOutput,
+  runCalendarNode,
+  telegramReply,
+  traceLines,
+} from "../src/calendar-node.ts";
+
+/** A match that ended in a write. The live shape, 2026-11-04. */
+const MATCH = JSON.stringify({
+  node: "calendar",
+  node_version: "0.2.0",
+  utterance_chars: 62,
+  abstained: false,
+  reason: null,
+  calendar: {
+    is_match: true,
+    confidence: 0.99,
+    decision: "venue_date_time",
+    threshold: 0.7,
+    rules: { states_intention: 0.19, has_venue: 0.99, has_date: 0.99, has_time: 0.99 },
+  },
+  model: "jev-1.14.0",
+  latency_ms: 311,
+  routes: [
+    {
+      destination: "do:calendar:gog",
+      status: "ran",
+      gate: "FREE",
+      source: "gog calendar freebusy",
+      note: "FREE · Fri 06 Nov 13:00 → 14:00 · nothing busy",
+      seconds: 0.4,
+      answer: "freebusy primary 2026-11-06T13:00:00+00:00 → 2026-11-06T14:00:00+00:00: FREE (nothing busy)",
+    },
+    {
+      destination: "do:calendar:create",
+      status: "created",
+      note: "Lunch with Marta · Fri 06 Nov 13:00 → 14:00 · Cafe Nero",
+      seconds: 0.6,
+      event: {
+        summary: "Lunch with Marta",
+        location: "Cafe Nero",
+        start: "2026-11-06T13:00:00+00:00",
+        end: "2026-11-06T14:00:00+00:00",
+        id: "abc123",
+        link: "https://calendar.google.com/event?eid=abc123",
+      },
+    },
+  ],
+});
+
+/** A match the read vetoed. */
+const BUSY = JSON.stringify({
+  node: "calendar",
+  abstained: false,
+  reason: null,
+  calendar: { is_match: true, confidence: 0.99, decision: "intention", threshold: 0.7, rules: {} },
+  routes: [
+    { destination: "do:calendar:gog", status: "ran", gate: "BUSY",
+      source: "gog calendar freebusy",
+      note: "BUSY · Mon 09 Nov 09:30 → 10:30 · busy 2026-11-09T09:30:00Z → 2026-11-09T10:00:00Z",
+      seconds: 0.3 },
+    { destination: "do:calendar:create", status: "skipped",
+      note: "the read said BUSY - refusing to write" },
+  ],
+});
+
+const NO_MATCH = JSON.stringify({
+  node: "calendar",
+  abstained: false,
+  reason: null,
+  calendar: { is_match: false, confidence: 0.01, decision: "none", threshold: 0.7, rules: {} },
+  model: "jev-1.14.0",
+  latency_ms: 348,
+  routes: [],
+});
+
+const ABSTAINED = JSON.stringify({
+  node: "calendar",
+  abstained: true,
+  reason: "classifier_error: TYPESAFE_API_KEY is not set",
+  calendar: null,
+  routes: [{ destination: "escalate", status: "no-op", note: "fail open - nothing routed" }],
+});
+
+describe("parseRouteOutput", () => {
+  it("reads a match with its two destinations", () => {
+    const verdict = parseRouteOutput(MATCH);
+    assert.equal(verdict.ok, true);
+    assert.equal(verdict.isMatch, true);
+    assert.equal(verdict.confidence, 0.99);
+    assert.equal(verdict.decision, "venue_date_time");
+    assert.equal(verdict.rules.has_venue, 0.99);
+    assert.equal(verdict.routes.length, 2);
+    assert.equal(verdict.routes[0].destination, "do:calendar:gog");
+    assert.equal(verdict.routes[0].source, "gog calendar freebusy");
+    assert.equal(verdict.routes[1].status, "created");
+    assert.equal(verdict.routes[1].event?.summary, "Lunch with Marta");
+    assert.equal(verdict.routes[1].event?.link, "https://calendar.google.com/event?eid=abc123");
+  });
+
+  it("reads a non-match as no destinations", () => {
+    const verdict = parseRouteOutput(NO_MATCH);
+    assert.equal(verdict.ok, true);
+    assert.equal(verdict.isMatch, false);
+    assert.deepEqual(verdict.routes, []);
+  });
+
+  it("keeps an abstain distinct from a non-match", () => {
+    const verdict = parseRouteOutput(ABSTAINED);
+    assert.equal(verdict.isMatch, false);
+    assert.equal(verdict.abstained, true);
+    assert.match(verdict.reason ?? "", /TYPESAFE_API_KEY/);
+  });
+
+  it("refuses output that cannot be trusted", () => {
+    assert.throws(() => parseRouteOutput("not json"), /JSON|Unexpected/);
+    assert.throws(() => parseRouteOutput(JSON.stringify({ calendar: {} })), /abstained/);
+    assert.throws(() => parseRouteOutput(JSON.stringify({ abstained: false })), /calendar verdict/);
+  });
+});
+
+describe("traceLines", () => {
+  it("shows the judgment and both destinations on a match", () => {
+    const lines = traceLines(parseRouteOutput(MATCH));
+    assert.match(lines[0], /^\[jev\]   calendar true 0\.990 \(venue_date_time\)/);
+    assert.ok(lines.some((line) => line.includes("do:calendar:gog") && line.includes("FREE")));
+    assert.ok(lines.some((line) => line.includes("gog calendar freebusy")));
+    assert.ok(lines.some((line) => line.includes("do:calendar:create") && line.includes("created")));
+  });
+
+  it("says nothing was routed on a non-match", () => {
+    const lines = traceLines(parseRouteOutput(NO_MATCH));
+    assert.match(lines[0], /calendar false/);
+    assert.ok(lines.includes("[route] none - ordinary turn"));
+  });
+
+  it("reports a missing verdict as a continuing turn", () => {
+    const lines = traceLines({ ...parseRouteOutput(NO_MATCH), ok: false, reason: "timed out" });
+    assert.deepEqual(lines, ["[calendar] no verdict: timed out - turn continues"]);
+  });
+});
+
+describe("outcomeLines", () => {
+  it("reports the created event with its time and link", () => {
+    const lines = outcomeLines(parseRouteOutput(MATCH));
+    assert.match(lines[0], /^→ created: Lunch with Marta$/);
+    assert.ok(lines.some((line) => line.includes("2026-11-06T13:00:00+00:00 → 2026-11-06T14:00:00+00:00")));
+    assert.ok(lines.some((line) => line.includes("Cafe Nero")));
+    assert.ok(lines.some((line) => line.includes("calendar.google.com/event?eid=abc123")));
+  });
+
+  it("gives the one reason nothing was created", () => {
+    const lines = outcomeLines(parseRouteOutput(BUSY));
+    assert.equal(lines.length, 1);
+    assert.match(lines[0], /^→ not created: the read said BUSY - refusing to write$/);
+  });
+});
+
+describe("telegramReply", () => {
+  it("leads with the outcome and adds the trace when asked", () => {
+    const lines = telegramReply(parseRouteOutput(MATCH), true).split("\n");
+    assert.equal(lines[0], "created: Lunch with Marta");
+    assert.ok(lines.some((line) => line.includes("Cafe Nero")));
+    assert.ok(lines.some((line) => line.includes("calendar.google.com/event?eid=abc123")));
+    assert.ok(lines.some((line) => line.startsWith("calendar true 0.990 · read FREE")));
+    assert.ok(lines.some((line) => line.includes("write 0.6 s")));
+  });
+
+  it("omits the trace when print is off", () => {
+    const text = telegramReply(parseRouteOutput(MATCH), false);
+    assert.equal(text, "created: Lunch with Marta\n  2026-11-06T13:00:00+00:00 → 2026-11-06T14:00:00+00:00\n  Cafe Nero\n  https://calendar.google.com/event?eid=abc123");
+  });
+
+  it("says plainly when nothing was created", () => {
+    const text = telegramReply(parseRouteOutput(BUSY), true);
+    assert.match(text.split("\n")[0], /^not created: the read said BUSY/);
+  });
+});
+
+describe("contextBlock", () => {
+  it("states that the event was created, with its link", () => {
+    const block = contextBlock(parseRouteOutput(MATCH));
+    assert.match(block, /The node has already run/);
+    assert.match(block, /Do not run the node, gog, or a sibling agent again/);
+    assert.match(block, /The event WAS created/);
+    assert.match(block, /Lunch with Marta · 2026-11-06T13:00:00\+00:00/);
+    assert.match(block, /calendar\.google\.com\/event\?eid=abc123/);
+    assert.doesNotMatch(block, /No event was created/);
+  });
+
+  it("says nothing was written when the read said BUSY", () => {
+    const block = contextBlock(parseRouteOutput(BUSY));
+    assert.match(block, /do:calendar:gog -> ran \(BUSY/);
+    assert.match(block, /do:calendar:create -> skipped \(the read said BUSY/);
+    assert.match(block, /No event was created/);
+    assert.doesNotMatch(block, /The event WAS created/);
+  });
+});
+
+describe("arbiter bands", () => {
+  const HINT = JSON.stringify({
+    node: "calendar", abstained: false, reason: null,
+    calendar: { is_match: true, confidence: 0.72, decision: "venue_date_time", threshold: 0.7, rules: {} },
+    winner: { class: "calendar", band: "hint", confidence: 0.72, vetoed_by: [], capped_by: ["about_someone_else"] },
+    routes: [{ destination: "hint:calendar", status: "hint",
+      note: "maybe a calendar entry (0.72) · capped by about_someone_else - ask before writing" }],
+  });
+  const DOWNGRADED = JSON.stringify({
+    node: "calendar", abstained: false, reason: null,
+    calendar: { is_match: true, confidence: 0.95, decision: "intention", threshold: 0.7, rules: {} },
+    winner: { class: "calendar", band: "act", confidence: 0.95 },
+    routes: [
+      { destination: "do:calendar:gog", status: "downgraded", note: "second opinion: the extractor read it as other, not calendar_request" },
+      { destination: "do:calendar:create", status: "skipped", note: "the read did not run - refusing to write blind" },
+    ],
+  });
+
+  it("reads the winner and the band", () => {
+    const verdict = parseRouteOutput(HINT);
+    assert.equal(verdict.winner, "calendar");
+    assert.equal(verdict.band, "hint");
+    assert.equal(parseRouteOutput(MATCH).winner, null);
+  });
+
+  it("treats a hint and an extractor disagreement as unsure", () => {
+    assert.equal(isUnsure(parseRouteOutput(HINT)), true);
+    assert.equal(isUnsure(parseRouteOutput(DOWNGRADED)), true);
+    assert.equal(isUnsure(parseRouteOutput(MATCH)), false);
+    assert.equal(isUnsure(parseRouteOutput(BUSY)), false);
+  });
+
+  it("tells the model nothing was written and to ask first", () => {
+    const block = hintBlock(parseRouteOutput(DOWNGRADED));
+    assert.match(block, /nothing was written/);
+    assert.match(block, /second opinion/);
+    assert.match(block, /Do not create one yourself/);
+  });
+});
+
+describe("runCalendarNode", () => {
+  let dir = "";
+  before(async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "calendar-node-"));
+  });
+  after(async () => {
+    if (dir) await rm(dir, { recursive: true, force: true });
+  });
+
+  it("returns the verdict from a script that answers", async () => {
+    const script = path.join(dir, "ok.py");
+    await writeFile(script, `print(${JSON.stringify(MATCH)})\n`, "utf8");
+    const verdict = await runCalendarNode("lunch at Cafe Nero on Friday at 1pm", { script });
+    assert.equal(verdict.ok, true);
+    assert.equal(verdict.isMatch, true);
+  });
+
+  it("passes the shared classification to the node", async () => {
+    const script = path.join(dir, "argv.py");
+    const seen = path.join(dir, "argv");
+    await writeFile(script, `import sys\nopen(${JSON.stringify(seen)}, "w").write(" ".join(sys.argv[1:]))\nprint(${JSON.stringify(MATCH)})\n`, "utf8");
+    await runCalendarNode("lunch", { script, classifierJson: "/tmp/payload.json" });
+    assert.match(await readFile(seen, "utf8"), /--classifier-json \/tmp\/payload\.json/);
+  });
+
+  it("fails open when the node exits 2", async () => {
+    const script = path.join(dir, "fail.py");
+    await writeFile(script, `import sys\nprint("classifier timeout", file=sys.stderr)\nsys.exit(2)\n`, "utf8");
+    const verdict = await runCalendarNode("anything", { script });
+    assert.equal(verdict.ok, false);
+    assert.match(verdict.reason ?? "", /classifier timeout/);
+    assert.deepEqual(traceLines(verdict).length, 1);
+  });
+
+  it("fails open when the script is missing", async () => {
+    const verdict = await runCalendarNode("anything", { script: path.join(dir, "missing.py") });
+    assert.equal(verdict.ok, false);
+    assert.match(verdict.reason ?? "", /not runnable|no such file/i);
+  });
+
+  it("fails open when the output is not a verdict", async () => {
+    const script = path.join(dir, "junk.py");
+    await writeFile(script, `print("hello")\n`, "utf8");
+    const verdict = await runCalendarNode("anything", { script });
+    assert.equal(verdict.ok, false);
+    assert.match(verdict.reason ?? "", /unreadable/);
+  });
+});
