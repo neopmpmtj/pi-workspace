@@ -274,3 +274,24 @@ by default; refuses the current Cursor files by name).
 - [ ] keep-agent on the VPS has no dashboard/ledger units (`pi-keep-agent-dashboard.service`,
       `pi-keep-agent-ledger.timer`), so its token usage is not tracked there. Install them, or
       decide keep-agent stays laptop-only and the VPS just borrows `keep-cli`.
+
+## Agent home restore & rename audit (2026-11-06)
+- [x] ~~`/archive /home/pmpmt/.pi/agent` moved the live home into `z.old/` and the deletion
+      reached a pushed commit, so any pull (the VPS launcher pulls on every start) would have
+      gutted that machine's home too.~~ Restored 2026-11-06: 66 files from `8755ed5` (63/63
+      byte-identical to the archive), `logs/ledger.sqlite` and `events.log` from the archive,
+      `node_modules` rebuilt; the VPS migrated to the new layout, pi 1.5.0, submodules and its
+      own home-local `.env`. Report:
+      `docs/documented-from-session/2026-11-06T1632-agent-home-restore-and-rename-wiring-audit/`.
+- [ ] One Telegram bot, two machines: the laptop's `~/.pi/agent/.env` still holds the real
+      `TELEGRAM_BOT_TOKEN`. The VPS's legacy copy has it stripped by design, and `pi-cos.service`
+      is the single poller — but the laptop bridge auto-starts again now that the home is
+      restored, so the next laptop session would contend with the VPS. Decide: blank the token
+      on the laptop, or give the laptop its own bot.
+- [ ] Two cron jobs are overdue since 2026-11-03 (Daily Laptop Backup, gog-token-keepalive);
+      they were unreachable because the store path moved with the rename and now resolve again,
+      so they will fire on the next laptop start. The backup job's last recorded run failed
+      (`exit code 1`); its `main.py` path exists today, but decide: run, reschedule, or disable
+      before starting.
+- [ ] `~/.pi/z.old` is 226 MB across two archive runs. Everything tracked is in git and the
+      runtime state was recovered, so it can be pruned — on request only.
