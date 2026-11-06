@@ -6,7 +6,7 @@ Bash calls other agent launchers. A token ledger still records where the money w
 ## Layout
 
 ```
-~/.pi/agent-cos-orchestrator-agent/   repo root · .env · model-rates.json · README
+~/.pi/agent/   repo root · .env · model-rates.json · README
 └── cos-orchestrator-agent/                           PI_CODING_AGENT_DIR
     ├── AGENTS.md                prompt (short on purpose: it is re-sent with every turn)
     ├── APPEND_SYSTEM.md         environment notes
@@ -26,12 +26,12 @@ Bash calls other agent launchers. A token ledger still records where the money w
 ## Launch
 
 ```bash
-pi-cos-orchestrator-agent                       # TUI
-pi-cos-orchestrator-agent -p "your question"    # one chat turn, print mode
-cd ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent && npm run dashboard   # http://127.0.0.1:8787
+pi                       # TUI
+pi -p "your question"    # one chat turn, print mode
+cd ~/.pi/agent/cos-orchestrator-agent && npm run dashboard   # http://127.0.0.1:8787
 ```
 
-`~/.local/bin/pi-cos-orchestrator-agent` sources **only** `~/.pi/agent-cos-orchestrator-agent/.env`,
+`~/.local/bin/pi` sources **only** `~/.pi/agent/.env`,
 sets `PI_CODING_AGENT_DIR` to the nested agent home, and execs `pi`. Tools come from
 `settings.json` (`read`, `bash`, `edit`, `write`, `grep`, `find`). Provider, model, and thinking
 come from `default-model.json` when it exists, else from `settings.json` (`deepseek` /
@@ -64,7 +64,7 @@ already stores `usage` and `durationMs` per assistant message.
 /ask "What is a vector database?"
 /ask "…" --model gpt-6.1-sol --effort high
 /ask "…" --provider google --model gemini-3.8-flash --timeout 90
-pi-cos-orchestrator-agent -p '/ask "…"'          # answer → stdout, cost line → stderr
+pi -p '/ask "…"'          # answer → stdout, cost line → stderr
 ```
 
 | Flag | Meaning |
@@ -91,7 +91,7 @@ along would resolve `gpt-6.1-sol` against the DeepSeek catalog. Same rule for th
 Writing a script against `/ask` is the point, so a failure has to be visible in `$?`:
 
 ```bash
-pi-cos-orchestrator-agent -p '/ask "…"' > answer.txt || echo "ask failed" >&2
+pi -p '/ask "…"' > answer.txt || echo "ask failed" >&2
 ```
 
 Three ways to set that code, only one of which works:
@@ -204,8 +204,8 @@ Full transcripts stay in `sessions/`.
 
 | Path | Why |
 |---|---|
-| `~/.pi/agent-cos-orchestrator-agent/.env` | the three keys, mode 600 |
-| `~/.pi/agent-cos-orchestrator-agent/model-rates.json` | our prices (gitignored; template `.example.json`) |
+| `~/.pi/agent/.env` | the three keys, mode 600 |
+| `~/.pi/agent/model-rates.json` | our prices (gitignored; template `.example.json`) |
 | `cos-orchestrator-agent/settings.json` | provider, model, and thinking used when `default-model.json` is absent, by the launcher and by `/ask` |
 | `cos-orchestrator-agent/default-model.json` | written by the dashboard and `/ask --set-default-*`; read by the launcher and `/ask`, ahead of `settings.json` |
 | `cos-orchestrator-agent/logs/ledger.sqlite` | every call |
@@ -215,7 +215,7 @@ Full transcripts stay in `sessions/`.
 
 | Symptom | Cause |
 |---|---|
-| `[FAIL] No API key configured for provider "x"` | key missing from `~/.pi/agent-cos-orchestrator-agent/.env` |
+| `[FAIL] No API key configured for provider "x"` | key missing from `~/.pi/agent/.env` |
 | `[FAIL] Unknown model "prov"` | the model is not in that provider's cached catalog |
 | `[FAIL] table … has no column` | schema bumped; delete `logs/ledger.sqlite` |
 | `[FAIL] Request aborted` | `--timeout` fired; a failed row with 0 tokens was written |

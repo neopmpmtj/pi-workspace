@@ -8,7 +8,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 log_dir="$root/.dashboard-logs"
-orch="$root/agent-cos-orchestrator-agent/cos-orchestrator-agent"
+orch="$root/agent/cos-orchestrator-agent"
 describer="$root/agent-image-describer/image-describer"
 describer_ui="$describer/dashboard"
 web_master="$root/agent-web-master/web-master"

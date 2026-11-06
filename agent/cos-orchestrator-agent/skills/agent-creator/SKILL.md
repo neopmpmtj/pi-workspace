@@ -37,7 +37,7 @@ Run the deterministic scaffolding script via bash:
 
 ```bash
 node --experimental-strip-types \
-  ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/skills/agent-creator/scripts/scaffold.ts \
+  ~/.pi/agent/cos-orchestrator-agent/skills/agent-creator/scripts/scaffold.ts \
   --name <name> \
   --purpose "<purpose>" \
   --tools "<tools>" \

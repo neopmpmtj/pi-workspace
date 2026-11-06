@@ -523,7 +523,7 @@ def default_agent_home() -> Path:
     env = os.environ.get("PI_CODING_AGENT_DIR")
     if env:
         return Path(env).expanduser()
-    return Path.home() / ".pi" / "agent-cos-orchestrator-agent" / "cos-orchestrator-agent"
+    return Path.home() / ".pi" / "agent" / "cos-orchestrator-agent"
 
 
 def main(argv: list[str] | None = None) -> int:

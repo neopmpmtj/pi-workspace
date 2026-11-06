@@ -70,7 +70,7 @@ Latency per call is unchanged at ~0.2-0.5 s (still one request per message; meas
 The first node with a caller: `~/.pi/decision-nodes/calendar/`.
 
 - **Input**: every CoS message, before the turn starts
-  (`~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-node/index.ts`),
+  (`~/.pi/agent/cos-orchestrator-agent/extensions/calendar-node/index.ts`),
   switched by `calendarNode` in `~/.pi/config.json`.
 - **Judgment**: the multi CLI's `calendar` class, one request, ~300 ms.
 - **Routing**: deterministic. `config.router()` returns `do:calendar:gog` (live: one cheap
@@ -95,7 +95,7 @@ Each of these is on disk and has no caller in the current setup. The phrase clas
 - **Cloudflare Clef** — still listed in each copied node's `ENDPOINTS`. Calls go to TypeSafe.
 - **`jev-classifier-unit/`** — the earlier calendar-only CLI. It is still on disk. The CLI to run is `jev-classifier-multi/`.
 
-`act` on intake is the only question that reads a previous assistant line. That directory is `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/sessions`.
+`act` on intake is the only question that reads a previous assistant line. That directory is `~/.pi/agent/cos-orchestrator-agent/sessions`.
 
 ---
 

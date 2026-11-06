@@ -50,7 +50,7 @@ Credentials: `~/.config/keep-cli/credentials.json`, mode 600, holding `email`, `
 outside this home on purpose: rebuilding the agent home does not lose the login.
 
 Full details (endpoints, payloads, token routes, troubleshooting):
-`~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/docs/runbooks/google-keep-read-all.md`.
+`~/.pi/agent/cos-orchestrator-agent/docs/runbooks/google-keep-read-all.md`.
 
 ## Usage tracking, from conversation 1 onward
 

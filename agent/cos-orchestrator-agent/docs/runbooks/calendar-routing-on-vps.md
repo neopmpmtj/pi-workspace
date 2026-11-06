@@ -51,23 +51,23 @@ Run as the `pmpmt` user on the VPS.
    ```
 
 4. **Give the extractor its key.** The node reads `DEEPSEEK_API_KEY` from
-   `~/.pi/agent-cos-orchestrator-agent/.env`.
+   `~/.pi/agent/.env`.
 
 5. **Register the extension in the home that owns the bridge.**
 
    - If the bridge runs in the CoS home on the VPS
-     (`~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent`), it is already listed in
+     (`~/.pi/agent/cos-orchestrator-agent`), it is already listed in
      that home's `settings.json` after the pull; put `telegram.json` and
      `TELEGRAM_BOT_TOKEN` there, and stop any bridge in `~/.pi/agent`.
    - If the bridge stays in `~/.pi/agent`, add the extension by absolute path so its relative
      imports still resolve:
 
      ```json
-     "extensions": ["+~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-node/index.ts"]
+     "extensions": ["+~/.pi/agent/cos-orchestrator-agent/extensions/calendar-node/index.ts"]
      ```
 
      The delivery module is resolved as
-     `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/npm/node_modules/@llblab/pi-telegram/dist/api/delivery.js`.
+     `~/.pi/agent/cos-orchestrator-agent/npm/node_modules/@llblab/pi-telegram/dist/api/delivery.js`.
      If that path is absent, delivery fails **closed** and the turn falls back to a relay
      reply - nothing is lost, it just costs one model turn.
 

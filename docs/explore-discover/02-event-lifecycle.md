@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-03
 - **Host:** dev laptop `pmpmt`, Node `v24.21.0`, pi `1.4.0`
-- **Agent home:** `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent` · **cwd:** `/home/pmpmt/.pi`
+- **Agent home:** `~/.pi/agent/cos-orchestrator-agent` · **cwd:** `/home/pmpmt/.pi`
 - **Sources (local):**
   - `.../@earendil-works/pi-coding-agent/docs/extensions.md` ("Understand the runtime lifecycle", "Events and concurrency", "Choose an event by intent")
   - `.../dist/core/extensions/types.d.ts` (event payloads + result types; 1756 lines)

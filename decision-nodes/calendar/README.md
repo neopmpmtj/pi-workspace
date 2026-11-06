@@ -122,7 +122,7 @@ event written by do:calendar:create
 ## The fields, and the one model call
 
 JEV returns a verdict and a score, not fields. So the read first makes **one** request to
-`deepseek-flash` (`~/.pi/agent-cos-orchestrator-agent/.env`, `DEEPSEEK_API_KEY`) for strict
+`deepseek-flash` (`~/.pi/agent/.env`, `DEEPSEEK_API_KEY`) for strict
 JSON: `summary`, `location`, `start_local`, `end_local`, `confidence`, `reason`, and,
 when the phrase names them, `attendees`, `reminders`, and `rrule`. About
 1.5k in / 100 out - roughly $0.0002 - and ~2 s.

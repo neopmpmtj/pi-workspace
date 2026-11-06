@@ -8,7 +8,7 @@
 | Piece | Path |
 |---|---|
 | Decision node (router + destinations) | `~/.pi/decision-nodes/calendar/` (`config.py`, `route.py`) |
-| Hook that fires it on every message | `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/calendar-node/index.ts` |
+| Hook that fires it on every message | `~/.pi/agent/cos-orchestrator-agent/extensions/calendar-node/index.ts` |
 | Settings switches | `~/.pi/config.json` → `calendarNode` |
 | Classifier | `~/.pi/jev-classifier/jev-classifier-multi/src/classify.py` (calendar class) |
 | Calendar side | `sm-google-workspace` via `gog calendar` (v0.34.0, `calendar` scope granted) |
@@ -83,7 +83,7 @@ tail -3 ~/.pi/decision-nodes/calendar/verdicts.jsonl | python3 -m json.tool --js
 python3 ~/.pi/decision-nodes/calendar/tests/test_calendar.py
 
 # the harness side
-cd ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent
+cd ~/.pi/agent/cos-orchestrator-agent
 npm test -- 2>&1 | grep -E "parseRouteOutput|traceLines|contextBlock|runCalendarNode"
 ```
 
@@ -93,7 +93,7 @@ Both suites are offline: canned JSON and tiny Python stubs, no TypeSafe, no Goog
 
 The Telegram path needs the bridge loaded in the same pi process with a live token:
 `npm:@llblab/pi-telegram` is installed, `telegram.json` points at `$TELEGRAM_BOT_TOKEN`, and
-`~/.pi/agent-cos-orchestrator-agent/.env` must define it. It does not, as of 2026-11-04, so
+`~/.pi/agent/.env` must define it. It does not, as of 2026-11-04, so
 the fallback ran in testing (delivery refused, model relayed). Only one instance may poll a
 bot token - decide which pi home owns Telegram before adding it here.
 

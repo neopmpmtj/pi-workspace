@@ -1,10 +1,10 @@
 {
   "name": "cos-orchestrator-agent",
-  "launcher": "pi-cos-orchestrator-agent",
+  "launcher": "pi",
   "defaultPrompt": "/usage",
   "call": "not a delegation target — this home is the main agent",
   "purpose": "Chief of staff. Does work with its own tools and delegates to the sibling roster below. This manifest is for discovery only: `npm run fetch:publications` skips its own home, so this agent never appears in the roster it generates.",
-  "contract": "~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/AGENTS.md",
+  "contract": "~/.pi/agent/cos-orchestrator-agent/AGENTS.md",
   "tools": [
     {
       "name": "read",

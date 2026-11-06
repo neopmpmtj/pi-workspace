@@ -49,7 +49,7 @@ FREEBUSY_TIMEOUT_S = 60
 FREEBUSY_CALENDAR = "primary"
 
 # Fields, not verdicts: one cheap model call. Key comes from this agent's .env.
-EXTRACT_ENV = "~/.pi/agent-cos-orchestrator-agent/.env"
+EXTRACT_ENV = "~/.pi/agent/.env"
 EXTRACT_URL = "https://api.deepseek.com/chat/completions"
 EXTRACT_MODEL = "deepseek-flash"
 EXTRACT_TIMEOUT_S = 30

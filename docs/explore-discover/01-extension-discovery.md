@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-03
 - **Host:** dev laptop `pmpmt`, Ubuntu, Node `v24.21.0` (nvm), pi `1.4.0`
-- **Agent home (this session):** `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent` (`PI_CODING_AGENT_DIR`)
+- **Agent home (this session):** `~/.pi/agent/cos-orchestrator-agent` (`PI_CODING_AGENT_DIR`)
 - **cwd:** `/home/pmpmt/.pi`
 - **Sources read (all local, no network):**
   - `~/.nvm/versions/node/v24.21.0/lib/node_modules/@earendil-works/pi-coding-agent/docs/extensions.md`
@@ -69,7 +69,7 @@ insertion order is the load order):
 | 8 | **Built-in extensions** `builtin:llama.cpp`, `builtin:codemode`, `builtin:tool-search`, `builtin:mcp` | `package-manager.js:737-745`, `dist/extensions/index.js:5-12` |
 
 On this host that means: `~/.pi/.pi/extensions/{pi-event-tracer,session-memory}` (project,
-cwd is `/home/pmpmt/.pi`) load **before** `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/*`
+cwd is `/home/pmpmt/.pi`) load **before** `~/.pi/agent/cos-orchestrator-agent/extensions/*`
 (user), despite the project being "lower priority" in everyday language. Order is not
 priority here — nothing overrides by being later except duplicate-path dedupe, which drops
 the later copy.
@@ -213,7 +213,7 @@ So a project `.pi/extensions/*.ts` is inert until you trust the directory. Docs:
 ## 8. What this machine actually loads
 
 ```
-# user (~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/)
+# user (~/.pi/agent/cos-orchestrator-agent/extensions/)
 auto-sync.ts            cron.ts              git-commit.ts
 pi-prompt-capture.ts    secret-scrubber.ts
 chat/index.ts           input-contains-email/index.ts   input-contains-path/index.ts
@@ -243,8 +243,8 @@ pi config        # interactive: extensions/skills/prompts toggles, built-ins sec
 
 ```bash
 # 1. Minimal extension, no settings edit needed (auto-discovered):
-mkdir -p ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions
-cat > ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/hello.ts <<'EOF'
+mkdir -p ~/.pi/agent/cos-orchestrator-agent/extensions
+cat > ~/.pi/agent/cos-orchestrator-agent/extensions/hello.ts <<'EOF'
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 export default function (pi: ExtensionAPI) {
   pi.registerCommand("hello", {
@@ -260,8 +260,8 @@ pi -e ./hello.ts
 
 # 3. Prove the "one level only" rule:
 T=$(mktemp -d) && mkdir -p $T/demo/inner
-cp ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/git-commit.ts $T/demo/inner/
-cp ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/git-commit.ts $T/demo/ok.ts
+cp ~/.pi/agent/cos-orchestrator-agent/extensions/git-commit.ts $T/demo/inner/
+cp ~/.pi/agent/cos-orchestrator-agent/extensions/git-commit.ts $T/demo/ok.ts
 pi -e $T/demo            # ok.ts loads (adds /commit); demo/inner/* is never seen
 
 # 4. Disable one extension without deleting it:

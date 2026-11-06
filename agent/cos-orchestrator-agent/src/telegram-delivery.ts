@@ -10,7 +10,7 @@ export const TELEGRAM = /^\s*\[telegram/i;
 function deliveryModule(env: NodeJS.ProcessEnv = process.env): string {
   const override = env.PI_TELEGRAM_DELIVERY?.trim();
   if (override) return override;
-  return path.join(env.HOME ?? "", ".pi", "agent-cos-orchestrator-agent", "cos-orchestrator-agent",
+  return path.join(env.HOME ?? "", ".pi", "agent", "cos-orchestrator-agent",
     "npm", "node_modules", "@llblab", "pi-telegram", "dist", "api", "delivery.js");
 }
 

@@ -33,7 +33,7 @@ md5sum ~/.local/bin/pi-keep-agent                 # must match both hosts
 
 # 3. Env: never transfer keys over the wire when the VPS already has them.
 #    Build the agent's .env from an .env already on that host.
-ssh neopmpmtj 'src=~/.pi/agent-cos-orchestrator-agent/.env; dst=~/.pi/agent-keep-agent/.env; \
+ssh neopmpmtj 'src=~/.pi/agent/.env; dst=~/.pi/agent-keep-agent/.env; \
   umask 077; { grep -E "^(DEEPSEEK_API_KEY|GEMINI_API_KEY|OPENAI_API_KEY)=" $src; \
   echo DASHBOARD_PORT=8788; echo DASHBOARD_ORIGIN=http://127.0.0.1:8788; \
   grep -E "^(GOG_ACCOUNT|GOG_KEYRING_PASSWORD)=" ~/.pi/agent/.env; } > $dst; chmod 600 $dst'
@@ -77,7 +77,7 @@ correction matters because acting on the wrong reading briefly created a duplica
 
 | Unit | Socket | ExecStart | State |
 | --- | --- | --- | --- |
-| `pi-cos.service` — "chief of staff (Telegram bridge)" | `-L pi-cos` | `~/pi-service/pi-cos-supervisor.sh` → `~/.local/bin/pi-cos-orchestrator-agent` | **enabled + active**, the real owner since 2026-11-05 |
+| `pi-cos.service` — "chief of staff (Telegram bridge)" | `-L pi-cos` | `~/pi-service/pi-cos-supervisor.sh` → `~/.local/bin/pi` | **enabled + active**, the real owner since 2026-11-05 |
 | `pi-agent.service` — legacy "Pi coding agent" | `-L pi` | `~/pi-service/pi-supervisor.sh` → `~/.local/bin/pi` (no `PI_CODING_AGENT_DIR` → old harness home `~/.pi/agent/`) | `disabled` + `inactive`, keep it that way |
 
 `pi-cos-supervisor.sh` also encodes two hard-won behaviours: it waits for the previous CoS pi to
@@ -102,7 +102,7 @@ surviving `pi-cos` agent reclaimed the bot automatically. Verified after: one `p
 
 Also done: `TELEGRAM_BOT_TOKEN` removed from `~/.pi/agent/.env` (backup
 `.env.bak-20261106-1309`), so the legacy home cannot poll even if something starts it — the
-token now exists only in `~/.pi/agent-cos-orchestrator-agent/.env`.
+token now exists only in `~/.pi/agent/.env`.
 
 ### Reading this host without being fooled again
 

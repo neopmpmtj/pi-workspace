@@ -8,7 +8,7 @@
   - `.../dist/core/model-runtime.d.ts:70-73` — `ModelRuntime.getModel(provider, id)`
   - `.../dist/core/agent-session.d.ts:663` — `setModel()`
   - `.../examples/sdk/{01-minimal,03-custom-prompt,12-full-control}.ts`
-  - Live reference agents on this machine: `~/.local/bin/pi-image-describer` (smallest launcher), `pi-cos-orchestrator-agent` (fullest)
+  - Live reference agents on this machine: `~/.local/bin/pi-image-describer` (smallest launcher), `pi` (fullest)
 - **Everything below was executed.** Transcripts are real, not illustrative.
 
 ---
@@ -62,7 +62,7 @@ Three lines do all the work:
 2. `PI_CODING_AGENT_DIR` — the single switch that moves the config home away from `~/.pi/agent` (`environment-variables.md:81`). Everything below it (settings, `AGENTS.md`, sessions, skills, extensions, prompts) is rediscovered relative to the new home.
 3. `exec "$NODE_BIN/pi"` — `exec`, so no extra shell sits in the process tree and signals/exit codes pass through. Pinning `NODE_BIN` avoids nvm's shell-type-dependent PATH.
 
-Note what the launcher does **not** do: no model flags, no `--no-extensions`. Model choice belongs in `settings.json`; suppression flags belong in explicit calls. `pi-cos-orchestrator-agent` adds one optional block on top — a debounced `git pull --ff-only` guarded by `PI_SUBAGENT_*` — which a new agent does not need.
+Note what the launcher does **not** do: no model flags, no `--no-extensions`. Model choice belongs in `settings.json`; suppression flags belong in explicit calls. `pi` adds one optional block on top — a debounced `git pull --ff-only` guarded by `PI_SUBAGENT_*` — which a new agent does not need.
 
 ### `settings.json`
 

@@ -34,8 +34,8 @@ export interface ScaffoldOptions {
 
 const HOME = homedir();
 const PI_ROOT = path.join(HOME, ".pi");
-const COS_AGENT_DIR = path.join(PI_ROOT, "agent-cos-orchestrator-agent", "cos-orchestrator-agent");
-const COS_ENV_FILE = path.join(PI_ROOT, "agent-cos-orchestrator-agent", ".env");
+const COS_AGENT_DIR = path.join(PI_ROOT, "agent", "cos-orchestrator-agent");
+const COS_ENV_FILE = path.join(PI_ROOT, "agent", ".env");
 const BIN_DIR = path.join(HOME, ".local", "bin");
 
 export function normalizeAgentName(raw: string): string {
@@ -127,7 +127,7 @@ export async function scaffoldAgent(options: ScaffoldOptions): Promise<{ agentHo
   // env.ts with agent-specific fallback
   let envTs = await readFile(path.join(ledgerSrc, "env.ts"), "utf8");
   envTs = envTs.replace(
-    'path.join(env.HOME ?? "", ".pi", "agent-cos-orchestrator-agent", "cos-orchestrator-agent")',
+    'path.join(env.HOME ?? "", ".pi", "agent", "cos-orchestrator-agent")',
     `path.join(env.HOME ?? "", ".pi", "agent-${name}", "${name}")`
   );
   await writeFile(path.join(agentHome, "ledger", "env.ts"), envTs, "utf8");

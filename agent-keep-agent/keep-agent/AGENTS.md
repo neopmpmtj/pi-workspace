@@ -52,4 +52,4 @@ If a request is ambiguous, ask one short question instead of guessing. If it is 
   - Credentials are already stored in `~/.config/keep-cli/credentials.json` (mode 600).
   - Notes go to a real Google account: creating and trashing are fine, but ask before trashing
     something you did not create. Usage notes and the API it speaks:
-    `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/docs/runbooks/google-keep-read-all.md`.
+    `~/.pi/agent/cos-orchestrator-agent/docs/runbooks/google-keep-read-all.md`.

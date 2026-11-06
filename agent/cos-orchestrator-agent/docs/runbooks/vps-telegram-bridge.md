@@ -9,9 +9,9 @@ Symptom: phone messages get no answer. Bot is healthy; the bridge is not.
 pi-cos.service (user unit, WantedBy=default.target, enabled, linger=yes)
 └── ~/pi-service/pi-cos-supervisor.sh        keeps one pi alive in tmux -L pi-cos
     └── tmux -L pi-cos  session "pi-cos"
-        └── ~/.local/bin/pi-cos-orchestrator-agent
-            ├── sources ~/.pi/agent-cos-orchestrator-agent/.env   (TELEGRAM_BOT_TOKEN)
-            └── PI_CODING_AGENT_DIR=~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent
+        └── ~/.local/bin/pi
+            ├── sources ~/.pi/agent/.env   (TELEGRAM_BOT_TOKEN)
+            └── PI_CODING_AGENT_DIR=~/.pi/agent/cos-orchestrator-agent
                 ├── settings.json   -> packages: npm:@llblab/pi-telegram
                 └── telegram.json    -> { "botToken": "$TELEGRAM_BOT_TOKEN", "allowedUserId": 6363173838 }
 ```
@@ -22,7 +22,7 @@ fatal: pi starts normally and the status line just says `telegram disconnected`.
 ## What broke on 2026-11-04 (and why)
 
 1. On 2026-11-02 17:48 the CoS home moved from `~/.pi/cos-orchestrator-agent/cos-orchestrator-agent`
-   to `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent`, and the launcher was updated.
+   to `~/.pi/agent/cos-orchestrator-agent`, and the launcher was updated.
    The pi process started at 10:02 kept the **legacy** `PI_CODING_AGENT_DIR`, so nothing restarted it.
 2. The legacy home had **no `telegram.json`** → `telegram disconnected` for 2 days.
 3. `pi-cos-supervisor.sh` still had `AGENT_DIR` = the legacy path, so its "wait for the previous
@@ -45,12 +45,12 @@ for p in $(pgrep -x pi); do tr '\0' '\n' < /proc/$p/environ | grep PI_CODING_AGE
 tmux -L pi-cos capture-pane -p -t pi-cos | tail -3      # expect "telegram connected"
 
 # 4. is the token valid from this host, and is anyone polling?
-set -a; . ~/.pi/agent-cos-orchestrator-agent/.env; set +a
+set -a; . ~/.pi/agent/.env; set +a
 curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getMe"
 curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo"   # pending_update_count, url must be ""
 
 # 5. what did the bridge decide?
-tail -3 ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/tmp/pi-telegram/logs.jsonl
+tail -3 ~/.pi/agent/cos-orchestrator-agent/tmp/pi-telegram/logs.jsonl
 ```
 
 `"Initialized Telegram cursor without executing history"` with a `lastUpdateId` means the bridge
@@ -61,11 +61,11 @@ That is by design, so a queued "help" will never be answered; send a fresh messa
 
 ```bash
 # telegram.json must exist in the home the launcher actually sets
-cp ~/.pi/agent/telegram.json ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/telegram.json
-chmod 600 ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/telegram.json
+cp ~/.pi/agent/telegram.json ~/.pi/agent/cos-orchestrator-agent/telegram.json
+chmod 600 ~/.pi/agent/cos-orchestrator-agent/telegram.json
 
 # supervisor must watch the current home, not the legacy one
-sed -i 's|AGENT_DIR="$HOME/.pi/cos-orchestrator-agent/cos-orchestrator-agent"|AGENT_DIR="$HOME/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent"|' \
+sed -i 's|AGENT_DIR="$HOME/.pi/cos-orchestrator-agent/cos-orchestrator-agent"|AGENT_DIR="$HOME/.pi/agent/cos-orchestrator-agent"|' \
   ~/pi-service/pi-cos-supervisor.sh
 
 systemctl --user daemon-reload
@@ -86,4 +86,4 @@ poller and `pi-cos.service` reports `telegram connected`.
 - The legacy home `~/.pi/cos-orchestrator-agent/cos-orchestrator-agent` is unused; archive it.
 - `pi-agent.service` (old home) stays **stopped and disabled** — it shares the bot token.
 - CoS `/usage`, the token ledger and `telegram.json` are per-home, so the bridge must always run
-  under `~/.pi/agent-cos-orchestrator-agent/`.
+  under `~/.pi/agent/`.

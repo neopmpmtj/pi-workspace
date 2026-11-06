@@ -1,8 +1,8 @@
 ## Environment
 
-- Agent home: `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent` (own isolated workspace, not the main agent's).
-- Credentials file: `~/.pi/agent-cos-orchestrator-agent/.env`, at the repo root. It holds `DEEPSEEK_API_KEY` and `GEMINI_API_KEY`; OpenAI models need `OPENAI_API_KEY` there too. Do not read the main agent's `.env`.
-- Launch: `pi-cos-orchestrator-agent` sources only this agent's `.env`, sets `PI_CODING_AGENT_DIR` to the agent home, and starts Pi with the tools in `settings.json`. Provider, model, and thinking come from `default-model.json` when it exists, else `settings.json` (`deepseek` / `deepseek-flash`).
+- Agent home: `~/.pi/agent/cos-orchestrator-agent`. This is the main agent. `pi` starts with this directory as its working directory.
+- Credentials file: `~/.pi/agent/.env`, one level above the agent home. It holds `DEEPSEEK_API_KEY` and `GEMINI_API_KEY`; OpenAI models need `OPENAI_API_KEY` there too. Do not read a sibling agent's `.env`.
+- Launch: `pi` sources this `.env`, sets `PI_CODING_AGENT_DIR` to the agent home, cds there, and starts Pi with the tools in `settings.json`. Provider, model, and thinking come from `default-model.json` when it exists, else `settings.json` (`deepseek` / `deepseek-flash`).
 - Providers and models: `deepseek` (deepseek-flash, deepseek-v4-pro), `openai` (gpt-6.1-sol), `google` (gemini-3.8-flash, gemini-3.7-flash).
 - Tools: `read`, `bash`, `edit`, `write`, `grep`, and `find`. No web search, skills, subagents, or cron.
 - Ledger: `logs/ledger.sqlite`. Rate card: `model-rates.json`, beside `.env`.

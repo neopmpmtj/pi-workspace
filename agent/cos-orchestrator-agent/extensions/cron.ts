@@ -12,7 +12,7 @@
  * - /cron management command
  * - cron tool for the agent to schedule its own jobs
  *
- * Placement: ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/extensions/cron.ts
+ * Placement: ~/.pi/agent/cos-orchestrator-agent/extensions/cron.ts
  * The engine stays at ~/.pi/cron/ (three levels up from this file).
  */
 

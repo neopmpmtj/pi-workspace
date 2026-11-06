@@ -9,7 +9,7 @@
 
 - **Pi version**: 1.0.0 · **Node**: v24.21.0 (via nvm)
 - **Launcher**: `/home/pmpmt/.local/bin/pi` — wrapper that sources `~/.pi/agent/.env`, pins node v24.21.0 on `PATH`, then execs the real pi binary
-- **Config dir**: `/home/pmpmt/.pi/agent/`
+- **Config dir**: `/home/pmpmt/.pi/agent/cos-orchestrator-agent` (`pi` starts in this directory)
 - **Providers**: `deepseek` (default), `gemini` — `models-store.json` additionally carries `openrouter`, `google`, `openai` entries
 - **Default model**: `deepseek-flash`
 - **Enabled models**: `deepseek-v4-pro`, `deepseek-flash`
@@ -231,13 +231,13 @@ Private repos require GitHub auth on any machine you clone them from (SSH key or
 | Host | Role | State |
 |---|---|---|
 | `neopmpmtj` (100.85.79.17) | Replica of this agent: unattended, driven from Telegram | `~/.pi` is a clone of `pi-workspace`; boot autostart via **user** unit `pi-agent.service` (`~/pi-service/pi-supervisor.sh` → tmux socket `-L pi` → `~/.local/bin/pi`); linger `yes`; bot **@pi_vps_assistant_bot** |
-| `neopmpmtj` — chief of staff | **Currently owns the Telegram bridge** instead of the main agent | unit `pi-cos.service` (`~/pi-service/pi-cos-supervisor.sh` → tmux socket `-L pi-cos` → `~/.local/bin/pi-cos-orchestrator-agent`), agent dir `~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/`, own `.env` (DeepSeek, Gemini, `TELEGRAM_BOT_TOKEN`), own `telegram.json` (ignored), `npm:@llblab/pi-telegram` installed in its own npm dir. `pi-agent.service` is **disabled** — one bot token, one polling owner |
+| `neopmpmtj` — chief of staff | **Currently owns the Telegram bridge** instead of the main agent | unit `pi-cos.service` (`~/pi-service/pi-cos-supervisor.sh` → tmux socket `-L pi-cos` → `~/.local/bin/pi`), agent dir `~/.pi/agent/cos-orchestrator-agent/`, own `.env` (DeepSeek, Gemini, `TELEGRAM_BOT_TOKEN`), own `telegram.json` (ignored), `npm:@llblab/pi-telegram` installed in its own npm dir. `pi-agent.service` is **disabled** — one bot token, one polling owner |
 
 Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervisor waits up to 40 s for a previous CoS `pi` to exit (matched by `PI_CODING_AGENT_DIR` in `/proc/<pid>/environ`, so a later re-activated main agent does not block it), and a watchdog issues `/telegram-connect` if the status line still reads `telegram disconnected` after start. Reason: on shutdown the auto-sync hook commits + pushes *after* the unit reports `Stopped`, so a new instance could start while the old one still held the Telegram transport lock — the newcomer then refuses to auto-connect and the bot goes silent until someone connects manually ("Replaced stale lock"). `TimeoutStopSec=60`. Verified with three consecutive restarts, all ending connected with one process.
 
 - Same stack as here: nvm node `v24.21.0` → pi `1.4.0` → `~/.local/bin/pi` wrapper sourcing `.env`. The old self-contained `~/bin/pi` + `~/pi/node` launcher is retired; its scaffolding is archived in `~/.pi.archived-20261102`
 - Sync either direction with `git -C ~/.pi pull --ff-only` / `push`; the seven skills are cloned there as their own repos
-- **Automatic sync belongs to the chief-of-staff agent** (the main agent since 2026-11-02): `cos-orchestrator-agent/cos-orchestrator-agent/extensions/auto-sync.ts` commits + pushes `~/.pi` on shutdown, and `~/.local/bin/pi-cos-orchestrator-agent` pulls `--ff-only` before start (subagent-guarded, 120 s debounce). The plain `~/.local/bin/pi` wrapper and the main agent's `settings.json` no longer do either, so **a plain `pi` session now syncs nothing** — use the CoS launcher, or git by hand
+- **Automatic sync belongs to `pi`** (the main agent since 2026-11-02): `agent/cos-orchestrator-agent/extensions/auto-sync.ts` commits + pushes `~/.pi` on shutdown, and `~/.local/bin/pi` pulls `--ff-only` before start (subagent-guarded, 120 s debounce)
 - The CoS copy logs to the same `~/.pi/logs/auto-sync.log`. Its commit subject falls back to `session work` when no assistant message exists at shutdown
 - Switching the Telegram bridge between agents: stop one unit before starting the other (`systemctl --user disable --now pi-agent.service` ↔ `pi-cos.service`) — the bot token allows exactly one polling owner
 - `telegram.json` is ignored at **any depth** (`**/telegram.json`): untracking one with `git rm --cached` commits a deletion that **removes the file on every machine that pulls** — restore it locally afterwards
@@ -249,14 +249,14 @@ Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervis
 
 | File | Purpose |
 |---|---|
-| `~/.local/bin/pi` | Pi launcher wrapper (loads `.env`, pins node) |
-| `~/.pi/agent/settings.json` | All Pi settings |
-| `~/.pi/agent/.env` | API keys and secrets (sourced by the wrapper) |
-| `~/.pi/agent/auth.json` | Provider auth (`deepseek`, `gemini`) |
-| `~/.pi/agent/models-store.json` | Extra provider/model definitions |
-| `~/.pi/agent/trust.json` | Project trust decisions |
-| `~/.pi/agent/AGENTS.md` | Portable rules: orchestrator role, delegation, skill authoring, subagent troubleshooting (tracked) |
-| `~/.pi/agent/APPEND_SYSTEM.md` | Portable rules: secrets, CLI hygiene, working style, downloads, inter-agent comms (tracked) |
+| `~/.local/bin/pi` | Main agent launcher: pulls `~/.pi` `--ff-only` before start, sources `~/.pi/agent/.env`, sets `PI_CODING_AGENT_DIR`, starts in that directory, honours `default-model.json` |
+| `~/.pi/agent/cos-orchestrator-agent/settings.json` | Pi settings for the main agent |
+| `~/.pi/agent/.env` | API keys and secrets (sourced by `pi`) |
+| `~/.pi/agent/cos-orchestrator-agent/auth.json` | Provider auth for this home |
+| `~/.pi/agent/cos-orchestrator-agent/models-store.json` | Extra provider/model definitions |
+| `~/.pi/agent/cos-orchestrator-agent/trust.json` | Project trust decisions |
+| `~/.pi/agent/cos-orchestrator-agent/AGENTS.md` | Portable rules: orchestrator role, delegation, skill authoring, subagent troubleshooting (tracked) |
+| `~/.pi/agent/cos-orchestrator-agent/APPEND_SYSTEM.md` | Portable rules: secrets, CLI hygiene, working style, downloads, inter-agent comms (tracked) |
 | `~/AGENTS.md` | **Machine-local facts** (location, Postgres, remote hosts, tooling) — untracked, loaded as a context file by directory layering |
 | `~/.pi/agent/agents/frontend.md` | Front-end sub-agent definition |
 | `~/.pi/agent/agents/researcher.md` | Web research sub-agent definition |
@@ -266,7 +266,6 @@ Restart hardening in `pi-cos-supervisor.sh` (learned the hard way): the supervis
 | `~/.pi/agent/extensions/{cron,git-commit}.ts` + `observability/` | What remains on the main agent: cron store, `/commit` command, token observability |
 | `cos-orchestrator-agent/cos-orchestrator-agent/extensions/{auto-sync,secret-scrubber,pi-prompt-capture}.ts`, `chat/`, `input-contains-{path,url,email}/`, `less-than-input-words/` | CoS extensions. Auto-sync, secret scrubbing and prompt capture all moved here from the main agent on 2026-11-02, each as a **standalone file** (no symlinks into `agent/`, which is due for deletion). Both scrubbing and capture are agent-dir-relative: capture writes to `<agent-dir>/state/prompt-capture`, scrubber logs to `<agent-dir>/events.log` |
 | `cos-orchestrator-agent/cos-orchestrator-agent/extensions/auto-sync.ts` | On `session_shutdown`: stage `~/.pi`, secret-scan the staged diff, commit (`[pi:<host>] <last assistant line>`), push; on rejection rebase once then keep the commit locally. Skips subagents. Also adds `/sync` and `/sync pull` |
-| `~/.local/bin/pi-cos-orchestrator-agent` | Launcher of the main agent: pulls `~/.pi` `--ff-only` before start, sources the CoS `.env`, sets `PI_CODING_AGENT_DIR`, honours `default-model.json` |
 | `~/.pi/logs/auto-sync.log` | Auto-sync decisions (pull skips, secret-guard refusals, rebase outcomes) |
 | `~/.pi/agent/extensions/observability/index.ts` | Run recording → `runs.jsonl` + `runs.sqlite`; subagent lineage + token rollup views; `/tokens` |
 | `~/.pi/.pi/extensions/{pi-event-tracer,session-memory}/index.ts` | Project-local extensions |

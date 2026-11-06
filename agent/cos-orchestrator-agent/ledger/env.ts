@@ -7,7 +7,7 @@ import path from "node:path";
 export function agentDir(env: NodeJS.ProcessEnv = process.env): string {
   const configured = env.PI_CODING_AGENT_DIR?.trim();
   if (configured) return configured;
-  return path.join(env.HOME ?? "", ".pi", "agent-cos-orchestrator-agent", "cos-orchestrator-agent");
+  return path.join(env.HOME ?? "", ".pi", "agent", "cos-orchestrator-agent");
 }
 
 /** The folder that holds `.env` and the rate card, one level above the agent home. */

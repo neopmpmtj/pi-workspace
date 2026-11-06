@@ -29,7 +29,7 @@
     },
     {
       "id": 3,
-      "prompt": "convert /home/pmpmt/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent/skills/svg-photo-convert/evals/logo.png to svg, it has a transparent background i need to keep",
+      "prompt": "convert /home/pmpmt/.pi/agent/cos-orchestrator-agent/skills/svg-photo-convert/evals/logo.png to svg, it has a transparent background i need to keep",
       "expected_output": "A 3-6 layer trace with the alpha preserved through a clip path, exact brand colours, a handful of KB.",
       "files": ["logo.png"],
       "assertions": [

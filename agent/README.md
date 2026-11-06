@@ -14,7 +14,7 @@ web-master are the siblings. `/ask`, `/usage`, ingested chat turns, and the dash
 ## Layout
 
 ```
-~/.pi/agent-cos-orchestrator-agent/   repo root: .env, rate card, docs
+~/.pi/agent/   repo root: .env, rate card, docs
 └── cos-orchestrator-agent/                           Pi agent home (PI_CODING_AGENT_DIR)
     ├── default-model.json    provider + model + effort; written by the dashboard
     ├── extensions/chat/      the /ask command
@@ -27,15 +27,15 @@ web-master are the siblings. `/ask`, `/usage`, ingested chat turns, and the dash
 ## Use
 
 ```bash
-pi-cos-orchestrator-agent                                            # chat in the TUI
-pi-cos-orchestrator-agent -p "What is a vector database?"             # one turn, print mode
-pi-cos-orchestrator-agent -p '/ask "What is a vector database?"'      # one request, no chat turn
+pi                                            # chat in the TUI
+pi -p "What is a vector database?"             # one turn, print mode
+pi -p '/ask "What is a vector database?"'      # one request, no chat turn
 ```
 
 `/ask` writes the answer to stdout and the token/cost line to stderr, so it pipes:
 
 ```bash
-pi-cos-orchestrator-agent -p '/ask "Summarise CAP theorem" --model gpt-6.1-sol --effort high' > answer.txt
+pi -p '/ask "Summarise CAP theorem" --model gpt-6.1-sol --effort high' > answer.txt
 ```
 
 Flags: `--model`, `--provider`, `--effort` (`off`, `default`, `minimal`, `low`, `medium`,
@@ -48,7 +48,7 @@ descriptor 1 directly. A failure prints `[FAIL] <reason>` on stderr, records a f
 zero tokens, and **exits non-zero** so a script can branch on it:
 
 ```bash
-pi-cos-orchestrator-agent -p '/ask "…"' > answer.txt || echo "ask failed" >&2
+pi -p '/ask "…"' > answer.txt || echo "ask failed" >&2
 ```
 
 The exit code is set with `process.exitCode` rather than `process.exit`, so Pi still finishes
@@ -80,10 +80,10 @@ where the repo root holds `.env` and the Pi home sits one level below it.
 ## Usage
 
 ```bash
-pi-cos-orchestrator-agent -p '/usage'            # the last run, every call in it
-pi-cos-orchestrator-agent -p '/usage --all'      # totals per provider and model
-pi-cos-orchestrator-agent -p '/usage --session'  # this session only
-pi-cos-orchestrator-agent -p '/usage 7f3e'       # a run by id prefix
+pi -p '/usage'            # the last run, every call in it
+pi -p '/usage --all'      # totals per provider and model
+pi -p '/usage --session'  # this session only
+pi -p '/usage 7f3e'       # a run by id prefix
 ```
 
 One line per paid call, then the run total. `est` is our rate card; `pi` is Pi's own figure
@@ -110,7 +110,7 @@ than migrating: sessions rebuild the chat side, and the next command rewrites it
 ## Dashboard
 
 ```bash
-cd ~/.pi/agent-cos-orchestrator-agent/cos-orchestrator-agent && npm run dashboard     # http://127.0.0.1:8787
+cd ~/.pi/agent/cos-orchestrator-agent && npm run dashboard     # http://127.0.0.1:8787
 ```
 
 Port 8787 is this dashboard. The image describer API uses 8788.
@@ -139,7 +139,7 @@ The dashboard writes that switch as `default-model.json`:
 { "provider": "google", "model": "gemini-3.8-flash", "thinking": "low" }
 ```
 
-`pi-cos-orchestrator-agent` reads it at startup and passes `--provider`, `--model`, and
+`pi` reads it at startup and passes `--provider`, `--model`, and
 `--thinking` to Pi. It applies to the next launch, not a running session. Without the file,
 `settings.json` decides. `/ask` uses `default-model.json` when it exists, and otherwise
 `settings.json` (`defaultProvider`, `defaultModel`, `defaultThinkingLevel`).
