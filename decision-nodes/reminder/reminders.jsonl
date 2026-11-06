@@ -1,0 +1,3 @@
+{"ts": "2026-11-06T07:57:24+00:00", "host": "neopmpmtj", "op": "add", "id": "r-20261106-c42b", "title": "Take a tablet", "due": "2026-11-06T08:00:00+00:00", "surface": "telegram", "date_defaulted": false, "time_defaulted": false}
+{"ts": "2026-11-06T07:57:27+00:00", "host": "neopmpmtj", "op": "event", "id": "r-20261106-c42b", "event_id": "i3bsd6quvom1o71j4v9fhtdjck", "link": "https://www.google.com/calendar/event?eid=aTNic2Q2cXV2b20xbzcxajR2OWZodGRqY2sgbmVvcG1wbXRqQG0"}
+{"ts": "2026-11-06T08:16:44+00:00", "host": "neopmpmtj", "op": "done", "id": "r-20261106-c42b", "how": "command", "event": "kept-past"}
