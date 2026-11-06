@@ -182,3 +182,18 @@ by default; refuses the current Cursor files by name).
       Done 2026-11-05 with the `reminder`, `reminder_done` and `vetoes` modules.
 - [ ] Leave `classes/calendar.py` as one file until its questions and `decide` no longer fit
       there. A `classes/calendar/` package waits for that.
+
+## Reminder routing on this host (found 2026-11-06)
+
+- [x] ~~Classifier missing on this host, so the `reminder`/`calendar` hooks always failed open.~~
+      Fixed 2026-11-06: `~/.pi/jev-classifier` cloned at the pinned gitlink `6b43d6d`, and
+      `TYPESAFE_API_KEY` placed in `~/.pi/jev-classifier/.env` (mode 600, gitignored). Live
+      checks: `reminder` band `act` 0.99 on "remind me to take a tablet at 08:00", `calendar`
+      band `act` 0.99 on "add dentist appointment to my calendar on tuesday at 10:30"; the 25
+      node tests pass. A bare "dentist on tuesday at 10:30" (no intention verb) scores
+      `calendar` 0.18, below the 0.7 threshold - that is the model's call, not a fault.
+- [ ] `~/.pi/decision-nodes/reminder/reminders.jsonl` is **untracked** here although the node's
+      README calls it tracked with `merge=union`, so the one row on this host
+      (`r-20261106-c42b`) will not reach the laptop over git. Decide: add it to the workspace
+      repo with `merge=union` as the README already promises, or keep it host-local and say so
+      in that README.
