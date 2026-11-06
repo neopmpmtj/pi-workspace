@@ -218,3 +218,14 @@ by default; refuses the current Cursor files by name).
       domain + service account with domain-wide delegation and the Keep scope, or the
       unofficial `gkeepapi` route (not installed, token-based, breaks on client changes).
       Home: `extensions/reminder-node/index.ts`, `~/.pi/decision-nodes/reminder/config.py`.
+- [ ] `keep-agent` (built 2026-11-06, home `~/.pi/agent-keep-agent/keep-agent`, launcher
+      `pi-keep-agent`): a functional copy of this agent whose `AGENTS.md` says only that
+      instructions come from the user and whose `APPEND_SYSTEM.md` is zero bytes and frozen.
+      Two things are deliberately off and stay off until decided: the Telegram bridge has no
+      `TELEGRAM_BOT_TOKEN` (one polling owner per bot token — needs a **second** bot from
+      BotFather), and the calendar/reminder/jev routing extensions are dot-hidden
+      (`extensions/.calendar-node/` etc.) because they would share `~/.pi/config.json` gates,
+      `~/.pi/decision-nodes/` and `reminders.jsonl` with this agent and could double-write.
+      Its `auto-sync.ts` is `.disabled`: two processes pushing the same `~/.pi` repo is the
+      hazard that actually bit during verification. Its dashboard defaults to `8788`.
+      Contract: `~/.pi/agent-keep-agent/keep-agent/docs/CALLING.md`.

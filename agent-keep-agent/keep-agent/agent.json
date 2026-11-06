@@ -1,12 +1,11 @@
 {
   "name": "keep-agent",
   "launcher": "pi-keep-agent",
-  "defaultPrompt": "/usage",
+  "defaultPrompt": "<task in plain language>",
   "call": "<task in plain language>",
-  "purpose": "Functional copy of the orchestrator with frozen instruction files: AGENTS.md only says instructions come from the user, APPEND_SYSTEM.md is empty. Same tools, extensions, /ask, /usage, ledger and dashboard. Calendar and reminder routing are not loaded (shared decision-node state), and it has no Telegram token.",
+  "purpose": "Lean specialist copy of the orchestrator: zero extensions, zero skills, no Telegram bridge, no git automation, instructions from the user only. Token usage of every turn is recorded in its own ledger by a user timer and served on :8788.",
   "contract": "~/.pi/agent-keep-agent/keep-agent/docs/CALLING.md",
   "frozen": [
-    "AGENTS.md",
     "APPEND_SYSTEM.md"
   ],
   "tools": [
@@ -35,26 +34,5 @@
       "description": "Find files by glob."
     }
   ],
-  "commands": [
-    {
-      "name": "/usage",
-      "description": "Tokens and cost: /usage · /usage --all · /usage --session · /usage <runId>"
-    },
-    {
-      "name": "/ask",
-      "description": "One request, no chat turn: /ask \"question\". /ask --help lists the flags."
-    },
-    {
-      "name": "/sync",
-      "description": "Commit ~/.pi and push to origin (use '/sync pull' to only update)"
-    },
-    {
-      "name": "/cron",
-      "description": "Manage cron jobs (interactive mode only)"
-    },
-    {
-      "name": "/archive",
-      "description": "Move a file or folder into the archive: /archive <path> · /archive --undo"
-    }
-  ]
+  "commands": []
 }
