@@ -477,8 +477,9 @@ Deliberately **not** changed, needing a decision (also recorded in `docs/INBOX.m
    was open. Follow-up, 2026-11-06: the backup job was removed from `~/.pi/cron/jobs.json`
    (definition parked in `docs/INBOX.md`, together with the backup tool's own uninstalled
    `my_PC_backup.timer`); the `gog` keepalive remains and needs `GOG_ACCOUNT` in the CoS env
-   — resolved later the same day: those variables were added, and the VPS unit now runs the
-   tracked `scripts/gog-token-keepalive.sh` (see `docs/INBOX.md`).
+   — resolved later the same day: those variables were added, the VPS unit now runs the tracked
+   `scripts/gog-token-keepalive.sh`, and the laptop's cron job was replaced by the same systemd
+   timer (`docs/runbooks/gog-token-keepalive.md`).
 3. **`~/.pi/z.old` is 226 MB** and holds two archive runs, now provably redundant with git plus the
    recovered runtime state. Safe to prune on request.
 

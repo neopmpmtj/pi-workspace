@@ -300,9 +300,16 @@ by default; refuses the current Cursor files by name).
       `--dry-run` prints the alarm instead; exits 0/1/2. Two traps worth remembering: env files are
       **parsed as data, never sourced** (this one holds a `$4$` Postgres SCRAM hash, and `.` under
       `set -u` aborts on it), and the probe's output is captured rather than piped to `head`, so
-      `$?` is gog's status and not SIGPIPE. On the laptop the two gog variables were added to
-      `~/.pi/agent/.env`, which fixes its `0 8 * * *` job. Still open only if wanted: the same
-      probe as a systemd timer on the laptop instead of a Pi cron job.
+      `$?` is gog's status and not SIGPIPE. On the laptop the two gog variables went into
+      `~/.pi/agent/.env`, and its `0 8 * * *` Pi cron job was then **removed** in favour of the same
+      systemd timer (`~/.config/systemd/user/gog-token-keepalive.{service,timer}`,
+      `OnCalendar=08:00 Europe/Lisbon`, `Persistent=true`; a real run reports `Result=success`,
+      probe ~615 ms). Both hosts' units are written up in
+      `docs/runbooks/gog-token-keepalive.md`.
+- [ ] **Login lingering on the laptop.** `Linger=no`, so every user timer here (the gog probe and
+      the keep-agent ledger timer) only exists while `pmpmt` is logged in; a missed run replays at
+      the next login. `sudo loginctl enable-linger pmpmt` makes them fire with nobody logged in,
+      but it needs a password, so it is left for Pedro.
 - [x] ~~Two cron jobs are overdue since 2026-11-03 (Daily Laptop Backup, gog-token-keepalive),
       so they will fire on the next laptop start.~~ **That was wrong** (2026-11-06):
       `recomputeAllNextRuns()` writes the next *future* occurrence — `computeNextRunAtMs` verified
