@@ -283,11 +283,19 @@ by default; refuses the current Cursor files by name).
       `node_modules` rebuilt; the VPS migrated to the new layout, pi 1.5.0, submodules and its
       own home-local `.env`. Report:
       `docs/documented-from-session/2026-11-06T1632-agent-home-restore-and-rename-wiring-audit/`.
-- [ ] One Telegram bot, two machines: the laptop's `~/.pi/agent/.env` still holds the real
-      `TELEGRAM_BOT_TOKEN`. The VPS's legacy copy has it stripped by design, and `pi-cos.service`
-      is the single poller — but the laptop bridge auto-starts again now that the home is
-      restored, so the next laptop session would contend with the VPS. Decide: blank the token
-      on the laptop, or give the laptop its own bot.
+- [x] ~~One Telegram bot, two machines: the laptop's `~/.pi/agent/.env` still holds the real
+      `TELEGRAM_BOT_TOKEN`, so the next laptop session would contend with the VPS.~~ Decided
+      2026-11-06: the laptop is TUI-only, so the token was removed from `~/.pi/agent/.env` (the
+      file now records where to copy it back). `pi-telegram` fails closed with no token, and the
+      VPS CoS home `.env` is the only copy left, so `pi-cos.service` is the single polling owner.
+      Swept both hosts: no other agent `.env` holds a token.
+- [ ] `gog-token-keepalive.service` on the VPS has failed every morning since 2026-11-02
+      (`status=203/EXEC`): its `ExecStart=/home/pmpmt/.pi/agent/scripts/gog-token-keepalive.sh`
+      does not exist, and the unit file's own header still says "STAGED — NOT INSTALLED". So
+      neither host runs a gog health probe today (the laptop's is a Pi cron job that only fires
+      while pi is open). Decide: disable the timer until the script exists, write the script, or
+      move the two laptop cron jobs to systemd timers with `Persistent=true` so they catch up
+      after downtime instead of depending on pi being open at 08:00.
 - [ ] Two cron jobs are overdue since 2026-11-03 (Daily Laptop Backup, gog-token-keepalive);
       they were unreachable because the store path moved with the rename and now resolve again,
       so they will fire on the next laptop start. The backup job's last recorded run failed
