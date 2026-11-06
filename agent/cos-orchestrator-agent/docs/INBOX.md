@@ -289,20 +289,20 @@ by default; refuses the current Cursor files by name).
       file now records where to copy it back). `pi-telegram` fails closed with no token, and the
       VPS CoS home `.env` is the only copy left, so `pi-cos.service` is the single polling owner.
       Swept both hosts: no other agent `.env` holds a token.
-- [ ] `gog-token-keepalive` is broken on both hosts, for different reasons. **VPS:** the unit
-      and timer are installed and enabled (`OnCalendar=08:00 Europe/Lisbon`, `Persistent=true`),
-      but the service exits `203/EXEC` every morning since 2026-11-02 because
-      `ExecStart=/home/pmpmt/.pi/agent/scripts/gog-token-keepalive.sh` was never written (the
-      unit's own header still says "STAGED — NOT INSTALLED"). Only that script is missing:
-      `gog` v0.34.0 is at `~/.pi/agent/bin/gog` (not on `PATH`, which is why it looked absent),
-      `~/.pi/agent/.env` already carries `GOG_ACCOUNT` and `GOG_KEYRING_PASSWORD`, and a live
-      `gog drive ls` succeeded through it on 2026-11-06. **Laptop:** the Pi cron job
-      `gog-token-keepalive` (`0 8 * * *`) runs `gog drive ls` with no `--account`, and the CoS
-      `.env` has neither `GOG_ACCOUNT` nor `GOG_KEYRING_PASSWORD`, so it fails with
-      "missing --account" while the identical command succeeds under the sibling
-      sm-google-workspace env. Both are two-line fixes at the env level.
-      Decide: write the script and keep the systemd route (recommended — independent of pi, and
-      `Persistent=true` catches up after downtime), or drop the probe and let `gog` refresh on use.
+- [x] ~~`gog-token-keepalive` was broken on both hosts, for different reasons: the VPS unit's
+      `ExecStart` named a script that was never written (so it exited `203/EXEC` every morning
+      since 2026-11-02), and the laptop's Pi cron job ran `gog drive ls` with neither
+      `GOG_ACCOUNT` nor `GOG_KEYRING_PASSWORD` in the CoS `.env`.~~ Fixed 2026-11-06:
+      `scripts/gog-token-keepalive.sh` is tracked in this repo and the VPS unit runs it from the
+      tracked path (a real unit run reports `Result=success`, `OK: auth healthy (probe ~530ms)`).
+      It probes with `gog drive ls`, appends a plain-text log + JSONL ledger under
+      `~/.pi/agent/logs/`, tracks a failure streak, and messages the owner only on failure;
+      `--dry-run` prints the alarm instead; exits 0/1/2. Two traps worth remembering: env files are
+      **parsed as data, never sourced** (this one holds a `$4$` Postgres SCRAM hash, and `.` under
+      `set -u` aborts on it), and the probe's output is captured rather than piped to `head`, so
+      `$?` is gog's status and not SIGPIPE. On the laptop the two gog variables were added to
+      `~/.pi/agent/.env`, which fixes its `0 8 * * *` job. Still open only if wanted: the same
+      probe as a systemd timer on the laptop instead of a Pi cron job.
 - [x] ~~Two cron jobs are overdue since 2026-11-03 (Daily Laptop Backup, gog-token-keepalive),
       so they will fire on the next laptop start.~~ **That was wrong** (2026-11-06):
       `recomputeAllNextRuns()` writes the next *future* occurrence — `computeNextRunAtMs` verified
