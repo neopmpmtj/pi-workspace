@@ -17,9 +17,10 @@
    does not classify again. The node's extractor is a second opinion: if it reads the message
    as another kind, the write becomes a hint.
 
-Defaults: no date means tomorrow; no time means 06:00 (or the next full hour when 06:00
-today has passed); events last 15 minutes, no freebusy check. On done, a future event is
-deleted and a past one is kept.
+Defaults: no time means 06:00 (or the next full hour when 06:00 today has passed); no date
+means the next occurrence of a stated time — today while it is still ahead, tomorrow once
+it has passed — and tomorrow 06:00 when no time was stated either. Events last 15 minutes,
+no freebusy check. On done, a future event is deleted and a past one is kept.
 
 ## Commands (CoS home)
 

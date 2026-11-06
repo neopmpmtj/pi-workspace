@@ -27,8 +27,11 @@ your input
 | either, hint | `hint:reminder` / `hint:reminder_done` | nothing; the agent asks |
 | anything else | none | ordinary turn |
 
-Defaults: no date is tomorrow; no time is 06:00, or the next full hour when 06:00 today has
-passed; the event lasts 15 minutes; no freebusy check. A "done" needs a match of at least
+Defaults: no time is 06:00, or the next full hour when 06:00 today has passed; no date is
+**the next occurrence of a stated time** — today while that time is still ahead, tomorrow
+once it has passed ("remind me at 9" at 08:21 is today 09:00, at 10:00 it is tomorrow
+09:00). With no time stated either, a bare "remind me to buy milk" is tomorrow 06:00.
+The event lasts 15 minutes; no freebusy check. A "done" needs a match of at least
 0.7, otherwise `no-match` with the pending list. The extractor's `kind` is a second opinion:
 `calendar_request` or `other` downgrades the write to a hint.
 

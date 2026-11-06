@@ -71,6 +71,18 @@ class Defaults(unittest.TestCase):
         self.assertEqual(reminder["start"].hour, 15)
         self.assertFalse(reminder["time_defaulted"])
 
+    def test_a_bare_time_still_ahead_is_today(self):
+        reminder, why = self.ok(time_local="18:00")
+        self.assertIsNotNone(reminder, why)
+        self.assertEqual(reminder["start"], datetime(2026, 11, 5, 18, 0, tzinfo=ZONE))
+        self.assertTrue(reminder["date_defaulted"] and not reminder["time_defaulted"])
+
+    def test_a_bare_time_already_passed_is_tomorrow(self):
+        reminder, why = self.ok(time_local="09:00")
+        self.assertIsNotNone(reminder, why)
+        self.assertEqual(reminder["start"], datetime(2026, 11, 6, 9, 0, tzinfo=ZONE))
+        self.assertTrue(reminder["date_defaulted"])
+
     def test_today_without_time_moves_to_the_next_full_hour(self):
         reminder, _ = self.ok(date_local="2026-11-05")
         self.assertEqual(reminder["start"], datetime(2026, 11, 5, 15, 0, tzinfo=ZONE))

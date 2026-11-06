@@ -50,7 +50,9 @@ A hook in this home classifies every message before the turn and, on a match, ru
 
 The same classification also feeds the `reminder` node (`~/.pi/decision-nodes/reminder/`).
 "Remind me to...", "lembra-me de..." are logged in `reminders.jsonl` with a pending status and
-get a 15-minute calendar event (no date means tomorrow, no time means 06:00). "I bought the
+get a 15-minute calendar event (no time means 06:00; no date means the next occurrence of
+a stated time — today if still ahead, else tomorrow — or tomorrow 06:00 when no time was
+stated). "I bought the
 milk", "já paguei a luz" mark the matching pending reminder done.
 
 - It behaves like calendar routing: the hook answers the message itself and the turn is

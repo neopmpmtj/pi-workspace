@@ -5,8 +5,10 @@ The arbiter in jev-classifier-multi picks one winner per message; this node acts
 when that winner is `reminder` or `reminder_done`.
 
   do:reminder:log        one cheap model call for the title and the slot, then a
-                         row in reminders.jsonl. No date means tomorrow; no time
-                         means 06:00. Logged first, so a failed write still leaves
+                         row in reminders.jsonl. No time means 06:00; no date means
+                         the next occurrence of a stated time (today while it is
+                         still ahead, otherwise tomorrow), or tomorrow 06:00 when no
+                         time was stated either. Logged first, so a failed write still leaves
                          the reminder in the table.
   do:reminder:calendar   `gog calendar create primary`, 15 minutes, "Reminder: <title>".
                          No free/busy check: 06:00 is chosen because it is free.
@@ -182,11 +184,16 @@ def extract_reminder(text: str, now: datetime) -> tuple[dict | None, str]:
 
 
 def validate_reminder(parsed: dict, now: datetime) -> tuple[dict | None, str]:
-    """Fill the defaults: no date is tomorrow, no time is DEFAULT_HOUR:00.
+    """Fill the defaults: no time is DEFAULT_HOUR:00, and no date is the next
+    occurrence of a stated time.
 
-    A defaulted time that has already passed today moves to the next full hour, so
-    "remind me today to..." still lands ahead. A stated time in the past is kept and
-    the calendar route refuses it; the reminder is still logged.
+    A stated time with no stated date lands today while it is still ahead and rolls to
+    tomorrow once it has passed, so "remind me at 9" at 08:21 means today 09:00 while
+    "remind me at 9" at 10:00 means tomorrow 09:00. With no time either, the default is
+    tomorrow DEFAULT_HOUR:00. A defaulted time that has already passed today moves to
+    the next full hour, so "remind me today to..." still lands ahead. A stated date with
+    a stated time in the past is kept and the calendar route refuses it; the reminder is
+    still logged.
     """
     if not isinstance(parsed, dict):
         return None, "extraction returned no object"
@@ -204,7 +211,12 @@ def validate_reminder(parsed: dict, now: datetime) -> tuple[dict | None, str]:
     date_defaulted = not (isinstance(date_raw, str) and date_raw.strip())
     time_defaulted = not (isinstance(time_raw, str) and time_raw.strip())
     try:
-        day = (now + timedelta(days=1)).date() if date_defaulted else datetime.strptime(date_raw.strip(), "%Y-%m-%d").date()
+        if date_defaulted and not time_defaulted:
+            day = now.date()  # a bare clock time means the next such time, not tomorrow
+        elif date_defaulted:
+            day = (now + timedelta(days=1)).date()
+        else:
+            day = datetime.strptime(date_raw.strip(), "%Y-%m-%d").date()
     except ValueError:
         return None, f"unparsable date {date_raw!r}"
     try:
@@ -214,6 +226,10 @@ def validate_reminder(parsed: dict, now: datetime) -> tuple[dict | None, str]:
     start = datetime(day.year, day.month, day.day, clock[0], clock[1], tzinfo=zone)
     if time_defaulted and start <= now:
         start = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    elif date_defaulted and start <= now:
+        next_day = day + timedelta(days=1)
+        start = datetime(next_day.year, next_day.month, next_day.day,
+                         clock[0], clock[1], tzinfo=zone)
     return {"title": title, "start": start, "confidence": float(confidence),
             "date_defaulted": date_defaulted, "time_defaulted": time_defaulted}, ""
 
