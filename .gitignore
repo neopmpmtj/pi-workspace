@@ -78,14 +78,11 @@ postgres-migration/**
 #   git add -f agent/observability/
 agent/observability/
 
-# ── Skills are standalone repos (cloned individually from GitHub) ─────
-agent/skills/partner-agent-export/
-agent/skills/gog-workspace/
-agent/skills/skill-creator/
-agent/skills/video-finder/
-agent/skills/yt-download/
-agent/skills/pi-prompt-dump/
-agent/skills/agent-replica-adapt/
+# ── Skills ────────────────────────────────────────────────────────
+# skill-creator, video-finder, yt-download, pi-prompt-dump and
+# agent-replica-adapt are git submodules (see .gitmodules); agent-creator and
+# svg-photo-convert are plain directories tracked by this repo.
+# Initialise a clone with: git submodule update --init --recursive
 
 # ── Cron store & run history (machine-local state, never synced) ──
 cron/jobs.json

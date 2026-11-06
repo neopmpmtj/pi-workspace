@@ -2,7 +2,7 @@
  * Normalize LLM-generated cron job input.
  * Handles: case correction, legacy field names, missing defaults, and type coercion.
  */
-import type { CronJob, CronJobState, CronPayload, CronSchedule } from "./types";
+import type { CronJob, CronJobState, CronPayload, CronSchedule } from "./types.ts";
 
 type UnknownRecord = Record<string, unknown>;
 

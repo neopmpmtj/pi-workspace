@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { CronJob, CronStoreFile, CronRunEntry } from "./types";
+import type { CronJob, CronStoreFile, CronRunEntry } from "./types.ts";
 
 const CRON_DIR = path.join(
   process.env.PI_CODING_AGENT_DIR || path.join(process.env.HOME || "/tmp", ".pi/agent"),

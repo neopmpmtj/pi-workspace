@@ -1,0 +1,6 @@
+{
+  "name": "pi-cron-engine",
+  "private": true,
+  "type": "module",
+  "description": "Cron engine shared by the agent-home cron extension. ESM: the extension imports these modules as ESM; without this the TypeScript project treats them as CommonJS."
+}

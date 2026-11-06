@@ -1,4 +1,4 @@
-import type { CronSchedule } from "./types";
+import type { CronSchedule } from "./types.ts";
 
 // ── Relative time parsing ──
 

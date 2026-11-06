@@ -1,0 +1,18 @@
+[submodule "agent/cos-orchestrator-agent/skills/agent-replica-adapt"]
+	path = agent/cos-orchestrator-agent/skills/agent-replica-adapt
+	url = https://github.com/neopmpmtj/skill-agent-replica-adapt.git
+[submodule "agent/cos-orchestrator-agent/skills/pi-prompt-dump"]
+	path = agent/cos-orchestrator-agent/skills/pi-prompt-dump
+	url = https://github.com/neopmpmtj/skill-pi-prompt-dump.git
+[submodule "agent/cos-orchestrator-agent/skills/skill-creator"]
+	path = agent/cos-orchestrator-agent/skills/skill-creator
+	url = https://github.com/neopmpmtj/skill-skill-creator.git
+[submodule "agent/cos-orchestrator-agent/skills/video-finder"]
+	path = agent/cos-orchestrator-agent/skills/video-finder
+	url = https://github.com/neopmpmtj/skill-video-finder.git
+[submodule "agent/cos-orchestrator-agent/skills/yt-download"]
+	path = agent/cos-orchestrator-agent/skills/yt-download
+	url = https://github.com/neopmpmtj/skill-yt-download.git
+[submodule "jev-classifier"]
+	path = jev-classifier
+	url = https://github.com/neopmpmtj/jev-classifier.git
