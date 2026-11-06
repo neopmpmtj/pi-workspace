@@ -7,3 +7,6 @@
 {"ts": "2026-11-06T08:48:01+00:00", "host": "pmpmt-ThinkPad-T15-Gen-2i", "op": "event", "id": "r-20261106-b7a3", "event_id": "85lbo1gaerd1jmrkjb28adeqec", "link": "https://www.google.com/calendar/event?eid=ODVsYm8xZ2FlcmQxam1ya2piMjhhZGVxZWMgbmVvcG1wbXRqQG0"}
 {"ts": "2026-11-06T08:49:33+00:00", "host": "pmpmt-ThinkPad-T15-Gen-2i", "op": "add", "id": "r-20261106-8f2c", "title": "Ir ao barbeiro", "due": "2026-11-07T16:00:00+00:00", "surface": "local", "date_defaulted": true, "time_defaulted": false}
 {"ts": "2026-11-06T08:49:36+00:00", "host": "pmpmt-ThinkPad-T15-Gen-2i", "op": "event", "id": "r-20261106-8f2c", "event_id": "s9ppbeajt88am3fug85bqieefg", "link": "https://www.google.com/calendar/event?eid=czlwcGJlYWp0ODhhbTNmdWc4NWJxaWVlZmcgbmVvcG1wbXRqQG0"}
+{"ts": "2026-11-06T08:51:36+00:00", "host": "pmpmt-ThinkPad-T15-Gen-2i", "op": "done", "id": "r-20261106-65fb", "how": "command", "event": "deleted"}
+{"ts": "2026-11-06T08:51:37+00:00", "host": "pmpmt-ThinkPad-T15-Gen-2i", "op": "done", "id": "r-20261106-b7a3", "how": "command", "event": "deleted"}
+{"ts": "2026-11-06T08:51:38+00:00", "host": "pmpmt-ThinkPad-T15-Gen-2i", "op": "done", "id": "r-20261106-8f2c", "how": "command", "event": "deleted"}
