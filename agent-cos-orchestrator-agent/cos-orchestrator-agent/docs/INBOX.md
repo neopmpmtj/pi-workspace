@@ -192,8 +192,13 @@ by default; refuses the current Cursor files by name).
       band `act` 0.99 on "add dentist appointment to my calendar on tuesday at 10:30"; the 25
       node tests pass. A bare "dentist on tuesday at 10:30" (no intention verb) scores
       `calendar` 0.18, below the 0.7 threshold - that is the model's call, not a fault.
-- [ ] `~/.pi/decision-nodes/reminder/reminders.jsonl` is **untracked** here although the node's
-      README calls it tracked with `merge=union`, so the one row on this host
-      (`r-20261106-c42b`) will not reach the laptop over git. Decide: add it to the workspace
-      repo with `merge=union` as the README already promises, or keep it host-local and say so
-      in that README.
+- [x] ~~`~/.pi/decision-nodes/reminder/reminders.jsonl` was untracked here.~~ Tracked
+      2026-11-06 in `~/.pi` commit `0d38b4a`, together with the three rows for
+      `r-20261106-c42b`; `.gitattributes` already carries `merge=union` for that path.
+- [ ] The classifier misses the natural "done" phrasing: "I have taken the tablet" came back
+      `reminder_done` 0.22 with `winner: none`, vetoed by `is_past_report`, so the done-route
+      never fired and `route.py --done r-20261106-c42b` had to be called by hand. The rules in
+      `~/.pi/jev-classifier/jev-classifier-multi/src/classes/reminder*.py` score a bare
+      past-tense completion too low; `is_past_report` is meant to veto a *calendar entry*, not a
+      reminder close. Re-file the message with `/jev-wrong reminder_done` and add it to the
+      golden set before tuning.
