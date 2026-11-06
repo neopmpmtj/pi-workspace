@@ -258,3 +258,19 @@ by default; refuses the current Cursor files by name).
       agent's tool) or route through `pi-keep-agent`.
 - [ ] Tasks bridge: unchecked Keep rows → `gog tasks` entries, completed → back as ticked rows.
       Needs idempotency (a row→task id map) before it can be scheduled.
+
+## VPS parity (2026-11-06)
+- [x] ~~`pi-agent.service` on the VPS is `inactive` + `disabled`, while an orphan `pi` process
+      has run for days with no tmux server behind it — that orphan owns Telegram polling, so a
+      reboot would leave the bot dead.~~ **Diagnosis was wrong** (2026-11-06): the running agent
+      belonged to `pi-cos.service` on socket `-L pi-cos`, which was enabled and active all
+      along; `pi-agent.service` is the legacy unit for the old harness-only home. Enabling it
+      (which I did) produced two pollers on one bot for ~45 s — the `pi-cos` bridge went
+      `telegram disconnected`, `pi-cos-supervisor.sh` logged "previous instance still running".
+      Undone: `pi-agent.service` stopped + disabled, its supervisor restored from backup, the
+      bot token stripped from `~/.pi/agent/.env`. `pi-cos.service` is now the single owner,
+      `telegram connected`, one pi process. Lesson written up in
+      `docs/runbooks/vps-agent-parity.md`.
+- [ ] keep-agent on the VPS has no dashboard/ledger units (`pi-keep-agent-dashboard.service`,
+      `pi-keep-agent-ledger.timer`), so its token usage is not tracked there. Install them, or
+      decide keep-agent stays laptop-only and the VPS just borrows `keep-cli`.
