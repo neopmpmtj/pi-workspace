@@ -66,17 +66,25 @@ export async function readCalendarNode(env: NodeJS.ProcessEnv = process.env): Pr
   return { print: record.print !== false, route: record.mode !== "dry" };
 }
 
-/** The reminder-node hook. Same fields and defaults as calendarNode. */
-export type ReminderNode = CalendarNode;
+/** The reminder-node hook. Same fields and defaults as calendarNode, plus the write switch. */
+export interface ReminderNode extends CalendarNode {
+  /**
+   * The deterministic writes: the row in reminders.jsonl, its calendar event, and the done
+   * op. False only when the section sets writes: false; then the node routes nothing at all
+   * - nothing is logged, nothing is written - and the hook leaves the turn to the model.
+   */
+  writes: boolean;
+}
 
 /**
  * The reminderNode section, or null when the hook stays off.
  * mode defaults to routing; "dry" prints the same trace and executes nothing.
+ * writes defaults to true; it is false only when that field is boolean false.
  */
 export async function readReminderNode(env: NodeJS.ProcessEnv = process.env): Promise<ReminderNode | null> {
   const record = await readEnabledSection("reminderNode", env);
   if (!record) return null;
-  return { print: record.print !== false, route: record.mode !== "dry" };
+  return { print: record.print !== false, route: record.mode !== "dry", writes: record.writes !== false };
 }
 
 async function readGate(name: string, env: NodeJS.ProcessEnv): Promise<InputGate | null> {

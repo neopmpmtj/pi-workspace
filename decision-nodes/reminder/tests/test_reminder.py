@@ -43,6 +43,12 @@ class Routing(unittest.TestCase):
     def test_an_abstain_fails_open(self):
         self.assertEqual(config.router({"abstained": True}), ["escalate"])
 
+    def test_the_write_switch_off_routes_nothing(self):
+        with mock.patch.object(config, "WRITES_ENABLED", False):
+            for row in (won(), won("reminder_done"), won(band="hint"), won("reminder_done", band="hint")):
+                self.assertEqual(config.router(row), [])
+            self.assertEqual(config.router({"abstained": True}), ["escalate"])
+
     def test_every_name_has_a_handler(self):
         for row in (won(), won("reminder_done"), won(band="hint"), won("reminder_done", band="hint")):
             for name in config.router(row):
@@ -165,6 +171,13 @@ class Store(StoreBase):
 
 
 class Done(StoreBase):
+    def test_the_switch_off_closes_nothing(self):
+        self.add("r-1", "Buy milk", NOW + timedelta(days=1))
+        with mock.patch.object(config, "WRITES_ENABLED", False):
+            result = config.do_reminder_done({"utterance": "I bought the milk"})
+        self.assertEqual(result["status"], "skipped")
+        self.assertEqual(len(store.listing()), 1)
+
     def test_no_pending_reminders_is_no_match(self):
         result = config.do_reminder_done({"utterance": "I bought the milk"})
         self.assertEqual(result["status"], "no-match")
@@ -187,6 +200,17 @@ class Done(StoreBase):
 
 
 class Calendar(StoreBase):
+    def test_the_switch_off_writes_no_event(self):
+        start = datetime.now(ZONE) + timedelta(days=1)
+        row = {"utterance": "remind me to buy milk",
+               "logged": {"id": "r-1", "title": "Buy milk", "start": start, "confidence": 0.9}}
+        with mock.patch.object(config, "WRITES_ENABLED", False), \
+                mock.patch.object(config.calendar_config, "create_event") as create:
+            result = config.do_reminder_calendar(row)
+        create.assert_not_called()
+        self.assertEqual(result["status"], "skipped")
+        self.assertIn("no event written", result["note"])
+
     def test_the_event_is_written_and_recorded(self):
         start = datetime.now(ZONE) + timedelta(days=1)
         row = {"utterance": "remind me to buy milk",

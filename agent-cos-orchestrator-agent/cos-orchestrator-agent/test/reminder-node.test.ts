@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
@@ -16,6 +16,19 @@ import {
   runReminderCommand,
   runReminderNode,
 } from "../src/reminder-node.ts";
+import { readReminderNode } from "../src/global-config.ts";
+
+async function withGroupedRoot<T>(run: (env: NodeJS.ProcessEnv, configFile: string) => Promise<T>): Promise<T> {
+  const root = await mkdtemp(path.join(tmpdir(), "reminder-config-"));
+  const grouped = path.join(root, "pi-agents-experts-grouped");
+  const agent = path.join(grouped, "cos-orchestrator-agent", "cos-orchestrator-agent");
+  try {
+    await mkdir(agent, { recursive: true });
+    return await run({ PI_CODING_AGENT_DIR: agent }, path.join(grouped, "config.json"));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
 
 const WINNER = { class: "reminder", band: "act", confidence: 0.97, vetoed_by: [], capped_by: [] };
 
@@ -136,6 +149,20 @@ describe("unsure verdicts", () => {
   });
 });
 
+describe("write switch config", () => {
+  it("defaults to writing and only turns off on boolean false", async () => {
+    await withGroupedRoot(async (env, configFile) => {
+      assert.equal(await readReminderNode(env), null);
+      await writeFile(configFile, JSON.stringify({ reminderNode: { enabled: true } }), "utf8");
+      assert.deepEqual(await readReminderNode(env), { print: true, route: true, writes: true });
+      await writeFile(configFile, JSON.stringify({ reminderNode: { enabled: true, writes: false, mode: "dry" } }), "utf8");
+      assert.deepEqual(await readReminderNode(env), { print: true, route: false, writes: false });
+      await writeFile(configFile, JSON.stringify({ reminderNode: { enabled: true, writes: "false" } }), "utf8");
+      assert.equal((await readReminderNode(env))?.writes, true);
+    });
+  });
+});
+
 describe("table", () => {
   it("formats due times in Lisbon", () => {
     assert.equal(formatDue("2026-07-06T05:00:00Z"), "Mon 06 Jul 06:00");
@@ -174,6 +201,16 @@ describe("running the node", () => {
     const junk = path.join(dir, "junk.py");
     await writeFile(junk, `print("hello")\n`, "utf8");
     assert.match((await runReminderNode("x", { script: junk })).reason ?? "", /unreadable/);
+  });
+
+  it("passes the write switch to the node", async () => {
+    const script = path.join(dir, "gate.py");
+    const seen = path.join(dir, "gate-argv");
+    await writeFile(script, `import sys\nopen(${JSON.stringify(seen)}, "w").write(" ".join(sys.argv[1:]))\nprint(${JSON.stringify(LOGGED)})\n`, "utf8");
+    await runReminderNode("Remind me to buy milk", { script, writes: false });
+    assert.match(await readFile(seen, "utf8"), /--no-writes/);
+    await runReminderNode("Remind me to buy milk", { script, writes: true });
+    assert.doesNotMatch(await readFile(seen, "utf8"), /--no-writes/);
   });
 
   it("runs a table command and returns its JSON", async () => {

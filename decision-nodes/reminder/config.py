@@ -12,6 +12,10 @@ when that winner is `reminder` or `reminder_done`.
                          the reminder in the table.
   do:reminder:calendar   `gog calendar create primary`, 15 minutes, "Reminder: <title>".
                          No free/busy check: 06:00 is chosen because it is free.
+
+Both writes, and the done op, sit behind one switch, WRITES_ENABLED. With it off the node
+routes nothing at all: reminders.jsonl gains no line, no event is written, nothing is
+closed. JEV still classifies, and the harness leaves the turn to the model.
   do:reminder:done       one cheap model call picks which pending reminder the message
                          closes. Nothing changes unless it names a pending id with
                          confidence >= DONE_MIN_CONFIDENCE. A future event is deleted.
@@ -45,6 +49,12 @@ EXTRACT_MIN_CONFIDENCE = 0.5
 DONE_MIN_CONFIDENCE = 0.7
 GOG_DRY_RUN = False          # True runs `gog --dry-run` for create and delete
 
+# The deterministic path - the row in reminders.jsonl, the calendar event, the done op - has
+# one switch. REMINDER_WRITES=0 (or `route.py --no-writes`, which the harness passes when
+# ~/.pi/config.json has reminderNode.writes false) routes nothing at all: nothing is logged,
+# no event is written, nothing is closed. JEV still classifies; the turn goes to the model.
+WRITES_ENABLED = os.environ.get("REMINDER_WRITES", "1").strip().lower() not in ("0", "false", "off", "no")
+
 _CALENDAR_CONFIG = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                 "calendar", "config.py")
 _spec = importlib.util.spec_from_file_location("calendar_config", _CALENDAR_CONFIG)
@@ -60,9 +70,16 @@ def _local_now() -> datetime:
 
 
 def router(row: dict) -> list:
-    """Map the arbiter's winner to destination names. Deterministic."""
+    """Map the arbiter's winner to destination names. Deterministic.
+
+    WRITES_ENABLED false routes nothing, not even the hints: the row, the event and the done
+    op are all off, so reminders.jsonl gains no new line. The verdict is still recorded in
+    verdicts.jsonl, so what JEV decided stays visible.
+    """
     if row.get("abstained"):
         return ["escalate"]
+    if not WRITES_ENABLED:
+        return []
     winner = row.get("winner") or {}
     kind, band = winner.get("class"), winner.get("band")
     if kind == "reminder_done":
@@ -84,6 +101,9 @@ def _hint(name: str, what: str):
 
 
 def do_reminder_log(row: dict) -> dict:
+    if not WRITES_ENABLED:
+        return {"destination": "do:reminder:log", "status": "skipped",
+                "note": "writes off (reminderNode.writes false) - nothing logged"}
     now = _local_now()
     reminder, why = extract_reminder(row.get("utterance", ""), now)
     if reminder is None:
@@ -105,6 +125,9 @@ def do_reminder_log(row: dict) -> dict:
 
 
 def do_reminder_calendar(row: dict) -> dict:
+    if not WRITES_ENABLED:
+        return {"destination": "do:reminder:calendar", "status": "skipped",
+                "note": "writes off (reminderNode.writes false) - no event written"}
     reminder = row.get("logged")
     if not isinstance(reminder, dict):
         return {"destination": "do:reminder:calendar", "status": "skipped",
@@ -126,6 +149,9 @@ def do_reminder_calendar(row: dict) -> dict:
 
 
 def do_reminder_done(row: dict) -> dict:
+    if not WRITES_ENABLED:
+        return {"destination": "do:reminder:done", "status": "skipped",
+                "note": "writes off (reminderNode.writes false) - nothing closed"}
     open_rows = store.pending()
     if not open_rows:
         return {"destination": "do:reminder:done", "status": "no-match", "note": "no pending reminders"}

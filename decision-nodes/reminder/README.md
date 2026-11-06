@@ -35,6 +35,24 @@ The event lasts 15 minutes; no freebusy check. A "done" needs a match of at leas
 0.7, otherwise `no-match` with the pending list. The extractor's `kind` is a second opinion:
 `calendar_request` or `other` downgrades the write to a hint.
 
+## The two switches
+
+`~/.pi/config.json` holds `reminderNode`:
+
+| Field | Default | Effect |
+|---|---|---|
+| `enabled` | — | the hook runs at all |
+| `mode` | `"route"` | `"dry"` classifies and routes, runs nothing |
+| `print` | true | screen trace |
+| `writes` | true | the row in `reminders.jsonl`, its calendar event, the done op |
+
+`writes: false` gates the deterministic path whole, not just the event: the node routes
+nothing, so `reminders.jsonl` gains no line, no event is written and nothing is closed. JEV
+still classifies and the verdict still lands in `verdicts.jsonl`; the harness then finishes
+no turn, and the message reaches the model as an ordinary turn with no hidden block. Same
+switch from a shell: `REMINDER_WRITES=0`, or `route.py --no-writes`. The `--list`, `--done`
+and `--undo` subcommands are not gated: those are explicit commands, not JEV triggers.
+
 ## The table
 
 `reminders.jsonl` is append-only. Each line is one op: `add`, `event` (the calendar id),

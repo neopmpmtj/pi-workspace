@@ -46,7 +46,7 @@ describe("runCalendarUndo", () => {
 });
 
 describe("readReminderNode", () => {
-  it("is off unless enabled, routes unless mode is dry", async () => {
+  it("is off unless enabled, routes unless mode is dry, and writes unless writes is false", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "cos-orchestrator-agent-"));
     const { mkdir } = await import("node:fs/promises");
     const agent = path.join(root, "grouped", "cos-orchestrator-agent", "cos-orchestrator-agent");
@@ -55,9 +55,9 @@ describe("readReminderNode", () => {
     const file = path.join(root, "grouped", "config.json");
     assert.equal(await readReminderNode(env), null);
     await writeFile(file, JSON.stringify({ reminderNode: { enabled: true } }), "utf8");
-    assert.deepEqual(await readReminderNode(env), { print: true, route: true });
+    assert.deepEqual(await readReminderNode(env), { print: true, route: true, writes: true });
     await writeFile(file, JSON.stringify({ reminderNode: { enabled: true, print: false, mode: "dry" } }), "utf8");
-    assert.deepEqual(await readReminderNode(env), { print: false, route: false });
+    assert.deepEqual(await readReminderNode(env), { print: false, route: false, writes: true });
     await rm(root, { recursive: true, force: true });
   });
 });

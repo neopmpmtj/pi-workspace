@@ -24,6 +24,7 @@
   "reminderNode": {
     "enabled": true,
     "print": true,
-    "mode": "route"
+    "mode": "route",
+    "writes": true
   }
 }

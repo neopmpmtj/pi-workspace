@@ -11,10 +11,15 @@
 // Band hint, an extractor disagreement, or a done message that matched no pending
 // reminder: nothing is written, the turn runs, and the model gets a hidden hint.
 //
+// The writes have their own switch, reminderNode.writes (default true). With it false the
+// node routes nothing at all - no row in reminders.jsonl, no calendar event, no done op - and
+// the hook finishes no turn: no delivery, no hidden block, the message reaches the model as
+// an ordinary turn. JEV still classifies, which is where the next destination hooks in.
+//
 // Reminders never touch docs/INBOX.md. Off unless ~/.pi/config.json has reminderNode.enabled true.
 import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { readReminderNode } from "../../src/global-config.ts";
+import { type ReminderNode, readReminderNode } from "../../src/global-config.ts";
 import { claimAnnouncement, classifyPrompt, winnerLine } from "../../src/jev-classify.ts";
 import {
   isReminderUnsure,
@@ -35,11 +40,11 @@ function show(ctx: ExtensionContext, answer: string): void {
   else writeSync(1, `${answer}\n`);
 }
 
-async function judge(text: string, ctx: ExtensionContext, print: boolean, route: boolean): Promise<ReminderVerdict | null> {
+async function judge(text: string, ctx: ExtensionContext, setting: ReminderNode): Promise<ReminderVerdict | null> {
   const jev = await classifyPrompt(text);
-  if (print && claimAnnouncement(text)) show(ctx, winnerLine(jev));
+  if (setting.print && claimAnnouncement(text)) show(ctx, winnerLine(jev));
   if (!jev.ok || !jev.winner || !CLASSES.has(jev.winner.class) || jev.winner.band === "none") return null;
-  return runReminderNode(text, { dryRun: !route, classifierJson: jev.file });
+  return runReminderNode(text, { dryRun: !setting.route, writes: setting.writes, classifierJson: jev.file });
 }
 
 export default function registerReminderNode(pi: ExtensionAPI): void {
@@ -54,12 +59,15 @@ export default function registerReminderNode(pi: ExtensionAPI): void {
     const setting = await readReminderNode();
     if (!setting) return { action: "continue" };
 
-    const verdict = await judge(text, ctx, setting.print, setting.route);
+    const verdict = await judge(text, ctx, setting);
     last = { text, verdict, shown: false };
     if (!verdict) return { action: "continue" };
 
-    const executed = setting.route && verdict.ok && !verdict.abstained && !isReminderUnsure(verdict) &&
+    const wrote = setting.route && verdict.ok && !verdict.abstained && !isReminderUnsure(verdict) &&
       verdict.routes.some((r) => r.destination.startsWith("do:reminder:"));
+    // Only a turn whose writes actually ran is finished here. With the write switch off the
+    // node routes nothing and the model answers the message.
+    const executed = wrote && setting.writes;
 
     if (TELEGRAM.test(text)) {
       if (!executed) return { action: "continue" };
@@ -91,7 +99,7 @@ export default function registerReminderNode(pi: ExtensionAPI): void {
     }
 
     const cached = last && last.text === text ? last : null;
-    const verdict = cached ? cached.verdict : await judge(text, ctx, setting.print, setting.route);
+    const verdict = cached ? cached.verdict : await judge(text, ctx, setting);
     last = null;
     if (!verdict) return;
 
@@ -101,7 +109,7 @@ export default function registerReminderNode(pi: ExtensionAPI): void {
     if (isReminderUnsure(verdict)) {
       return { message: { customType: "reminder-node", content: reminderHintBlock(verdict), display: false } };
     }
-    if (!setting.route) return;
+    if (!setting.route || !setting.writes) return;
     return { message: { customType: "reminder-node", content: reminderContextBlock(verdict), display: false } };
   });
 }

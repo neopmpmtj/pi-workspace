@@ -21,6 +21,7 @@ Usage
   route.py --text "..." --dry-run                            stop after routing
   route.py --text "..." --json                               one JSON object
   route.py --text "..." --classifier-json payload.json       reuse one classification
+  route.py --text "..." --no-writes                          route nothing, write nothing
   route.py --list [--all] [--json]                           the reminders table
   route.py --done r-20261105-ab12 [--json]                   mark one done
   route.py --undo [--json]                                   withdraw the newest pending one
@@ -213,11 +214,16 @@ def main() -> int:
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--no-log", action="store_true")
     ap.add_argument("--classifier-json", default=None)
+    ap.add_argument("--no-writes", action="store_true",
+                    help="route and write nothing: no log row, no event (same as REMINDER_WRITES=0)")
     ap.add_argument("--list", action="store_true", help="print the reminders table")
     ap.add_argument("--all", action="store_true", help="with --list: include done and undone")
     ap.add_argument("--done", default=None, metavar="ID", help="mark one reminder done")
     ap.add_argument("--undo", action="store_true", help="withdraw the newest pending reminder")
     args = ap.parse_args()
+
+    if args.no_writes:
+        config.WRITES_ENABLED = False
 
     if args.list:
         emit(store.listing(args.all), args.json, print_table)

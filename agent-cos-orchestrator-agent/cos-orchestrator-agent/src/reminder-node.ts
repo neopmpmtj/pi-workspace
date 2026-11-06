@@ -113,6 +113,8 @@ export function parseReminderOutput(stdout: string): ReminderVerdict {
 
 export interface ReminderRunOptions {
   dryRun?: boolean;
+  /** False passes --no-writes: the node routes nothing, so nothing is logged or written. */
+  writes?: boolean;
   classifierJson?: string;
   timeoutMs?: number;
   env?: NodeJS.ProcessEnv;
@@ -152,6 +154,7 @@ function runScript(args: string[], options: ReminderRunOptions): Promise<{ code:
 export async function runReminderNode(text: string, options: ReminderRunOptions = {}): Promise<ReminderVerdict> {
   const args = ["--text", text, "--json"];
   if (options.dryRun) args.push("--dry-run");
+  if (options.writes === false) args.push("--no-writes");
   if (options.classifierJson) args.push("--classifier-json", options.classifierJson);
   const run = await runScript(args, options);
   if (run.failure) return noReminderVerdict(run.failure);

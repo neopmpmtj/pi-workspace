@@ -202,3 +202,19 @@ by default; refuses the current Cursor files by name).
       past-tense completion too low; `is_past_report` is meant to veto a *calendar entry*, not a
       reminder close. Re-file the message with `/jev-wrong reminder_done` and add it to the
       golden set before tuning.
+
+## Reminder destinations: calendar, Keep, fallback (2026-11-06)
+- [x] ~~`reminderNode.calendar: false` gated only the calendar event, so the row was still
+      logged.~~ Corrected the same day: the switch is `reminderNode.writes`, and with it
+      `false` the node routes nothing at all — no row in `reminders.jsonl`, no event, no done
+      op. JEV still classifies and the verdict still lands in `verdicts.jsonl`.
+- [ ] The reminder path should have three destinations, in this order: (1) the calendar event,
+      today's custom path, behind `reminderNode.writes`; (2) a Google Keep note, the new
+      option; (3) the fallback, an ordinary model turn with nothing written. Config chooses
+      one, the other, or both in sequence. Blocker found 2026-11-06: the Keep API is Workspace
+      only — `gog keep` (v0.34.0: list, get, search, create --title/--text/--item, delete,
+      attachment) is listed by `gog auth add` under "Workspace service-account-only services"
+      and this host's only account is the personal `neopmpmtj@gmail.com`. Needs a Workspace
+      domain + service account with domain-wide delegation and the Keep scope, or the
+      unofficial `gkeepapi` route (not installed, token-based, breaks on client changes).
+      Home: `extensions/reminder-node/index.ts`, `~/.pi/decision-nodes/reminder/config.py`.

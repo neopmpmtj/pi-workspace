@@ -58,6 +58,10 @@ milk", "já paguei a luz" mark the matching pending reminder done.
 - It behaves like calendar routing: the hook answers the message itself and the turn is
   swallowed. On a failed Telegram delivery a hidden `reminder-node` block arrives: relay it,
   do not log the reminder again or create its event by hand.
+- The writes are gated by `reminderNode.writes` in `~/.pi/config.json` (default `true`).
+  With it `false` the node routes nothing at all: no row in `reminders.jsonl`, no calendar
+  event, no done op. JEV still classifies, and the hook finishes no turn — the message
+  reaches the model as an ordinary turn, with no hidden block and nothing to relay.
 - A `reminder-node` hint (unsure, or a "done" with no clear match) means nothing was written.
   Ask the user, then point to `/reminder-done <id>` or let them restate it.
 - Reminders are not inbox items: never add them to `docs/INBOX.md`.
