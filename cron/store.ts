@@ -1,12 +1,14 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { CronJob, CronStoreFile, CronRunEntry } from "./types.ts";
 
-const CRON_DIR = path.join(
-  process.env.PI_CODING_AGENT_DIR || path.join(process.env.HOME || "/tmp", ".pi/agent"),
-  "..", // go up from agent to .pi
-  "cron"
-);
+// The store lives beside this engine, wherever the engine sits. Deriving it from the
+// module's own location (instead of hoping PI_CODING_AGENT_DIR is exactly one level
+// below ~/.pi) keeps jobs and run history stable when the agent home moves: with the
+// 2026-11-06 rename the home gained a level, `join(agentDir, "..", "cron")` silently
+// became ~/.pi/agent/cron, and the two real jobs in ~/.pi/cron stopped being read.
+const CRON_DIR = path.dirname(fileURLToPath(import.meta.url));
 const STORE_PATH = path.join(CRON_DIR, "jobs.json");
 const RUNS_DIR = path.join(CRON_DIR, "runs");
 
