@@ -1,0 +1,14 @@
+{
+  "inputPhrase": {
+    "enabled": true,
+    "append1": "Congratulate me for my 31st birthday",
+    "normal": {
+      "enabled": false,
+      "phrase": "respond in a single sentence"
+    },
+    "advanced": {
+      "enabled": true,
+      "phrase": ""
+    }
+  }
+}

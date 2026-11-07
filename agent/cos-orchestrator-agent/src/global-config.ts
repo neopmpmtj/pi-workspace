@@ -1,10 +1,16 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { repoRoot } from "../ledger/env.ts";
+import { inputPhraseFromSection, type InputPhrase } from "./input-phrase.ts";
 
 /** Grouped-repo config, one level above the orchestrator submodule. */
 export function globalConfigPath(env: NodeJS.ProcessEnv = process.env): string {
   return path.resolve(repoRoot(env), "..", "config.json");
+}
+
+/** Agent mode phrases, beside config.json. */
+export function agentModesConfigPath(env: NodeJS.ProcessEnv = process.env): string {
+  return path.resolve(repoRoot(env), "..", "agent-modes-config.json");
 }
 
 /** A configured word limit. Present only when the section is allowed to run. */
@@ -87,6 +93,17 @@ export async function readReminderNode(env: NodeJS.ProcessEnv = process.env): Pr
   return { print: record.print !== false, route: record.mode !== "dry", writes: record.writes !== false };
 }
 
+/**
+ * The inputPhrase section in agent-modes-config.json, or null when the hook stays off.
+ * Null when that file, the section, or enabled: true is missing or unreadable.
+ * An enabled section still returns a conflict when the number of on options is not exactly one.
+ */
+export async function readInputPhrase(env: NodeJS.ProcessEnv = process.env): Promise<InputPhrase | null> {
+  const record = await readEnabledSection("inputPhrase", env, agentModesConfigPath(env));
+  if (!record) return null;
+  return inputPhraseFromSection(record);
+}
+
 async function readGate(name: string, env: NodeJS.ProcessEnv): Promise<InputGate | null> {
   const record = await readEnabledSection(name, env);
   if (!record) return null;
@@ -94,10 +111,10 @@ async function readGate(name: string, env: NodeJS.ProcessEnv): Promise<InputGate
 }
 
 /** Null when the file, the section, or enabled: true is missing or unreadable. */
-async function readEnabledSection(name: string, env: NodeJS.ProcessEnv): Promise<Record<string, unknown> | null> {
+async function readEnabledSection(name: string, env: NodeJS.ProcessEnv, file = globalConfigPath(env)): Promise<Record<string, unknown> | null> {
   let text: string;
   try {
-    text = await readFile(globalConfigPath(env), "utf8");
+    text = await readFile(file, "utf8");
   } catch {
     return null;
   }
