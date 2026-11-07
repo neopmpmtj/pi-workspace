@@ -59,6 +59,15 @@ pi-config set agent.cos.thinking high
 file replacement are the web page's own code. Runbooks:
 `docs/runbooks/pi-config-terminal-toggles.md`, `docs/runbooks/mode-switch.md`.
 
+## Extensions
+
+Pi auto-discovers every `extensions/*.ts` and `extensions/*/index.ts`. Default is **on**.
+The `+path` lines in `settings.json` document what we intend to load; leaving a file out of
+that array does **not** disable it. Exhibit: `extensions/git-commit.ts` is unlisted and still
+provides `/commit`. Disable with `-extensions/git-commit.ts`, or rename the file so it is
+not `.ts` (see `pi-prompt-capture.ts.disabled`). `.pi/extensions/` also loads when cwd is
+`~/.pi`. The array order is not load order (see Design rules).
+
 ## Sibling agents
 
 | | |
@@ -259,3 +268,4 @@ Full transcripts stay in `sessions/`.
    assume it runs before another one: put the bypass in the code they all share, the way
    `src/mode-switch.ts` does it inside `classifyPrompt`, and mark replacements (`src/mode-ack.ts`)
    instead of relying on position. `settings.json` order documents intent, nothing more.
+   Omitting a path from the array also does not disable it; default is on, disable with `-path`.
