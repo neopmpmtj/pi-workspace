@@ -141,3 +141,4 @@ decision-nodes/**/logs/
 decision-nodes/**/__pycache__/
 # Message text kept 14 days for reviewing misclassifications (src/jev-classify.ts)
 decision-nodes/review.jsonl
+keep-agent-copy/**
