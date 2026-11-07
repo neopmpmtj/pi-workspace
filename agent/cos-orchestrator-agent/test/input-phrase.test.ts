@@ -18,17 +18,27 @@ async function withGroupedRoot<T>(run: (env: NodeJS.ProcessEnv, configFile: stri
   }
 }
 
-function section(options: { normal?: boolean | string; advanced?: boolean | string; append1?: unknown; normalPhrase?: unknown; advancedPhrase?: unknown }): Record<string, unknown> {
+function section(options: {
+  normal?: boolean | string;
+  advanced?: boolean | string;
+  append1?: unknown;
+  normalPhrase?: unknown;
+  advancedPhrase?: unknown;
+  normalAllowBlank?: boolean | string;
+  advancedAllowBlank?: boolean | string;
+}): Record<string, unknown> {
   return {
     inputPhrase: {
       enabled: true,
       append1: options.append1 === undefined ? "Congratulate me for my 31st birthday" : options.append1,
       normal: {
         enabled: options.normal ?? false,
+        ...(options.normalAllowBlank === undefined ? {} : { allowBlank: options.normalAllowBlank }),
         phrase: options.normalPhrase === undefined ? "respond in a single sentence" : options.normalPhrase,
       },
       advanced: {
         enabled: options.advanced ?? false,
+        ...(options.advancedAllowBlank === undefined ? {} : { allowBlank: options.advancedAllowBlank }),
         phrase: options.advancedPhrase === undefined ? "respond with a brief explanation" : options.advancedPhrase,
       },
     },
@@ -48,8 +58,9 @@ describe("append input phrase", () => {
     assert.equal(appendInputPhrase("hello", ["keep\nboth"]), "hello\nkeep\nboth");
   });
 
-  it("leaves the text unchanged when every phrase is blank", () => {
-    assert.equal(appendInputPhrase("hello", ["  ", ""]), "hello");
+  it("keeps a blank line that was included", () => {
+    assert.equal(appendInputPhrase("hello", []), "hello");
+    assert.equal(appendInputPhrase("hello", ["", ""]), "hello\n\n");
   });
 
   it("skips extension prompts and slash commands", () => {
@@ -124,14 +135,29 @@ describe("inputPhrase config", () => {
     });
   });
 
-  it("skips a blank append1 or a blank selected phrase", () => {
+  it("appends append1 whenever it is a string, including a blank one", () => {
     assert.deepEqual(
       inputPhraseFromSection(section({ normal: true, append1: "  ", normalPhrase: "  respond  " }).inputPhrase as Record<string, unknown>),
-      { lines: ["respond"], conflict: null },
+      { lines: ["", "respond"], conflict: null },
     );
+    assert.deepEqual(
+      inputPhraseFromSection(section({ advanced: true, append1: "" }).inputPhrase as Record<string, unknown>),
+      { lines: ["", "respond with a brief explanation"], conflict: null },
+    );
+  });
+
+  it("skips a blank option phrase unless that option sets allowBlank true", () => {
     assert.deepEqual(
       inputPhraseFromSection(section({ advanced: true, append1: 1, advancedPhrase: "" }).inputPhrase as Record<string, unknown>),
       { lines: [], conflict: null },
+    );
+    assert.deepEqual(
+      inputPhraseFromSection(section({ advanced: true, append1: "hi", advancedPhrase: "  ", advancedAllowBlank: true }).inputPhrase as Record<string, unknown>),
+      { lines: ["hi", ""], conflict: null },
+    );
+    assert.deepEqual(
+      inputPhraseFromSection(section({ normal: true, append1: "hi", normalPhrase: "", normalAllowBlank: "true" }).inputPhrase as Record<string, unknown>),
+      { lines: ["hi"], conflict: null },
     );
   });
 });

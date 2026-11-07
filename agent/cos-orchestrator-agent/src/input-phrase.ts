@@ -8,7 +8,7 @@ export type InputPhraseOption = (typeof inputPhraseOptions)[number];
 
 /** What an enabled inputPhrase section contributes to the next user message. */
 export interface InputPhrase {
-  /** append1, then the one enabled option's phrase. Empty when both strings are blank. */
+  /** append1, then the one enabled option's phrase. A "" entry is a blank line that is still appended. */
   lines: string[];
   /** Set when the section is on and the number of enabled options is not one. */
   conflict: string | null;
@@ -21,10 +21,10 @@ export function inputPhraseApplies(text: string, source: string): boolean {
   return true;
 }
 
-/** User text with each phrase on its own following line. Blank lines are left out. */
+/** User text with each phrase on its own following line. A blank entry stays a blank line. */
 export function appendInputPhrase(text: string, lines: readonly string[]): string {
-  const body = lines.map((line) => line.trim()).filter((line) => line.length > 0);
-  if (body.length === 0) return text;
+  if (lines.length === 0) return text;
+  const body = lines.map((line) => line.trim());
   const base = text.replace(/\s+$/, "");
   if (!base) return body.join("\n");
   return `${base}\n${body.join("\n")}`;
@@ -34,15 +34,16 @@ export function appendInputPhrase(text: string, lines: readonly string[]): strin
  * Lines to append, or a conflict, for a section that is already enabled.
  * Zero enabled options and more than one enabled option are both conflicts.
  * Only boolean true counts as enabled.
+ * append1 is appended whenever it is a string, including "".
+ * An option phrase that trims to "" is appended only when that option's allowBlank is boolean true.
  */
 export function inputPhraseFromSection(record: Record<string, unknown>): InputPhrase {
   const enabled = inputPhraseOptions.filter((name) => optionEnabled(record[name]));
   if (enabled.length !== 1) return { lines: [], conflict: inputPhraseConflict(enabled) };
   const lines: string[] = [];
-  const append = phraseText(record.append1);
-  if (append) lines.push(append);
+  if (typeof record.append1 === "string") lines.push(record.append1.trim());
   const phrase = optionPhrase(record[enabled[0]]);
-  if (phrase) lines.push(phrase);
+  if (phrase !== null) lines.push(phrase);
   return { lines, conflict: null };
 }
 
@@ -58,11 +59,9 @@ function optionEnabled(entry: unknown): boolean {
 
 function optionPhrase(entry: unknown): string | null {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
-  return phraseText((entry as Record<string, unknown>).phrase);
-}
-
-function phraseText(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
+  const record = entry as Record<string, unknown>;
+  if (typeof record.phrase !== "string") return null;
+  const trimmed = record.phrase.trim();
+  if (trimmed.length === 0 && record.allowBlank !== true) return null;
+  return trimmed;
 }

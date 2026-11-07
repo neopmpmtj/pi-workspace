@@ -4,10 +4,12 @@
     "append1": "Congratulate me for my 31st birthday",
     "normal": {
       "enabled": false,
+      "allowBlank": true,
       "phrase": "respond in a single sentence"
     },
     "advanced": {
       "enabled": true,
+      "allowBlank": true,
       "phrase": ""
     }
   }
