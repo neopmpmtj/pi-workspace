@@ -255,6 +255,33 @@ describe("a file that cannot be read is skipped, never fatal", () => {
 
 });
 
+describe("modeSwitch.answer", () => {
+  it("writes hook or model and rejects any other string, leaving the file", async () => {
+    const root = await fixture();
+    try {
+      const file = path.join(root, "config.json");
+      const config = JSON.parse(await readFile(file, "utf8")) as Record<string, unknown>;
+      config.modeSwitch = { enabled: true, print: true, answer: "model" };
+      await writeFile(file, `${JSON.stringify(config, null, 2)}\n`);
+      const before = await readFile(file, "utf8");
+
+      await assert.rejects(
+        () => writeGate("modeSwitch", { fields: { answer: "shout" } }, root),
+        (error: unknown) => error instanceof SettingsError && /answer must be hook or model/.test(error.message),
+      );
+      assert.equal(await readFile(file, "utf8"), before);
+
+      const written = await writeGate("modeSwitch", { fields: { answer: "hook" } }, root);
+      const answer = written.fields.find((field) => field.key === "answer");
+      assert.equal(answer?.type, "answer");
+      assert.equal(answer?.value, "hook");
+      assert.equal(JSON.parse(await readFile(file, "utf8")).modeSwitch.answer, "hook");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("the write path", () => {
   it("leaves the directory clean and the file whole after a write", async () => {
     const root = await fixture();
