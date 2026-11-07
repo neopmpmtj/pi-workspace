@@ -4,6 +4,7 @@
 import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { readLessThanInputWords } from "../../src/global-config.ts";
+import { isModeAck } from "../../src/mode-ack.ts";
 import { lessThanInputWords, lessThanInputWordsLines } from "../../src/less-than-input-words.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
@@ -14,6 +15,7 @@ function show(ctx: ExtensionContext, answer: string): void {
 export default function registerLessThanInputWords(pi: ExtensionAPI): void {
   pi.on("input", async (event, ctx) => {
     if (event.source === "extension") return { action: "continue" };
+    if (isModeAck(event.text)) return { action: "continue" };
     const setting = await readLessThanInputWords();
     if (setting?.print) show(ctx, lessThanInputWords(event.text, setting.words) ? "true" : "false");
     return { action: "continue" };
@@ -21,6 +23,7 @@ export default function registerLessThanInputWords(pi: ExtensionAPI): void {
 
   pi.on("before_agent_start", async (event) => {
     if (event.messageType !== "user") return;
+    if (isModeAck(event.prompt)) return;
     const setting = await readLessThanInputWords();
     if (!setting) return;
     return {

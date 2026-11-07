@@ -1,4 +1,9 @@
 {
+  "modeSwitch": {
+    "enabled": true,
+    "print": true,
+    "answer": "model"
+  },
   "lessThanInputWords": {
     "enabled": true,
     "words": 6,

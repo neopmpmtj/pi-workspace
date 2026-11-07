@@ -99,6 +99,24 @@ export async function readReminderNode(env: NodeJS.ProcessEnv = process.env): Pr
   return { print: record.print !== false, route: record.mode !== "dry", writes: record.writes !== false };
 }
 
+/** The mode-switch hook: the deterministic layer above the JEV classifier. */
+export interface ModeSwitch {
+  /** Screen trace, missing or non-boolean values stay true. */
+  print: boolean;
+  /** "hook" answers with the CLI's own one line and no model turn; anything else uses the model. */
+  answer: "model" | "hook";
+}
+
+/**
+ * The modeSwitch section, or null when the hook stays off.
+ * answer is "hook" only when the field says exactly that; every other value stays "model".
+ */
+export async function readModeSwitch(env: NodeJS.ProcessEnv = process.env): Promise<ModeSwitch | null> {
+  const record = await readEnabledSection("modeSwitch", env);
+  if (!record) return null;
+  return { print: record.print !== false, answer: record.answer === "hook" ? "hook" : "model" };
+}
+
 /**
  * The inputPhrase section in agent-modes-config.json, or null when the hook stays off.
  * Null when that file, the section, or enabled: true is missing or unreadable.

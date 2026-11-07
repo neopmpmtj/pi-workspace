@@ -30,6 +30,21 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 - Say when you do not know, or when the answer depends on something you cannot see.
 - Do not claim to have done something you did not do.
 
+## Mode routing
+
+A hook above the JEV classifier, off unless `modeSwitch.enabled` is true in `~/.pi/config.json`.
+While it is on, the classifier itself refuses mode requests, so no extension load order matters.
+
+- "what mode are you on", "change your mode to normal": answered by the control plane's CLI,
+  not by JEV and not by a decision node — `pi-config get inputPhrase --json` for a status,
+  `pi-config use inputPhrase.<mode>` then the same read for a change. The message then arrives
+  as an acknowledgement that already carries the result: reply in one short line, run nothing.
+  With `answer: hook` the CLI's own line is printed and no model runs at all.
+- A failed CLI arrives as a failure carrying its `[FAIL]` text. Never say the mode changed
+  unless the CLI exited 0 and the read-back agreed.
+- `pi-config get modeSwitch` · `pi-config set modeSwitch.enabled off` · runbook
+  `docs/runbooks/mode-switch.md`.
+
 ## Calendar routing
 
 A hook in this home classifies every message before the turn and, on a match, runs the

@@ -4,6 +4,7 @@
 import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { readInputPhrase } from "../../src/global-config.ts";
+import { isModeAck } from "../../src/mode-ack.ts";
 import { appendInputPhrase, inputPhraseApplies } from "../../src/input-phrase.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
@@ -14,6 +15,7 @@ function show(ctx: ExtensionContext, answer: string): void {
 export default function registerInputPhrase(pi: ExtensionAPI): void {
   pi.on("input", async (event, ctx) => {
     if (!inputPhraseApplies(event.text, event.source)) return { action: "continue" };
+    if (isModeAck(event.text)) return { action: "continue" };
     const setting = await readInputPhrase();
     if (!setting) return { action: "continue" };
     if (setting.conflict) {

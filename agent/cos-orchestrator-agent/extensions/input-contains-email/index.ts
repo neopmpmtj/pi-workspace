@@ -3,6 +3,7 @@
 import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { readInputContainsEmail } from "../../src/global-config.ts";
+import { isModeAck } from "../../src/mode-ack.ts";
 import { inputContainsEmail, inputContainsEmailLines } from "../../src/input-contains-email.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
@@ -13,6 +14,7 @@ function show(ctx: ExtensionContext, answer: string): void {
 export default function registerInputContainsEmail(pi: ExtensionAPI): void {
   pi.on("input", async (event, ctx) => {
     if (event.source === "extension") return { action: "continue" };
+    if (isModeAck(event.text)) return { action: "continue" };
     const setting = await readInputContainsEmail();
     if (setting?.print) show(ctx, inputContainsEmail(event.text).length > 0 ? "true" : "false");
     return { action: "continue" };
@@ -20,6 +22,7 @@ export default function registerInputContainsEmail(pi: ExtensionAPI): void {
 
   pi.on("before_agent_start", async (event) => {
     if (event.messageType !== "user") return;
+    if (isModeAck(event.prompt)) return;
     const setting = await readInputContainsEmail();
     if (!setting) return;
     return {

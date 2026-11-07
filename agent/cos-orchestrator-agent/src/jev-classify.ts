@@ -14,6 +14,10 @@ import path from "node:path";
 import { inputContainsEmail } from "./input-contains-email.ts";
 import { inputContainsPath } from "./input-contains-path.ts";
 import { inputContainsUrl } from "./input-contains-url.ts";
+import { readModeSwitch } from "./global-config.ts";
+import { isModeAck } from "./mode-ack.ts";
+import { detectModeRequest } from "./mode-detect.ts";
+import { cleanPrompt } from "./prompt-text.ts";
 
 export const REVIEW_DAYS = 14;
 
@@ -82,15 +86,7 @@ export function reviewFile(env: NodeJS.ProcessEnv = process.env): string {
 }
 
 // Kept in step with clean() in decision-nodes/*/route.py.
-const HARNESS_LINE = /^\s*\[(time|voice)\][^\n]*$/gim;
-const HARNESS_INLINE = /^\s*\[(telegram|tui)\]\s*/gim;
-const HARNESS_ANY = /\[(time|voice|telegram|tui)\][^\n]*/gi;
-
-/** Strip the surface markup pi adds, so only the speaker's words are classified. */
-export function cleanPrompt(raw: string): string {
-  const text = raw.replace(HARNESS_LINE, "").replace(HARNESS_INLINE, "").replace(HARNESS_ANY, " ");
-  return text.split("\n").map((line) => line.trim()).filter(Boolean).join(" ").replace(/\s{2,}/g, " ").trim();
-}
+export { cleanPrompt } from "./prompt-text.ts";
 
 /** Why the classifier is not worth asking about this text, or null when it is. */
 export function skipReason(text: string): string | null {
@@ -110,7 +106,16 @@ export function skipReason(text: string): string | null {
  * The classification for this prompt. A second caller with the same prompt gets the
  * same promise, so a message is classified once whichever hook asks first.
  */
-export function classifyPrompt(raw: string, options: ClassifyOptions = {}): Promise<JevClassification> {
+export async function classifyPrompt(raw: string, options: ClassifyOptions = {}): Promise<JevClassification> {
+  // A mode request is answered by the mode-switch hook, in whatever order pi loaded it.
+  // With that gate on, the classifier never sees one: no classifier call, no review row, no
+  // decision node. The gate off means the hook is off, so the text is classified as usual.
+  if (isModeAck(raw)) {
+    return { ok: false, text: cleanPrompt(raw), skipped: "mode switch" };
+  }
+  if (detectModeRequest(raw) && (await readModeSwitch(options.env))) {
+    return { ok: false, text: cleanPrompt(raw), skipped: "mode request" };
+  }
   const state = shared();
   if (state.raw === raw && state.pending) return state.pending;
   state.raw = raw;

@@ -73,6 +73,7 @@ config.json        gates (one set of screens per hook)
   inputContainsEmail.{enabled,print}
   calendarNode.{enabled,print,mode}        mode: route | dry
   reminderNode.{enabled,print,mode,writes} writes:false = route nothing, leave the turn to the model
+  modeSwitch.{enabled,print,answer}        answer: model | hook (see docs/runbooks/mode-switch.md)
 
 agent-modes-config.json
   inputPhrase.enabled

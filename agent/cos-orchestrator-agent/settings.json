@@ -30,6 +30,7 @@
     "find"
   ],
   "extensions": [
+    "+extensions/mode-switch/index.ts",
     "+extensions/cron.ts",
     "+extensions/auto-sync.ts",
     "+extensions/chat/index.ts",

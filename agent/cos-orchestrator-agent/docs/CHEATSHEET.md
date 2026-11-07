@@ -20,7 +20,7 @@ Bash calls other agent launchers. A token ledger still records where the money w
     ├── dashboard/               server.ts + public/{index.html,app.js,style.css}
     ├── logs/ledger.sqlite       the ledger
     ├── sessions/                Pi's own session JSONL, grouped by working directory
-    └── test/                    201 tests, no network
+    └── test/                    254 tests, no network
 ```
 
 ## Launch
@@ -46,6 +46,8 @@ The same values flip from a shell, with no server running:
 pi-config list                  # gates · inputPhrase · promptBuild · agent settings, grouped
 pi-config get agent.cos.model
 pi-config set reminderNode.writes off
+pi-config set modeSwitch.enabled off  # the hook above JEV: mode status and mode changes
+pi-config set modeSwitch.answer hook # answer a mode request with no model turn at all
 pi-config set inputPhrase.enabled on
 pi-config use inputPhrase.normal     # the exactly-one-option groups swap in one write
 pi-config set promptBuild.option2.config '{"tone":"warm"}'
@@ -53,8 +55,8 @@ pi-config set agent.cos.thinking high
 ```
 
 `~/.pi/control/cli.ts` imports `~/.pi/control/store.ts`, so validation and the atomic
-file replacement are the web page's own code. Runbook:
-`docs/runbooks/pi-config-terminal-toggles.md`.
+file replacement are the web page's own code. Runbooks:
+`docs/runbooks/pi-config-terminal-toggles.md`, `docs/runbooks/mode-switch.md`.
 
 ## Sibling agents
 
@@ -250,3 +252,9 @@ Full transcripts stay in `sessions/`.
    `process.exitCode`, never `process.exit` — Pi must finish writing the session file.
 4. Tools are read, bash, edit, write, grep, and find. Use bash to call other agent launchers. No web search.
 5. `ledger/` has no agent-specific code, so the next agent copies it unchanged.
+6. Extension `input` handlers run in **extension load order**, and pi's load order is directory
+   enumeration (`readdirSync`), not the `extensions` array in `settings.json` (verified
+   2026-11-07: zzz/aaa/mmm listed in that order loaded aaa/mmm/zzz). So a hook must never
+   assume it runs before another one: put the bypass in the code they all share, the way
+   `src/mode-switch.ts` does it inside `classifyPrompt`, and mark replacements (`src/mode-ack.ts`)
+   instead of relying on position. `settings.json` order documents intent, nothing more.
