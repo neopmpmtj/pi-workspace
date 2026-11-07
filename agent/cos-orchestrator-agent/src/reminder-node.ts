@@ -23,6 +23,8 @@ export interface ReminderRoute {
   eventAction?: string;
   /** do:reminder:done with no match - what is still open. */
   pending?: Array<{ id: string; title: string; due: string }>;
+  /** do:reminder:tasks - the Google Task written. */
+  task?: { id: string | null; title: string; due: string; list_id?: string };
 }
 
 export interface ReminderVerdict {
@@ -84,6 +86,16 @@ function routeOf(r: Record<string, unknown>): ReminderRoute {
     route.pending = r.pending.filter((p): p is Record<string, unknown> => !!p && typeof p === "object")
       .map((p) => ({ id: String(p.id ?? ""), title: String(p.title ?? ""), due: String(p.due ?? "") }));
   }
+  const task = r.task;
+  if (task && typeof task === "object") {
+    const t = task as Record<string, unknown>;
+    route.task = {
+      id: typeof t.id === "string" ? t.id : null,
+      title: String(t.title ?? ""),
+      due: String(t.due ?? ""),
+      list_id: typeof t.list_id === "string" ? t.list_id : undefined,
+    };
+  }
   return route;
 }
 
@@ -113,8 +125,10 @@ export function parseReminderOutput(stdout: string): ReminderVerdict {
 
 export interface ReminderRunOptions {
   dryRun?: boolean;
-  /** False passes --no-writes: the node routes nothing, so nothing is logged or written. */
+  /** False passes --no-writes. Prefer writer. */
   writes?: boolean;
+  /** Exclusive writer passed as --writer. off / writes: false pass --no-writes. */
+  writer?: "store" | "tasks" | "off";
   classifierJson?: string;
   timeoutMs?: number;
   env?: NodeJS.ProcessEnv;
@@ -154,7 +168,8 @@ function runScript(args: string[], options: ReminderRunOptions): Promise<{ code:
 export async function runReminderNode(text: string, options: ReminderRunOptions = {}): Promise<ReminderVerdict> {
   const args = ["--text", text, "--json"];
   if (options.dryRun) args.push("--dry-run");
-  if (options.writes === false) args.push("--no-writes");
+  if (options.writer === "off" || options.writes === false) args.push("--no-writes");
+  else if (options.writer === "store" || options.writer === "tasks") args.push("--writer", options.writer);
   if (options.classifierJson) args.push("--classifier-json", options.classifierJson);
   const run = await runScript(args, options);
   if (run.failure) return noReminderVerdict(run.failure);
@@ -205,10 +220,24 @@ export function reminderTraceLines(verdict: ReminderVerdict): string[] {
 
 /** The whole reply for a turn the hook finishes itself. */
 export function reminderOutcomeLines(verdict: ReminderVerdict): string[] {
-  const done = verdict.routes.find((r) => r.destination === "do:reminder:done");
+  const done = verdict.routes.find((r) => r.destination === "do:reminder:done" || r.destination === "do:reminder:tasks-done");
   if (done) {
-    if (done.status === "done") return [`→ done: ${done.title ?? done.id ?? "?"} (${done.id ?? "?"}, event ${done.eventAction ?? "none"})`];
+    if (done.status === "done" || done.status === "dry-run") {
+      const extra = done.destination === "do:reminder:tasks-done" ? "Tasks" : `event ${done.eventAction ?? "none"}`;
+      return [`→ done: ${done.title ?? done.id ?? "?"} (${done.id ?? "?"}, ${extra})`];
+    }
     return [`→ not closed: ${done.note ?? done.status}`];
+  }
+  const task = verdict.routes.find((r) => r.destination === "do:reminder:tasks");
+  if (task) {
+    if (task.status === "created" || task.status === "dry-run") {
+      return [`→ reminder: ${task.task?.title ?? task.note ?? "task"} (${task.task?.id ?? "?"})`,
+        `  due ${formatDue(task.task?.due)}`, "  Google Tasks · Reminders"];
+    }
+    if (task.status === "skipped" && task.task?.id) {
+      return [`→ reminder: ${task.task.title} (${task.task.id})`, "  already on Google Tasks"];
+    }
+    return [`→ not written: ${task.note ?? task.error ?? task.status}`];
   }
   const log = verdict.routes.find((r) => r.destination === "do:reminder:log");
   if (!log || log.status !== "logged" || !log.reminder) return [`→ not logged: ${log?.note ?? log?.error ?? log?.status ?? "nothing ran"}`];
@@ -237,7 +266,7 @@ export function reminderContextBlock(verdict: ReminderVerdict): string {
   return [
     "reminderNode - deterministic, already executed before this turn",
     ...verdict.routes.map((r) => `  ${r.destination} -> ${r.status}${r.note ? ` (${r.note})` : ""}`),
-    "The reminder node has already run. Do not log the reminder, create its event, or close it again,",
+    "The reminder node has already run. Do not log the reminder, create its event, add a Google Task, or close it again,",
     "and do not add it to docs/INBOX.md. Relay this outcome in a few lines:",
     ...reminderOutcomeLines(verdict),
   ].join("\n");
@@ -247,9 +276,10 @@ export function reminderContextBlock(verdict: ReminderVerdict): string {
 export function reminderHintBlock(verdict: ReminderVerdict): string {
   const why = verdict.routes.find((r) => r.status === "hint" || r.status === "downgraded" || r.status === "no-match");
   const lines = ["reminderNode - unsure, nothing was written", `reason: ${why?.note ?? "low confidence"}`];
-  if (why?.destination === "do:reminder:done" || why?.destination === "hint:reminder_done") {
-    lines.push("This message may say a reminder is done. Do not edit the reminders table yourself.",
-      "If it is, ask which reminder, then tell the user to run /reminder-done <id>.");
+  if (why?.destination === "do:reminder:done" || why?.destination === "do:reminder:tasks-done" || why?.destination === "hint:reminder_done") {
+    lines.push("This message may say a reminder is done. Do not edit the reminders table or Google Tasks yourself.",
+      "If it is a store reminder, ask which one, then tell the user to run /reminder-done <id>.",
+      "If it is a Google Task, ask which one, then tell the user to name it again or ask tasks-agent.");
     for (const p of why.pending ?? []) lines.push(`  pending ${p.id}: ${p.title} (due ${formatDue(p.due)})`);
   } else {
     lines.push("This message may ask for a reminder. Do not create one yourself, and do not add it to docs/INBOX.md.",

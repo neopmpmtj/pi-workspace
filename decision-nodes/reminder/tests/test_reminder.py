@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 import tempfile
@@ -44,15 +45,29 @@ class Routing(unittest.TestCase):
         self.assertEqual(config.router({"abstained": True}), ["escalate"])
 
     def test_the_write_switch_off_routes_nothing(self):
-        with mock.patch.object(config, "WRITES_ENABLED", False):
+        with mock.patch.object(config, "WRITER", "off"):
             for row in (won(), won("reminder_done"), won(band="hint"), won("reminder_done", band="hint")):
                 self.assertEqual(config.router(row), [])
             self.assertEqual(config.router({"abstained": True}), ["escalate"])
 
+    def test_writer_tasks_uses_the_tasks_destinations_only(self):
+        with mock.patch.object(config, "WRITER", "tasks"):
+            self.assertEqual(config.router(won()), ["do:reminder:tasks"])
+            self.assertEqual(config.router(won("reminder_done")), ["do:reminder:tasks-done"])
+            self.assertEqual(config.router(won(band="hint")), ["hint:reminder"])
+            self.assertEqual(config.router(won("reminder_done", band="hint")), ["hint:reminder_done"])
+
+    def test_unknown_writer_routes_nothing(self):
+        with mock.patch.object(config, "WRITER", "keep"):
+            self.assertEqual(config.router(won()), [])
+            self.assertEqual(config.router(won("reminder_done")), [])
+
     def test_every_name_has_a_handler(self):
-        for row in (won(), won("reminder_done"), won(band="hint"), won("reminder_done", band="hint")):
-            for name in config.router(row):
-                self.assertIn(name, config.DESTINATIONS)
+        for writer in ("store", "tasks"):
+            with mock.patch.object(config, "WRITER", writer):
+                for row in (won(), won("reminder_done"), won(band="hint"), won("reminder_done", band="hint")):
+                    for name in config.router(row):
+                        self.assertIn(name, config.DESTINATIONS)
 
 
 class Defaults(unittest.TestCase):
@@ -173,7 +188,7 @@ class Store(StoreBase):
 class Done(StoreBase):
     def test_the_switch_off_closes_nothing(self):
         self.add("r-1", "Buy milk", NOW + timedelta(days=1))
-        with mock.patch.object(config, "WRITES_ENABLED", False):
+        with mock.patch.object(config, "WRITER", "off"):
             result = config.do_reminder_done({"utterance": "I bought the milk"})
         self.assertEqual(result["status"], "skipped")
         self.assertEqual(len(store.listing()), 1)
@@ -204,7 +219,7 @@ class Calendar(StoreBase):
         start = datetime.now(ZONE) + timedelta(days=1)
         row = {"utterance": "remind me to buy milk",
                "logged": {"id": "r-1", "title": "Buy milk", "start": start, "confidence": 0.9}}
-        with mock.patch.object(config, "WRITES_ENABLED", False), \
+        with mock.patch.object(config, "WRITER", "off"), \
                 mock.patch.object(config.calendar_config, "create_event") as create:
             result = config.do_reminder_calendar(row)
         create.assert_not_called()
@@ -233,6 +248,82 @@ class Calendar(StoreBase):
         row = {"logged": {"id": "r-1", "title": "x", "start": datetime.now(ZONE) - timedelta(hours=1),
                           "confidence": 0.9}}
         self.assertIn("past", config.do_reminder_calendar(row)["note"])
+
+
+class TasksWriter(unittest.TestCase):
+    def setUp(self):
+        self.writer = mock.patch.object(config, "WRITER", "tasks")
+        self.writer.start()
+        self.addCleanup(self.writer.stop)
+        self.dry = mock.patch.object(config.calendar_config, "GOG_DRY_RUN", False)
+        self.dry.start()
+        self.addCleanup(self.dry.stop)
+
+    def gog(self, calls):
+        def run(*args, write=False):
+            remaining = list(args)
+            key = remaining[0]
+            if key == "lists" and len(remaining) == 1:
+                return 0, json.dumps({"items": [{"id": "L1", "title": "Reminders"}]}), ""
+            if remaining[:2] == ["lists", "create"]:
+                return 0, json.dumps({"id": "L1"}), ""
+            if remaining[0] == "list":
+                return 0, json.dumps({"items": calls.get("open", [])}), ""
+            if remaining[0] == "add":
+                calls["added"] = remaining
+                return 0, json.dumps({"id": "T9", "title": remaining[remaining.index("--title") + 1]}), ""
+            if remaining[0] == "done":
+                calls["done"] = remaining
+                return 0, "{}", ""
+            return 1, "", f"unexpected {remaining}"
+        return run
+
+    def test_a_new_reminder_is_added_to_tasks(self):
+        start = datetime.now(ZONE) + timedelta(days=1)
+        reminder = {"title": "Buy milk", "start": start, "confidence": 0.9,
+                    "date_defaulted": False, "time_defaulted": False}
+        calls: dict = {"open": []}
+        with mock.patch.object(config, "extract_reminder", return_value=(reminder, "")), \
+                mock.patch.object(config, "_gog_tasks", side_effect=self.gog(calls)):
+            result = config.do_reminder_tasks({"utterance": "remind me to buy milk"})
+        self.assertEqual(result["status"], "created")
+        self.assertEqual(result["task"]["id"], "T9")
+        self.assertEqual(calls["added"][0], "add")
+        self.assertIn("--due", calls["added"])
+
+    def test_a_duplicate_title_is_not_added_again(self):
+        start = datetime.now(ZONE) + timedelta(days=1)
+        reminder = {"title": "Buy milk", "start": start, "confidence": 0.9,
+                    "date_defaulted": True, "time_defaulted": True}
+        calls = {"open": [{"id": "T1", "title": "Buy milk", "status": "needsAction"}]}
+        with mock.patch.object(config, "extract_reminder", return_value=(reminder, "")), \
+                mock.patch.object(config, "_gog_tasks", side_effect=self.gog(calls)):
+            result = config.do_reminder_tasks({"utterance": "remind me to buy milk"})
+        self.assertEqual(result["status"], "skipped")
+        self.assertNotIn("added", calls)
+
+    def test_store_writer_does_not_call_gog_tasks(self):
+        with mock.patch.object(config, "WRITER", "store"), \
+                mock.patch.object(config, "_gog_tasks") as gog:
+            result = config.do_reminder_tasks({"utterance": "remind me to buy milk"})
+        gog.assert_not_called()
+        self.assertEqual(result["status"], "skipped")
+
+    def test_a_done_match_ticks_the_task(self):
+        open_rows = [{"id": "T1", "title": "Buy milk", "due": "2026-11-06"}]
+        with mock.patch.object(config, "_open_tasks", return_value=open_rows), \
+                mock.patch.object(config, "tasks_list_id", return_value=("L1", "")), \
+                mock.patch.object(config, "match_pending", return_value=("T1", 0.95, "")), \
+                mock.patch.object(config, "_gog_tasks", return_value=(0, "{}", "")) as gog:
+            result = config.do_reminder_tasks_done({"utterance": "I bought the milk"})
+        self.assertEqual(result["status"], "done")
+        self.assertEqual(gog.call_args.args[:3], ("done", "L1", "T1"))
+
+    def test_no_open_task_is_no_match(self):
+        with mock.patch.object(config, "tasks_list_id", return_value=("L1", "")), \
+                mock.patch.object(config, "_open_tasks", return_value=[]):
+            result = config.do_reminder_tasks_done({"utterance": "I bought the milk"})
+        self.assertEqual(result["status"], "no-match")
 
 
 if __name__ == "__main__":

@@ -110,6 +110,19 @@ describe("reminder outcome", () => {
       ["→ done: Buy milk (r-20261105-ab12, event deleted)"]);
   });
 
+  it("reports a Google Task write", () => {
+    const row = JSON.stringify({
+      node: "reminder",
+      abstained: false,
+      winner: WINNER,
+      routes: [{ destination: "do:reminder:tasks", status: "created",
+        task: { id: "T9", title: "Buy milk", due: "2026-11-06T06:00:00+00:00", list_id: "L1" } }],
+    });
+    const lines = reminderOutcomeLines(parseReminderOutput(row));
+    assert.equal(lines[0], "→ reminder: Buy milk (T9)");
+    assert.match(lines[2], /Google Tasks/);
+  });
+
   it("drops the arrow on Telegram and adds the trace when asked", () => {
     const text = reminderTelegramReply(parseReminderOutput(LOGGED), true);
     assert.match(text, /^reminder: Buy milk/);
@@ -150,15 +163,17 @@ describe("unsure verdicts", () => {
 });
 
 describe("write switch config", () => {
-  it("defaults to writing and only turns off on boolean false", async () => {
+  it("reads writer store|tasks|off, and maps leftover writes: false to off", async () => {
     await withGroupedRoot(async (env, configFile) => {
       assert.equal(await readReminderNode(env), null);
       await writeFile(configFile, JSON.stringify({ reminderNode: { enabled: true } }), "utf8");
-      assert.deepEqual(await readReminderNode(env), { print: true, route: true, writes: true });
+      assert.deepEqual(await readReminderNode(env), { print: true, route: true, writer: "store" });
       await writeFile(configFile, JSON.stringify({ reminderNode: { enabled: true, writes: false, mode: "dry" } }), "utf8");
-      assert.deepEqual(await readReminderNode(env), { print: true, route: false, writes: false });
-      await writeFile(configFile, JSON.stringify({ reminderNode: { enabled: true, writes: "false" } }), "utf8");
-      assert.equal((await readReminderNode(env))?.writes, true);
+      assert.deepEqual(await readReminderNode(env), { print: true, route: false, writer: "off" });
+      await writeFile(configFile, JSON.stringify({ reminderNode: { enabled: true, writer: "tasks" } }), "utf8");
+      assert.equal((await readReminderNode(env))?.writer, "tasks");
+      await writeFile(configFile, JSON.stringify({ reminderNode: { enabled: true, writer: "keep" } }), "utf8");
+      assert.equal((await readReminderNode(env))?.writer, "off");
     });
   });
 });
@@ -207,10 +222,16 @@ describe("running the node", () => {
     const script = path.join(dir, "gate.py");
     const seen = path.join(dir, "gate-argv");
     await writeFile(script, `import sys\nopen(${JSON.stringify(seen)}, "w").write(" ".join(sys.argv[1:]))\nprint(${JSON.stringify(LOGGED)})\n`, "utf8");
-    await runReminderNode("Remind me to buy milk", { script, writes: false });
+    await runReminderNode("Remind me to buy milk", { script, writer: "off" });
     assert.match(await readFile(seen, "utf8"), /--no-writes/);
-    await runReminderNode("Remind me to buy milk", { script, writes: true });
-    assert.doesNotMatch(await readFile(seen, "utf8"), /--no-writes/);
+    await runReminderNode("Remind me to buy milk", { script, writer: "tasks" });
+    const tasksArgv = await readFile(seen, "utf8");
+    assert.match(tasksArgv, /--writer tasks/);
+    assert.doesNotMatch(tasksArgv, /--no-writes/);
+    await runReminderNode("Remind me to buy milk", { script, writer: "store" });
+    const storeArgv = await readFile(seen, "utf8");
+    assert.match(storeArgv, /--writer store/);
+    assert.doesNotMatch(storeArgv, /--no-writes/);
   });
 
   it("runs a table command and returns its JSON", async () => {

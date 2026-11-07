@@ -17,7 +17,7 @@ const GATES = {
   inputContainsEmail: { enabled: true, print: true },
   modeSwitch: { enabled: true, print: true, answer: "model" },
   calendarNode: { enabled: true, print: true, mode: "route" },
-  reminderNode: { enabled: true, print: true, mode: "route", writes: true },
+  reminderNode: { enabled: true, print: true, mode: "route", writer: "store" },
 };
 
 async function fixture(): Promise<string> {
@@ -101,6 +101,14 @@ describe("pi-config", () => {
       assert.equal(shout.code, 1);
       assert.match(shout.err.join("\n"), /answer must be hook or model/);
       assert.equal(await readFile(path.join(root, "config.json"), "utf8"), before);
+
+      const keep = await run(root, ["set", "reminderNode.writer", "keep"]);
+      assert.equal(keep.code, 1);
+      assert.match(keep.err.join("\n"), /writer must be store, tasks, or off/);
+      assert.equal(await readFile(path.join(root, "config.json"), "utf8"), before);
+      assert.equal((await run(root, ["set", "reminderNode.writer", "tasks"])).code, 0);
+      assert.equal((await readJson(path.join(root, "config.json"))).reminderNode.writer, "tasks");
+      assert.equal("writes" in (await readJson(path.join(root, "config.json"))).reminderNode, false);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

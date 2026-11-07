@@ -13,12 +13,16 @@ when that winner is `reminder` or `reminder_done`.
   do:reminder:calendar   `gog calendar create primary`, 15 minutes, "Reminder: <title>".
                          No free/busy check: 06:00 is chosen because it is free.
 
-Both writes, and the done op, sit behind one switch, WRITES_ENABLED. With it off the node
-routes nothing at all: reminders.jsonl gains no line, no event is written, nothing is
-closed. JEV still classifies, and the harness leaves the turn to the model.
+Both store writes, and the done op, sit behind one exclusive writer: store, tasks, or off.
+With it off the node routes nothing at all: reminders.jsonl gains no line, no event is
+written, nothing is closed, and Google Tasks is not touched. JEV still classifies, and the
+harness leaves the turn to the model.
   do:reminder:done       one cheap model call picks which pending reminder the message
                          closes. Nothing changes unless it names a pending id with
                          confidence >= DONE_MIN_CONFIDENCE. A future event is deleted.
+  do:reminder:tasks      writer tasks: parsed title and due -> `gog tasks add` on the
+                         Reminders list. No jsonl, no calendar event.
+  do:reminder:tasks-done writer tasks: match an open task on that list, then `gog tasks done`.
   hint:reminder          the unsure band: nothing runs, the model asks first.
   hint:reminder_done
 
@@ -30,13 +34,14 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import subprocess
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import reminder_store as store
 
 NODE_NAME = "reminder"
-NODE_VERSION = "0.1.0"
+NODE_VERSION = "0.2.0"
 
 CLASSIFIER = "~/.pi/jev-classifier/jev-classifier-multi/src/classify.py"
 CLASSIFIER_TIMEOUT_S = 45
@@ -49,11 +54,31 @@ EXTRACT_MIN_CONFIDENCE = 0.5
 DONE_MIN_CONFIDENCE = 0.7
 GOG_DRY_RUN = False          # True runs `gog --dry-run` for create and delete
 
-# The deterministic path - the row in reminders.jsonl, the calendar event, the done op - has
-# one switch. REMINDER_WRITES=0 (or `route.py --no-writes`, which the harness passes when
-# ~/.pi/config.json has reminderNode.writes false) routes nothing at all: nothing is logged,
-# no event is written, nothing is closed. JEV still classifies; the turn goes to the model.
-WRITES_ENABLED = os.environ.get("REMINDER_WRITES", "1").strip().lower() not in ("0", "false", "off", "no")
+# One exclusive writer. store = reminders.jsonl + calendar; tasks = gog tasks on the
+# Reminders list; off = classify only. REMINDER_WRITER wins; REMINDER_WRITES=0 still
+# means off (`route.py --no-writes` / a missing writer). A hand run with no flag stays
+# on store, so the shell does not follow config.json.
+_WRITERS = ("store", "tasks", "off")
+TASKS_LIST_TITLE = "Reminders"
+
+
+def _writer_from_env() -> str:
+    named = os.environ.get("REMINDER_WRITER")
+    if isinstance(named, str) and named.strip().lower() in _WRITERS:
+        return named.strip().lower()
+    if os.environ.get("REMINDER_WRITES", "1").strip().lower() in ("0", "false", "off", "no"):
+        return "off"
+    return "store"
+
+
+WRITER = _writer_from_env()
+
+
+def set_writer(name: str) -> None:
+    global WRITER
+    text = (name or "").strip().lower()
+    WRITER = text if text in _WRITERS else "off"
+
 
 _CALENDAR_CONFIG = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                 "calendar", "config.py")
@@ -72,21 +97,24 @@ def _local_now() -> datetime:
 def router(row: dict) -> list:
     """Map the arbiter's winner to destination names. Deterministic.
 
-    WRITES_ENABLED false routes nothing, not even the hints: the row, the event and the done
-    op are all off, so reminders.jsonl gains no new line. The verdict is still recorded in
+    writer off (or any other value) routes nothing, not even the hints: the row, the event,
+    the Tasks write and the done op are all off. The verdict is still recorded in
     verdicts.jsonl, so what JEV decided stays visible.
     """
     if row.get("abstained"):
         return ["escalate"]
-    if not WRITES_ENABLED:
+    if WRITER not in ("store", "tasks"):
         return []
     winner = row.get("winner") or {}
     kind, band = winner.get("class"), winner.get("band")
     if kind == "reminder_done":
-        return ["do:reminder:done"] if band == "act" else (["hint:reminder_done"] if band == "hint" else [])
+        if band == "act":
+            return ["do:reminder:done"] if WRITER == "store" else ["do:reminder:tasks-done"]
+        return ["hint:reminder_done"] if band == "hint" else []
     if kind == "reminder":
-        return ["do:reminder:log", "do:reminder:calendar"] if band == "act" else (
-            ["hint:reminder"] if band == "hint" else [])
+        if band == "act":
+            return ["do:reminder:log", "do:reminder:calendar"] if WRITER == "store" else ["do:reminder:tasks"]
+        return ["hint:reminder"] if band == "hint" else []
     return []
 
 
@@ -101,9 +129,9 @@ def _hint(name: str, what: str):
 
 
 def do_reminder_log(row: dict) -> dict:
-    if not WRITES_ENABLED:
+    if WRITER != "store":
         return {"destination": "do:reminder:log", "status": "skipped",
-                "note": "writes off (reminderNode.writes false) - nothing logged"}
+                "note": f"writer {WRITER} - nothing logged"}
     now = _local_now()
     reminder, why = extract_reminder(row.get("utterance", ""), now)
     if reminder is None:
@@ -125,9 +153,9 @@ def do_reminder_log(row: dict) -> dict:
 
 
 def do_reminder_calendar(row: dict) -> dict:
-    if not WRITES_ENABLED:
+    if WRITER != "store":
         return {"destination": "do:reminder:calendar", "status": "skipped",
-                "note": "writes off (reminderNode.writes false) - no event written"}
+                "note": f"writer {WRITER} - no event written"}
     reminder = row.get("logged")
     if not isinstance(reminder, dict):
         return {"destination": "do:reminder:calendar", "status": "skipped",
@@ -149,9 +177,9 @@ def do_reminder_calendar(row: dict) -> dict:
 
 
 def do_reminder_done(row: dict) -> dict:
-    if not WRITES_ENABLED:
+    if WRITER != "store":
         return {"destination": "do:reminder:done", "status": "skipped",
-                "note": "writes off (reminderNode.writes false) - nothing closed"}
+                "note": f"writer {WRITER} - nothing closed"}
     open_rows = store.pending()
     if not open_rows:
         return {"destination": "do:reminder:done", "status": "no-match", "note": "no pending reminders"}
@@ -163,6 +191,165 @@ def do_reminder_done(row: dict) -> dict:
     result["destination"] = "do:reminder:done"
     result["note"] = f"{result.get('note')} · match {confidence:.2f}"
     return result
+
+
+def do_reminder_tasks(row: dict) -> dict:
+    """Parse the reminder, then `gog tasks add` on the Reminders list. No jsonl, no event."""
+    if WRITER != "tasks":
+        return {"destination": "do:reminder:tasks", "status": "skipped",
+                "note": f"writer {WRITER} - no task written"}
+    now = _local_now()
+    reminder, why = extract_reminder(row.get("utterance", ""), now)
+    if reminder is None:
+        status = "downgraded" if why.startswith(SECOND_OPINION) else "skipped"
+        return {"destination": "do:reminder:tasks", "status": status, "note": why}
+
+    list_id, list_why = tasks_list_id()
+    if list_id is None:
+        return {"destination": "do:reminder:tasks", "status": "failed", "note": list_why}
+
+    existing = _open_task_with_title(list_id, reminder["title"])
+    if existing:
+        return {"destination": "do:reminder:tasks", "status": "skipped",
+                "note": f"already on Tasks ({existing['id']})",
+                "task": existing}
+
+    due = reminder["start"].date().isoformat()
+    notes = f"due {reminder['start']:%H:%M} {TIMEZONE}"
+    code, out, err = _gog_tasks("add", list_id, "--title", reminder["title"],
+                                "--due", due, "--notes", notes, write=True)
+    if code != 0:
+        detail = (err or out or f"exit {code}").strip()[-300:]
+        return {"destination": "do:reminder:tasks", "status": "failed",
+                "note": f"gog tasks add failed: {detail}"}
+    created_id = _gog_id(_gog_payload(out))
+    status = "dry-run" if calendar_config.GOG_DRY_RUN else "created"
+    defaults = [label for label, flag in (("date", reminder["date_defaulted"]),
+                                          ("time", reminder["time_defaulted"])) if flag]
+    task = {"id": created_id, "title": reminder["title"], "due": reminder["start"].isoformat(),
+            "list_id": list_id}
+    return {"destination": "do:reminder:tasks", "status": status,
+            "note": f"{reminder['title']} · due {reminder['start']:%a %d %b %H:%M}"
+                    + (f" · default {' and '.join(defaults)}" if defaults else ""),
+            "task": task}
+
+
+def do_reminder_tasks_done(row: dict) -> dict:
+    """Match an open task on the Reminders list, then `gog tasks done`."""
+    if WRITER != "tasks":
+        return {"destination": "do:reminder:tasks-done", "status": "skipped",
+                "note": f"writer {WRITER} - nothing closed"}
+    list_id, list_why = tasks_list_id()
+    if list_id is None:
+        return {"destination": "do:reminder:tasks-done", "status": "failed", "note": list_why}
+    open_rows = _open_tasks(list_id)
+    if not open_rows:
+        return {"destination": "do:reminder:tasks-done", "status": "no-match",
+                "note": "no open tasks on Reminders"}
+    rid, confidence, why = match_pending(row.get("utterance", ""), open_rows)
+    if rid is None:
+        return {"destination": "do:reminder:tasks-done", "status": "no-match", "note": why,
+                "pending": [{"id": r["id"], "title": r["title"], "due": r["due"]} for r in open_rows]}
+    matched = next(r for r in open_rows if r["id"] == rid)
+    code, out, err = _gog_tasks("done", list_id, rid, write=True)
+    if code != 0:
+        detail = (err or out or f"exit {code}").strip()[-300:]
+        return {"destination": "do:reminder:tasks-done", "status": "failed",
+                "note": f"gog tasks done failed: {detail}", "id": rid, "title": matched["title"]}
+    status = "dry-run" if calendar_config.GOG_DRY_RUN else "done"
+    return {"destination": "do:reminder:tasks-done", "status": status, "id": rid,
+            "title": matched["title"],
+            "note": f"{rid} · {matched['title']} · match {confidence:.2f}"}
+
+
+def _gog_tasks(*args: str, write: bool = False) -> tuple[int, str, str]:
+    env = dict(os.environ)
+    env.update(calendar_config._env_file(calendar_config.GOG_ENV))
+    command = ["gog", "tasks", *args, "-j", "--no-input"]
+    if write and calendar_config.GOG_DRY_RUN:
+        command.append("--dry-run")
+    try:
+        proc = subprocess.run(command, capture_output=True, text=True, timeout=60, env=env)
+    except subprocess.TimeoutExpired:
+        return 124, "", "gog tasks timed out"
+    except OSError as exc:
+        return 127, "", f"gog not runnable: {exc}"
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+def _gog_payload(stdout: str):
+    try:
+        return json.loads(stdout.strip() or "{}")
+    except json.JSONDecodeError:
+        return None
+
+
+def _gog_items(payload) -> list[dict]:
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if not isinstance(payload, dict):
+        return []
+    for key in ("items", "lists", "tasks", "tasklists"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            return [item for item in value if isinstance(item, dict)]
+    if payload.get("id"):
+        return [payload]
+    return []
+
+
+def _gog_id(payload) -> str | None:
+    if isinstance(payload, dict):
+        for key in ("task", "list", "tasklist", "item"):
+            inner = payload.get(key)
+            if isinstance(inner, dict) and inner.get("id"):
+                return str(inner["id"])
+        if payload.get("id"):
+            return str(payload["id"])
+    return None
+
+
+def tasks_list_id() -> tuple[str | None, str]:
+    """Id of the Reminders task list, creating it when missing. Never raises."""
+    code, out, err = _gog_tasks("lists")
+    if code != 0:
+        return None, f"gog tasks lists failed: {(err or out).strip()[-300:]}"
+    wanted = TASKS_LIST_TITLE.casefold()
+    for item in _gog_items(_gog_payload(out)):
+        title = str(item.get("title") or item.get("name") or "").strip()
+        if title.casefold() == wanted and item.get("id"):
+            return str(item["id"]), ""
+    code, out, err = _gog_tasks("lists", "create", "--title", TASKS_LIST_TITLE, write=True)
+    if code != 0:
+        return None, f"gog tasks lists create failed: {(err or out).strip()[-300:]}"
+    created = _gog_id(_gog_payload(out))
+    if not created:
+        return None, "gog tasks lists create printed no id"
+    return created, ""
+
+
+def _open_tasks(list_id: str) -> list[dict]:
+    code, out, err = _gog_tasks("list", list_id)
+    if code != 0:
+        return []
+    rows = []
+    for item in _gog_items(_gog_payload(out)):
+        if str(item.get("status") or "").casefold() == "completed":
+            continue
+        task_id = item.get("id")
+        title = str(item.get("title") or "").strip()
+        if not task_id or not title:
+            continue
+        rows.append({"id": str(task_id), "title": title, "due": str(item.get("due") or "")})
+    return rows
+
+
+def _open_task_with_title(list_id: str, title: str) -> dict | None:
+    wanted = title.strip().casefold()
+    for item in _open_tasks(list_id):
+        if item["title"].casefold() == wanted:
+            return item
+    return None
 
 
 # ----------------------------------------------------------------- the fields
@@ -316,4 +503,6 @@ DESTINATIONS = {
     "do:reminder:log": do_reminder_log,
     "do:reminder:calendar": do_reminder_calendar,
     "do:reminder:done": do_reminder_done,
+    "do:reminder:tasks": do_reminder_tasks,
+    "do:reminder:tasks-done": do_reminder_tasks_done,
 }

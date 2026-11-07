@@ -72,7 +72,7 @@ config.json        gates (one set of screens per hook)
   inputContainsUrl.{enabled,print}
   inputContainsEmail.{enabled,print}
   calendarNode.{enabled,print,mode}        mode: route | dry
-  reminderNode.{enabled,print,mode,writes} writes:false = route nothing, leave the turn to the model
+  reminderNode.{enabled,print,mode,writer} writer: store | tasks | off (off = route nothing)
   modeSwitch.{enabled,print,answer}        answer: model | hook (see docs/runbooks/mode-switch.md)
 
 input-phrase-config.json
@@ -89,7 +89,7 @@ prompt-build-config.json
   promptBuild.<1-Personal|2-Development|3-Work|4-Automatic|5-Research>.config    a JSON object, stored as an object
 
 agent.<id>.{provider,model,thinking,tools,enabledModels,extensions,packages}
-  <id>: cos | image-describer | web-master | keep | google-workspace
+  <id>: cos | image-describer | web-master | tasks | google-workspace
   model/thinking land in default-model.json when it exists, else in settings.json
 ```
 
@@ -149,7 +149,7 @@ pi-config set promptBuild.3-Work.prompt "be brief"
 pi-config set promptBuild.3-Work.config '{"tone":"warm"}'
 pi-config use promptBuild personal
 pi-config set calendarNode.mode dry                  # classify and trace, write nothing
-pi-config set reminderNode.writes off                # no reminders.jsonl row, no event
+pi-config set reminderNode.writer tasks              # gog tasks on Reminders; store = jsonl+calendar; off = nothing
 pi-config set lessThanInputWords.words 12
 pi-config set agent.cos.thinking high
 pi-config set agent.cos.tools "read,bash,edit,write,grep,find"

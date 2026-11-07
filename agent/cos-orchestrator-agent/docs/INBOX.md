@@ -208,13 +208,11 @@ by default; refuses the current Cursor files by name).
       logged.~~ Corrected the same day: the switch is `reminderNode.writes`, and with it
       `false` the node routes nothing at all — no row in `reminders.jsonl`, no event, no done
       op. JEV still classifies and the verdict still lands in `verdicts.jsonl`.
-- [ ] The reminder path should have three destinations, in this order: (1) the calendar event,
+- [x] ~~The reminder path should have three destinations, in this order: (1) the calendar event,
       today's custom path, behind `reminderNode.writes`; (2) a Google Keep note; (3) the
-      fallback, an ordinary model turn with nothing written. Config chooses one, the other,
-      or both in sequence. The official Keep API is Workspace only, and `gog keep` does not
-      serve the personal account `neopmpmtj@gmail.com`. On 2026-11-07 keep-cli was removed
-      with keep-agent and must not be restored, so destination (2) is blocked again.
-      Home: `extensions/reminder-node/index.ts`, `~/.pi/decision-nodes/reminder/config.py`.
+      fallback, an ordinary model turn with nothing written.~~ Replaced 2026-11-07: exclusive
+      `reminderNode.writer` `store` | `tasks` | `off`. Keep is gone. `tasks` calls `gog tasks`
+      from the reminder node (no sibling turn). `off` is the fallback ordinary turn.
 - [x] ~~`keep-agent` (built 2026-11-06, home `~/.pi/agent-keep-agent/keep-agent`, launcher
       `pi-keep-agent`).~~ Removed 2026-11-07 together with keep-cli. Will not return: no home,
       no roster row, no `control/agents.ts` row, no `:8790` unit, no launcher. Creation report:
@@ -222,9 +220,9 @@ by default; refuses the current Cursor files by name).
 
 ## tasks-agent (2026-11-07)
 - [x] Lean sibling at `~/.pi/agent-tasks-agent/tasks-agent`, launcher `pi-tasks-agent`,
-      dashboard `:8791`, frozen empty `APPEND_SYSTEM.md`. Google Tasks via `gog tasks` (auth
-      from this home's `.env`: `GOG_ACCOUNT`, `GOG_KEYRING_PASSWORD`). Reminder node is not
-      wired; jsonl + calendar stay on COS. Contract:
+      dashboard `:8791`. Google Tasks via `gog tasks` (auth from this home's `.env`).
+      `APPEND_SYSTEM.md` unfrozen 2026-11-07 (default list `Reminders`). Reminder node writer
+      `tasks` calls `gog tasks` itself; this sibling stays a chat specialist. Contract:
       `~/.pi/agent-tasks-agent/tasks-agent/docs/CALLING.md`.
 
 ## Google Keep via `keep-cli` (2026-11-06)

@@ -2,19 +2,22 @@
 // `reminder_done`. Shares one classification per message with the calendar hook
 // (src/jev-classify.ts) and never classifies on its own.
 //
-// Band act:
+// Band act, writer store:
 //   reminder       -> do:reminder:log (row in reminders.jsonl), do:reminder:calendar (event)
 //   reminder_done  -> do:reminder:done (closes the matching pending reminder)
+// Band act, writer tasks:
+//   reminder       -> do:reminder:tasks (`gog tasks add` on the Reminders list)
+//   reminder_done  -> do:reminder:tasks-done (`gog tasks done` on the matching open task)
 // and the message finishes here with no model turn: printed locally, or sent through the
 // Telegram bridge. A failed Telegram delivery keeps the turn and attaches the hidden block.
 //
 // Band hint, an extractor disagreement, or a done message that matched no pending
 // reminder: nothing is written, the turn runs, and the model gets a hidden hint.
 //
-// The writes have their own switch, reminderNode.writes (default true). With it false the
-// node routes nothing at all - no row in reminders.jsonl, no calendar event, no done op - and
-// the hook finishes no turn: no delivery, no hidden block, the message reaches the model as
-// an ordinary turn. JEV still classifies, which is where the next destination hooks in.
+// reminderNode.writer is store, tasks, or off. off (and a leftover writes: false) routes
+// nothing: no jsonl row, no calendar event, no Google Task, no done op. The hook finishes
+// no turn: no delivery, no hidden block, the message reaches the model as an ordinary turn.
+// JEV still classifies.
 //
 // Reminders never touch docs/INBOX.md. Off unless ~/.pi/config.json has reminderNode.enabled true.
 import { writeSync } from "node:fs";
@@ -44,7 +47,7 @@ async function judge(text: string, ctx: ExtensionContext, setting: ReminderNode)
   const jev = await classifyPrompt(text);
   if (setting.print && claimAnnouncement(text)) show(ctx, winnerLine(jev));
   if (!jev.ok || !jev.winner || !CLASSES.has(jev.winner.class) || jev.winner.band === "none") return null;
-  return runReminderNode(text, { dryRun: !setting.route, writes: setting.writes, classifierJson: jev.file });
+  return runReminderNode(text, { dryRun: !setting.route, writer: setting.writer, classifierJson: jev.file });
 }
 
 export default function registerReminderNode(pi: ExtensionAPI): void {
@@ -65,9 +68,9 @@ export default function registerReminderNode(pi: ExtensionAPI): void {
 
     const wrote = setting.route && verdict.ok && !verdict.abstained && !isReminderUnsure(verdict) &&
       verdict.routes.some((r) => r.destination.startsWith("do:reminder:"));
-    // Only a turn whose writes actually ran is finished here. With the write switch off the
+    // Only a turn whose writes actually ran is finished here. With writer off the
     // node routes nothing and the model answers the message.
-    const executed = wrote && setting.writes;
+    const executed = wrote && setting.writer !== "off";
 
     if (TELEGRAM.test(text)) {
       if (!executed) return { action: "continue" };
@@ -109,7 +112,7 @@ export default function registerReminderNode(pi: ExtensionAPI): void {
     if (isReminderUnsure(verdict)) {
       return { message: { customType: "reminder-node", content: reminderHintBlock(verdict), display: false } };
     }
-    if (!setting.route || !setting.writes) return;
+    if (!setting.route || setting.writer === "off") return;
     return { message: { customType: "reminder-node", content: reminderContextBlock(verdict), display: false } };
   });
 }

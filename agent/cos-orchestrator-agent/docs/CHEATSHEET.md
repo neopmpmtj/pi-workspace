@@ -45,7 +45,7 @@ The same values flip from a shell, with no server running:
 ```bash
 pi-config list                  # gates · inputPhrase · promptBuild · agent settings, grouped
 pi-config get agent.cos.model
-pi-config set reminderNode.writes off
+pi-config set reminderNode.writer tasks
 pi-config set modeSwitch.enabled off  # the hook above JEV: mode status and mode changes
 pi-config set modeSwitch.answer hook # answer a mode request with no model turn at all
 pi-config set inputPhrase.enabled on

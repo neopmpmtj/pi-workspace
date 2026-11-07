@@ -279,6 +279,38 @@ describe("a file that cannot be read is skipped, never fatal", () => {
 
 });
 
+describe("reminderNode.writer", () => {
+  it("writes store, tasks, or off, migrates leftover writes, and rejects keep", async () => {
+    const root = await fixture();
+    try {
+      const file = path.join(root, "config.json");
+      const config = JSON.parse(await readFile(file, "utf8")) as Record<string, unknown>;
+      config.reminderNode = { enabled: true, print: true, mode: "route", writes: true };
+      await writeFile(file, `${JSON.stringify(config, null, 2)}\n`);
+
+      const viewed = (await readControlPlane(root)).gates.find((gate) => gate.name === "reminderNode");
+      assert.equal(viewed?.fields.find((field) => field.key === "writer")?.value, "store");
+      assert.equal(viewed?.fields.find((field) => field.key === "writes"), undefined);
+
+      const before = await readFile(file, "utf8");
+      await assert.rejects(
+        () => writeGate("reminderNode", { fields: { writer: "keep" } }, root),
+        (error: unknown) => error instanceof SettingsError && /writer must be store, tasks, or off/.test(error.message),
+      );
+      assert.equal(await readFile(file, "utf8"), before);
+
+      const written = await writeGate("reminderNode", { fields: { writer: "tasks" } }, root);
+      assert.equal(written.fields.find((field) => field.key === "writer")?.type, "writer");
+      assert.equal(written.fields.find((field) => field.key === "writer")?.value, "tasks");
+      const saved = JSON.parse(await readFile(file, "utf8")).reminderNode;
+      assert.equal(saved.writer, "tasks");
+      assert.equal("writes" in saved, false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("modeSwitch.answer", () => {
   it("writes hook or model and rejects any other string, leaving the file", async () => {
     const root = await fixture();

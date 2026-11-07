@@ -10,7 +10,7 @@ export class SettingsError extends Error {}
 
 export interface FieldView {
   key: string;
-  type: "boolean" | "number" | "string" | "mode" | "answer";
+  type: "boolean" | "number" | "string" | "mode" | "answer" | "writer";
   value: boolean | number | string;
 }
 
@@ -196,8 +196,18 @@ export async function writeGate(name: string, incoming: unknown, root = PI_ROOT)
   const fields = fieldMap(incoming);
   const next: Record<string, unknown> = { ...record };
   for (const [key, value] of Object.entries(fields)) {
+    if (name === "reminderNode" && key === "writer") {
+      next.writer = writerOf(value);
+      continue;
+    }
     if (!(key in record)) throw new SettingsError(`${name}.${key} is not a field of this gate.`);
     next[key] = coerceLike(key, record[key], value, name);
+  }
+  if (name === "reminderNode") {
+    if (next.writer !== "store" && next.writer !== "tasks" && next.writer !== "off") {
+      next.writer = writerFromRecord(record);
+    }
+    delete next.writes;
   }
   config[name] = next;
   await writeObject(file, config);
@@ -334,13 +344,30 @@ async function readAgent(root: string, agent: AgentSpec): Promise<AgentSettingsV
 
 function gateView(name: string, section: unknown): GateView {
   const record = objectOf(section, name);
-  const fields = Object.entries(record).filter(([, value]) => isPrimitive(value)).map(([key, value]) => fieldView(key, value));
+  const body = name === "reminderNode" ? reminderNodeFields(record) : record;
+  const fields = Object.entries(body).filter(([, value]) => isPrimitive(value)).map(([key, value]) => fieldView(key, value));
   return { name, fields };
+}
+
+function reminderNodeFields(record: Record<string, unknown>): Record<string, unknown> {
+  const next = { ...record };
+  delete next.writes;
+  next.writer = writerFromRecord(record);
+  return next;
+}
+
+function writerFromRecord(record: Record<string, unknown>): string {
+  const named = record.writer;
+  if (named === "store" || named === "tasks" || named === "off") return named;
+  if (typeof named === "string" && named.trim() !== "") return "off";
+  if (record.writes === false) return "off";
+  return "store";
 }
 
 function fieldView(key: string, value: unknown): FieldView {
   if (key === "mode") return { key, type: "mode", value: typeof value === "string" ? value : "" };
   if (key === "answer") return { key, type: "answer", value: typeof value === "string" ? value : "" };
+  if (key === "writer") return { key, type: "writer", value: typeof value === "string" ? value : "" };
   if (typeof value === "boolean") return { key, type: "boolean", value };
   if (typeof value === "number") return { key, type: "number", value };
   return { key, type: "string", value: typeof value === "string" ? value : "" };
@@ -431,6 +458,7 @@ function coerceLike(key: string, current: unknown, value: unknown, gate: string)
   }
   if (key === "mode") return modeOf(value);
   if (key === "answer") return answerOf(value);
+  if (key === "writer") return writerOf(value);
   if (typeof current === "string") return stringOf(value, `${gate}.${key}`, true);
   throw new SettingsError(`${gate}.${key} cannot be edited here.`);
 }
@@ -449,6 +477,13 @@ function modeOf(value: unknown): string {
 
 function answerOf(value: unknown): string {
   if (value !== "hook" && value !== "model") throw new SettingsError("answer must be hook or model.");
+  return value;
+}
+
+function writerOf(value: unknown): string {
+  if (value !== "store" && value !== "tasks" && value !== "off") {
+    throw new SettingsError("writer must be store, tasks, or off.");
+  }
   return value;
 }
 

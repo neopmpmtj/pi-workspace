@@ -22,6 +22,7 @@ Usage
   route.py --text "..." --json                               one JSON object
   route.py --text "..." --classifier-json payload.json       reuse one classification
   route.py --text "..." --no-writes                          route nothing, write nothing
+  route.py --text "..." --writer store|tasks|off             exclusive writer (default store)
   route.py --list [--all] [--json]                           the reminders table
   route.py --done r-20261105-ab12 [--json]                   mark one done
   route.py --undo [--json]                                   withdraw the newest pending one
@@ -215,7 +216,9 @@ def main() -> int:
     ap.add_argument("--no-log", action="store_true")
     ap.add_argument("--classifier-json", default=None)
     ap.add_argument("--no-writes", action="store_true",
-                    help="route and write nothing: no log row, no event (same as REMINDER_WRITES=0)")
+                    help="route and write nothing (same as --writer off / REMINDER_WRITER=off)")
+    ap.add_argument("--writer", choices=["store", "tasks", "off"], default=None,
+                    help="exclusive writer: store (jsonl+calendar), tasks (gog tasks), off")
     ap.add_argument("--list", action="store_true", help="print the reminders table")
     ap.add_argument("--all", action="store_true", help="with --list: include done and undone")
     ap.add_argument("--done", default=None, metavar="ID", help="mark one reminder done")
@@ -223,7 +226,9 @@ def main() -> int:
     args = ap.parse_args()
 
     if args.no_writes:
-        config.WRITES_ENABLED = False
+        config.set_writer("off")
+    elif args.writer:
+        config.set_writer(args.writer)
 
     if args.list:
         emit(store.listing(args.all), args.json, print_table)

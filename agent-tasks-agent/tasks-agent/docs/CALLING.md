@@ -1,7 +1,8 @@
 # Calling tasks-agent
 
-`tasks-agent` is the orchestrator stripped to its model, tools and usage tracking. It has no
-baked-in instructions: the user's message is the task. Google Tasks is reached with `gog tasks`.
+`tasks-agent` is the orchestrator stripped to its model, tools and usage tracking. The user's
+message is the task. Standing Google Tasks work (default list `Reminders`) lives in
+`APPEND_SYSTEM.md`. Google Tasks is reached with `gog tasks`.
 
 | Item | Value |
 | --- | --- |
@@ -9,7 +10,7 @@ baked-in instructions: the user's message is the task. Google Tasks is reached w
 | Env | `~/.pi/agent-tasks-agent/.env` — provider keys, `GOG_ACCOUNT`, `GOG_KEYRING_PASSWORD`, `DASHBOARD_PORT=8791`, `DASHBOARD_ORIGIN` |
 | Launcher | `~/.local/bin/pi-tasks-agent` (install from `scripts/pi-tasks-agent`) |
 | Model | `deepseek` / `deepseek-flash` / thinking `high` (all from `settings.json`) |
-| Instructions | `AGENTS.md` — "instructions come from the user" plus `gog tasks`. `APPEND_SYSTEM.md` — **zero bytes, frozen** |
+| Instructions | `AGENTS.md` — identity and how to work. `APPEND_SYSTEM.md` — environment and standing Google Tasks work (default list `Reminders`) |
 | Usage | `logs/ledger.sqlite`, filled from `sessions/` by a user timer; viewed at `http://127.0.0.1:8791` |
 
 ## Call
@@ -110,8 +111,8 @@ on the next tick.
 | `keep-cli` / Keep API | Tasks, not Keep. Use `gog tasks` |
 | Ledger history | Started empty |
 
-`APPEND_SYSTEM.md` being empty is the freeze. This home has no `fetch:publications` script
-and neither publishes nor consumes a sibling roster.
+`APPEND_SYSTEM.md` holds the standing Google Tasks environment (unfrozen 2026-11-07). This
+home has no `fetch:publications` script and neither publishes nor consumes a sibling roster.
 
 ## What still works
 
@@ -131,7 +132,7 @@ PI_CODING_AGENT_DIR="$PWD" pi list          # expect: no user packages
 ls extensions skills prompts bin 2>&1       # expect: four "No such file or directory"
 ls src/calendar-node.ts src/jev-classify.ts src/global-config.ts scripts/keep_cli.py 2>&1
                                             # expect: four "No such file or directory"
-wc -c APPEND_SYSTEM.md                      # expect: 0
+wc -c APPEND_SYSTEM.md                      # expect: non-zero (standing Tasks work)
 pi-tasks-agent -p "say ok"                  # expect: no [jev] line, no gate booleans
 ```
 
