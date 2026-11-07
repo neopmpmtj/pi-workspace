@@ -8,8 +8,7 @@
   "scripts": {
     "test": "node --experimental-strip-types --test --test-timeout=20000 test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "dashboard": "node --experimental-strip-types dashboard/server.ts",
-    "fetch:publications": "node --experimental-strip-types scripts/fetch-publications.ts"
+    "dashboard": "node --experimental-strip-types dashboard/server.ts"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "1.4.0",
