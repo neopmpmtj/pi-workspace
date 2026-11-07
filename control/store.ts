@@ -501,8 +501,12 @@ async function readObject(file: string): Promise<Record<string, unknown>> {
   let text: string;
   try {
     text = await readFile(file, "utf8");
-  } catch {
-    throw new SettingsError(`Cannot read ${path.basename(file)}.`);
+  } catch (error) {
+    // The store files are per-machine and gitignored, so a fresh host has none of them.
+    // Seed from the tracked <name>.sample.json instead of failing the whole CLI.
+    const seeded = isMissing(error) ? await seedFromSample(file) : null;
+    if (seeded === null) throw new SettingsError(`Cannot read ${path.basename(file)}.`);
+    text = seeded;
   }
   let parsed: unknown;
   try {
@@ -511,6 +515,41 @@ async function readObject(file: string): Promise<Record<string, unknown>> {
     throw new SettingsError(`${path.basename(file)} is not valid JSON.`);
   }
   return objectOf(parsed, path.basename(file));
+}
+
+/** config.json -> config.sample.json beside it. Ungoverned files have no sample and stay errors. */
+function samplePath(file: string): string {
+  return path.join(path.dirname(file), `${path.basename(file, ".json")}.sample.json`);
+}
+
+/**
+ * Copies <name>.sample.json to <name> and returns its text, or null when there is no sample.
+ * The sample itself is never written; the copy is exclusive, so a file another process created
+ * in the meantime wins the race and is read instead.
+ */
+async function seedFromSample(file: string): Promise<string | null> {
+  const sample = samplePath(file);
+  let text: string;
+  try {
+    text = await readFile(sample, "utf8");
+  } catch {
+    return null;
+  }
+  try {
+    await writeFile(file, text, { encoding: "utf8", flag: "wx" });
+  } catch {
+    try {
+      return await readFile(file, "utf8");
+    } catch {
+      return null;
+    }
+  }
+  process.stderr.write(`[note] ${path.basename(file)} was missing — seeded from ${path.basename(sample)}\n`);
+  return text;
+}
+
+function isMissing(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT";
 }
 
 async function writeObject(file: string, value: Record<string, unknown>): Promise<void> {

@@ -115,11 +115,17 @@ cp input-phrase-config.sample.json input-phrase-config.json
 cp prompt-build-config.sample.json prompt-build-config.json
 ```
 
-A missing file still breaks `pi-config` (`SettingsError: Cannot read …`, `control/store.ts`) while
-the hooks merely stay off — so seed before using the CLI. Untracking does **not** delete the
-working file, but a *pull* of the commit that untracked it does: back the three files up on the
-other host first, pull, then restore. The launcher `~/.local/bin/pi-config` is not in the repo;
-copy it to a new host by hand.
+A missing file no longer breaks the CLI: `readObject` (`control/store.ts`) seeds `<name>.json`
+from `<name>.sample.json` on the first read and prints `[note] <name> was missing — seeded from
+<name>.sample.json` on stderr (stdout stays clean for `--json`). The copy is exclusive (`wx`), so
+a file created meanwhile wins, and the sample itself is never written. A file that has no sample
+(e.g. an agent's `settings.json`) still fails with `SettingsError: Cannot read …`, which is right —
+those are tracked and a missing one means a broken checkout. The hooks keep their own rule: absent
+file, hook off.
+
+Untracking does **not** delete the working file, but a *pull* of the commit that untracked it does:
+back the three files up on the other host first, pull, then restore (done once, 2026-11-07). The
+launcher `~/.local/bin/pi-config` is not in the repo; copy it to a new host by hand.
 
 Value forms: booleans `true|false|on|off|yes|no|1|0`; `tools`/`enabledModels` a comma list;
 `extensions` a JSON array of `"+path"`/`"-path"` (or `{path, enabled}`);
