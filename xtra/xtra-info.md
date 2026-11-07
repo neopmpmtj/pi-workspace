@@ -17,10 +17,14 @@ curl -sS -m 8 -o /dev/null -w "%{http_code}\n" https://news.ycombinator.com/
 | Web master (page and API) | http://127.0.0.1:8789 |
 | Image describer page | http://127.0.0.1:5173 |
 
+Keep (`:8790`) and the project control plane (`:8786`) are not in this table. Keep is a user systemd unit (`pi-keep-agent-dashboard.service`). `:8786` is `control/server.ts`, started by hand.
+
+The scripts below are a leftover laptop helper. Nothing else calls them (only `restart-dashboards.sh` wraps start). They are not an agent registry. Do not add new siblings here; COS roster is `APPEND_SYSTEM.md`, settings/dashboard start is `control/agents.ts`.
+
 ```bash
-~/pi-agents-experts-grouped/scripts/stop-dashboards.sh
-~/pi-agents-experts-grouped/scripts/start-dashboards.sh
-~/pi-agents-experts-grouped/scripts/restart-dashboards.sh
+~/.pi/xtra/bash-system-scripts/stop-dashboards.sh
+~/.pi/xtra/bash-system-scripts/start-dashboards.sh
+~/.pi/xtra/bash-system-scripts/restart-dashboards.sh
 ```
 
-Logs: `~/pi-agents-experts-grouped/.dashboard-logs/`
+They boot only 8787, 8788, 8789, and 5173. Logs: `~/.pi/.dashboard-logs/`
