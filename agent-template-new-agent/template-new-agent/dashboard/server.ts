@@ -10,7 +10,7 @@ import { summarizeRuns, tokensOfCall, totalsByModel, type RunSummary } from "../
 import { estimateCost } from "../ledger/tokens.ts";
 import { readDefaultModel, THINKING_LEVELS, writeDefaultModel } from "../src/default-model.ts";
 
-const DEFAULT_ORIGINS = ["http://127.0.0.1:8791", "http://localhost:8791"];
+const DEFAULT_ORIGINS = ["http://127.0.0.1:8792", "http://localhost:8792"];
 const PUBLIC_DIR = path.join(import.meta.dirname, "public");
 const MAX_BODY = 8_192;
 
@@ -37,7 +37,7 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
   const root = options.root ?? process.env.DASHBOARD_ROOT ?? path.join(import.meta.dirname, "..");
   const env: NodeJS.ProcessEnv = { ...process.env, PI_CODING_AGENT_DIR: root };
   const host = options.host ?? process.env.DASHBOARD_HOST ?? "127.0.0.1";
-  const port = options.port ?? Number(process.env.DASHBOARD_PORT ?? 8791);
+  const port = options.port ?? Number(process.env.DASHBOARD_PORT ?? 8792);
   const origins = options.origins ?? (process.env.DASHBOARD_ORIGIN?.split(",").map((o) => o.trim()) ?? DEFAULT_ORIGINS);
   const pollMs = options.pollMs ?? 2_000;
   const watchers = new Set<ServerResponse>();
@@ -348,7 +348,7 @@ if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
   const dashboard = startDashboard();
   const announce = (): void => {
     const address = dashboard.server.address();
-    const bound = typeof address === "object" && address ? address.port : 8791;
+    const bound = typeof address === "object" && address ? address.port : 8792;
     write(`template-new-agent dashboard on http://127.0.0.1:${bound}\n`);
   };
   if (dashboard.server.listening) announce();

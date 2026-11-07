@@ -21,6 +21,7 @@ export const AGENTS: readonly AgentSpec[] = [
   { id: "image-describer", name: "Image describer", home: "agent-image-describer/image-describer", port: 8788 },
   { id: "web-master", name: "Web master", home: "agent-web-master/web-master", port: 8789 },
   { id: "keep", name: "Keep", home: "agent-keep-agent/keep-agent", port: 8790 },
+  { id: "tasks", name: "Tasks", home: "agent-tasks-agent/tasks-agent", port: 8791 },
   {
     id: "google-workspace",
     name: "Google Workspace",

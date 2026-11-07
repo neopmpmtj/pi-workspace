@@ -4,7 +4,7 @@
   "defaultPrompt": "<task in plain language>",
   "call": "<task in plain language>",
   "publish": false,
-  "purpose": "Lean portable seed of a tools-only agent: zero extensions, zero skills, no Telegram bridge, no git automation, instructions from the user only. Not a live sibling and not the COS scaffold. Token usage is recorded in its own ledger; dashboard default :8791.",
+  "purpose": "Lean portable seed of a tools-only agent: zero extensions, zero skills, no Telegram bridge, no git automation, instructions from the user only. Not a live sibling and not the COS scaffold. Token usage is recorded in its own ledger; dashboard default :8792.",
   "contract": "~/.pi/agent-template-new-agent/template-new-agent/docs/CALLING.md",
   "frozen": [
     "APPEND_SYSTEM.md"

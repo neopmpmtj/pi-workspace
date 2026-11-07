@@ -44,6 +44,7 @@ async function fixture(): Promise<string> {
     "agent-image-describer/image-describer",
     "agent-web-master/web-master",
     "agent-keep-agent/keep-agent",
+    "agent-tasks-agent/tasks-agent",
     "agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace",
   ]) {
     const dir = path.join(root, homePath);

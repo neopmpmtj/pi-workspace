@@ -15,9 +15,9 @@ To insert this home as its own agent: copy and rename the container, pick a free
 | Launcher | `pi-template-new-agent` (not installed; this seed is not launched) |
 | Model | `deepseek` / `deepseek-flash` / thinking `high` (all from `settings.json`) |
 | Instructions | `AGENTS.md` — "instructions come from the user" plus generic hygiene. `APPEND_SYSTEM.md` — **zero bytes, frozen** |
-| Usage | `logs/ledger.sqlite`, filled from `sessions/` by ingest; dashboard default `http://127.0.0.1:8791` |
+| Usage | `logs/ledger.sqlite`, filled from `sessions/` by ingest; dashboard default `http://127.0.0.1:8792` |
 
-Ports 8786–8790 are already taken (control, COS, image-describer, web-master, keep). Override
+Ports 8786–8791 are already taken (control, COS, image-describer, web-master, keep, tasks). Override
 with `DASHBOARD_PORT` when inserting.
 
 ## Call
@@ -40,7 +40,7 @@ There are no slash commands in this home: no `/ask`, `/usage`, `/cron`, `/archiv
 ```bash
 cd ~/.pi/agent-template-new-agent/template-new-agent && PI_CODING_AGENT_DIR=$PWD \
   node --experimental-strip-types scripts/ingest.ts
-npm run dashboard   # http://127.0.0.1:8791 unless DASHBOARD_PORT is set
+npm run dashboard   # http://127.0.0.1:8792 unless DASHBOARD_PORT is set
 ```
 
 ## What is gone, deliberately
