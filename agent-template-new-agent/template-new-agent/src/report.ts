@@ -32,5 +32,5 @@ export function formatFooter(outcome: AskOutcome): string {
   if (outcome.costPi !== null) parts.push(`pi ${formatMoney(outcome.costPi)}`);
   if (outcome.effortEffective) parts.push(`effort ${outcome.effortEffective}`);
   if (outcome.durationMs !== null) parts.push(`${(outcome.durationMs / 1000).toFixed(2)}s`);
-  return `[keep-agent] ${parts.join(" · ")}`;
+  return `[template-new-agent] ${parts.join(" · ")}`;
 }

@@ -55,8 +55,8 @@ const CATALOG = {
 };
 
 before(async () => {
-  repo = await mkdtemp(path.join(tmpdir(), "keep-agent-dash-"));
-  root = path.join(repo, "keep-agent");
+  repo = await mkdtemp(path.join(tmpdir(), "template-new-agent-dash-"));
+  root = path.join(repo, "template-new-agent");
   await mkdir(path.join(root, "sessions", "--tmp--"), { recursive: true });
   await mkdir(path.join(root, "logs"), { recursive: true });
   await writeFile(path.join(root, "sessions", "--tmp--", `2026-10-27T08-00-00-000Z_${SESSION_ID}.jsonl`), `${SESSION}\n`, "utf8");
@@ -90,7 +90,7 @@ describe("dashboard", () => {
   it("serves the page and its assets", async () => {
     const page = await fetch(`${base}/`);
     assert.equal(page.status, 200);
-    assert.match(await page.text(), /cos<span>·<\/span>orchestrator<span>·<\/span>agent/);
+    assert.match(await page.text(), /template<span>·<\/span>new<span>·<\/span>agent/);
     const script = await fetch(`${base}/app.js`);
     assert.equal(script.status, 200);
     assert.match(await script.text(), /api\/data/);

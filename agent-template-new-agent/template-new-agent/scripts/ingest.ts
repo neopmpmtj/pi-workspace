@@ -4,7 +4,7 @@
 // per-file byte offset, so a run that is late (or never happened) backfills every turn it
 // missed. Nothing is lost by leaving this off for a while — it just is not visible yet.
 //
-// Run by the `pi-keep-agent-ledger.timer` user timer, or by hand:
+// Run by hand (this seed has no systemd timer):
 //   PI_CODING_AGENT_DIR=$PWD node --experimental-strip-types scripts/ingest.ts
 import { ledgerPath, sessionsRoot } from "../ledger/env.ts";
 import { syncSessions } from "../ledger/ingest.ts";

@@ -33,7 +33,7 @@ const CALL: CallRecord = {
 
 describe("ledger store", () => {
   it("writes a call, assigns a sequence, and reads it back", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "keep-agent-"));
+    const root = await mkdtemp(path.join(tmpdir(), "template-new-agent-"));
     const ledger = openLedger(path.join(root, "logs", "ledger.sqlite"));
     try {
       ledger.upsertRun({
@@ -60,7 +60,7 @@ describe("ledger store", () => {
   });
 
   it("ignores a repeated call id, so re-reading a session cannot duplicate rows", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "keep-agent-"));
+    const root = await mkdtemp(path.join(tmpdir(), "template-new-agent-"));
     const ledger = openLedger(path.join(root, "logs", "ledger.sqlite"));
     try {
       assert.equal(ledger.insertCall(CALL), true);
@@ -73,7 +73,7 @@ describe("ledger store", () => {
   });
 
   it("keeps one run row and updates it", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "keep-agent-"));
+    const root = await mkdtemp(path.join(tmpdir(), "template-new-agent-"));
     const ledger = openLedger(path.join(root, "logs", "ledger.sqlite"));
     try {
       const run = {

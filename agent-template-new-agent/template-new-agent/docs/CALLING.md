@@ -1,108 +1,77 @@
-# Calling keep-agent
+# Calling template-new-agent
 
-`keep-agent` is the orchestrator stripped to its model, tools and usage tracking. It has no
-baked-in instructions: the user's message is the task.
+This is a lean portable seed, not a live sibling. `"publish": false` keeps it off the COS
+roster. COS creates new siblings from `agent/cos-orchestrator-agent` via
+`skills/agent-creator/scripts/scaffold.ts`, not from this folder.
+
+To insert this home as its own agent: copy and rename the container, pick a free
+`DASHBOARD_PORT`, write a launcher, then either leave `publish: false` or add it to the roster
+(`npm run fetch:publications` in COS, and `control/agents.ts` if it should appear on `:8786`).
 
 | Item | Value |
 | --- | --- |
-| Home | `~/.pi/agent-keep-agent/keep-agent` (`PI_CODING_AGENT_DIR`) |
-| Env | `~/.pi/agent-keep-agent/.env` — provider keys, `DASHBOARD_PORT=8788`, `DASHBOARD_ORIGIN` |
-| Launcher | `~/.local/bin/pi-keep-agent` |
+| Home | `~/.pi/agent-template-new-agent/template-new-agent` (`PI_CODING_AGENT_DIR`) |
+| Env | `~/.pi/agent-template-new-agent/.env` — provider keys, `DASHBOARD_PORT`, `DASHBOARD_ORIGIN` |
+| Launcher | `pi-template-new-agent` (not installed; this seed is not launched) |
 | Model | `deepseek` / `deepseek-flash` / thinking `high` (all from `settings.json`) |
 | Instructions | `AGENTS.md` — "instructions come from the user" plus generic hygiene. `APPEND_SYSTEM.md` — **zero bytes, frozen** |
-| Usage | `logs/ledger.sqlite`, filled from `sessions/` by a user timer; viewed at `http://127.0.0.1:8788` |
+| Usage | `logs/ledger.sqlite`, filled from `sessions/` by ingest; dashboard default `http://127.0.0.1:8791` |
+
+Ports 8786–8790 are already taken (control, COS, image-describer, web-master, keep). Override
+with `DASHBOARD_PORT` when inserting.
 
 ## Call
 
+This seed has no launcher on `PATH`. After you install one:
+
 ```bash
-cd ~/.pi/agent-keep-agent/keep-agent && pi-keep-agent -p "<task in plain language>"
+cd ~/.pi/agent-template-new-agent/template-new-agent && pi-template-new-agent -p "<task in plain language>"
 ```
 
 There are no slash commands in this home: no `/ask`, `/usage`, `/cron`, `/archive`, `/commit`,
 `/sync`, `/reminders`. A `-p` turn is the only way in. Per-run overrides: `--model`, `--thinking`.
 
-## Usage tracking, from conversation 1 onward
+## Usage tracking
 
-Every turn is recorded, including the ones that happened before the tracker was switched on.
-
-- **Source of truth: `sessions/`.** Pi itself writes one JSONL per session. Never prune it — the
-  ledger is only a derived cache of it.
-- **Ingest:** `scripts/ingest.ts` reads those files with a per-file byte offset and writes runs,
-  calls, tokens and cost into `logs/ledger.sqlite`. A file that grew since the last read is read
-  from the offset; a file that shrank is re-read from zero (repeated call ids make that safe).
-  So a late or missed ingest backfills everything it skipped — nothing is lost, it is only
-  invisible until the next run.
-- **Who runs it:** `pi-keep-agent-ledger.timer` (user timer, every 2 min, plus 2 min after boot),
-  which starts `pi-keep-agent-ledger.service`. Output is appended to `logs/ingest.log`.
-- **How to look:** `pi-keep-agent-dashboard.service` serves the dashboard on
-  `http://127.0.0.1:8788` and ingests on every `/api/data` request. Port 8787 stays the
-  orchestrator's, and `DASHBOARD_ORIGIN` in the `.env` allows the 8788 origin.
+- **Source of truth: `sessions/`.** Pi itself writes one JSONL per session.
+- **Ingest:** `scripts/ingest.ts` reads those files with a per-file byte offset and writes runs
+  into `logs/ledger.sqlite`. Run by hand; this seed has no systemd timer.
 
 ```bash
-systemctl --user status pi-keep-agent-ledger.timer pi-keep-agent-dashboard.service --no-pager
-tail -5 ~/.pi/agent-keep-agent/keep-agent/logs/ingest.log
-cd ~/.pi/agent-keep-agent/keep-agent && PI_CODING_AGENT_DIR=$PWD \
-  node --experimental-strip-types scripts/ingest.ts     # ingest now, by hand
+cd ~/.pi/agent-template-new-agent/template-new-agent && PI_CODING_AGENT_DIR=$PWD \
+  node --experimental-strip-types scripts/ingest.ts
+npm run dashboard   # http://127.0.0.1:8791 unless DASHBOARD_PORT is set
 ```
-
-Totals by hand (no dashboard needed):
-
-```bash
-cd ~/.pi/agent-keep-agent/keep-agent && node -e '
-const {DatabaseSync}=require("node:sqlite");
-const db=new DatabaseSync("logs/ledger.sqlite");
-console.log(db.prepare("select count(*) runs from runs").get(),
-            db.prepare("select count(*) calls, sum(total_tokens) tokens, sum(cost_pi) usd from calls").get());'
-```
-
-Rebuild the cache from scratch: delete `logs/ledger.sqlite` and run the ingest above. The next
-run reads every session file, because the offsets live in that database.
-
-Known limit: `Linger=no` for this user, so the timer only ticks while `pmpmt` has a session.
-That is harmless here — turns only happen while someone is logged in — and any gap is backfilled
-on the next tick.
 
 ## What is gone, deliberately
 
 | Removed | Why |
 | --- | --- |
-| Every extension (`extensions/`) | Question 3: the calendar and reminder nodes share `~/.pi/config.json`, `~/.pi/decision-nodes/` and `reminders.jsonl` with the orchestrator and could double-write. The rest went with them: cron, archive, chat, `/commit`, the input gates, `secret-scrubber`, `auto-sync`. Recoverable from the `~/.pi` git history or the orchestrator's home |
-| Routing source (`src/calendar-node.ts`, `reminder-node.ts`, `jev-classify.ts`, `jev-feedback.ts`, `telegram-delivery.ts`, `input-contains-*.ts`, `less-than-input-words.ts`, `global-config.ts`) | The extensions were already gone; these files still imported the shared classifier and `reminders.jsonl`. Leaving them in a home with no `extensions/` made the tree look like this copy still routed, and a later copy of COS's `extensions/` onto this `src/` would double-write. Restore from COS, not from this home |
-| `skills/` | Every `SKILL.md` was re-sent each turn — the largest per-turn cost. Instructions come from the user; the agent needs no skills |
-| `npm/`, `telegram.json`, `@llblab/pi-telegram` | No bot token, so the bridge could never connect, and it injected six skills into every turn. Revert: `pi install npm:@llblab/pi-telegram` |
-| Git automation | The workspace pull is gone from the launcher and `auto-sync` went with the extensions. This home never commits or pushes `~/.pi` |
-| `prompts/`, `bin/`, `docs/` (except this file) | Inherited from the orchestrator: prompt templates and vendored `fd`/`rg` binaries nothing referenced, and a 400 KB runbook archive describing *other* agents. Zero prompt cost, but misleading for a specialist |
-| Ledger history | Started empty. Conversation 1 of this home (2026-11-06 10:08) is in the ledger |
+| Every extension (`extensions/`) | Calendar and reminder nodes share `~/.pi/config.json`, `~/.pi/decision-nodes/` and `reminders.jsonl` with the orchestrator and could double-write. Restore from COS, not from this home |
+| Routing source (`src/calendar-node.ts`, `reminder-node.ts`, `jev-classify.ts`, `jev-feedback.ts`, `telegram-delivery.ts`, `input-contains-*.ts`, `less-than-input-words.ts`, `global-config.ts`) | Same double-write risk. This seed stays lean |
+| `skills/` | Every `SKILL.md` was re-sent each turn. Instructions come from the user |
+| Roster publication | `"publish": false` — this is not keep-agent and must not appear as a second keep row |
 
 `APPEND_SYSTEM.md` being empty is the freeze. This home has no `fetch:publications` script
 and neither publishes nor consumes a sibling roster.
 
 ## What still works
 
-- `ledger/`, `dashboard/`, `scripts/ingest.ts`, `src/default-model.ts` — the usage stack the
-  timer and dashboard run, copied in this home so it stays portable.
+- `ledger/`, `dashboard/`, `scripts/ingest.ts`, `src/default-model.ts` — the usage stack, copied
+  in this home so a new agent stays portable.
 - `src/args.ts`, `ask.ts`, `usage.ts`, `effective.ts`, `prompt.ts`, `report.ts`,
   `session-command.ts`, `archive-command.ts` — slash-command parsers with no `extensions/` to
   register them. Kept so a chat extension can be added here without copying those files from COS.
-- Tests: `npm test` (76 tests) — ledger, token, dashboard, `/ask` parsers, and model code. No
-  calendar, reminder, JEV, or input-gate tests; those modules are not in this home.
-- `node_modules` (177 MB) exists only for those three folders; nothing in the prompt path needs it.
+- Tests: `npm test` (76 tests) — ledger, token, dashboard, `/ask` parsers, and model code.
 
 ## Verify it is still lean
 
 ```bash
-cd ~/.pi/agent-keep-agent/keep-agent
-PI_CODING_AGENT_DIR="$PWD" pi list          # expect: no user packages
+cd ~/.pi/agent-template-new-agent/template-new-agent
 ls extensions skills prompts bin 2>&1       # expect: four "No such file or directory"
 ls src/calendar-node.ts src/jev-classify.ts src/global-config.ts 2>&1
                                             # expect: three "No such file or directory"
 wc -c APPEND_SYSTEM.md                      # expect: 0
-pi-keep-agent -p "say ok"                   # expect: no [jev] line, no gate booleans
+python3 -c "import json; print(json.load(open('agent.json'))['name'])"
+                                            # expect: template-new-agent
 ```
-
-## Host context that still arrives
-
-`/home/pmpmt/AGENTS.md` is loaded by working directory, so any agent started from under `$HOME`
-receives the machine facts (Portugal, LAN server `192.168.1.60`, VPS). The frozen
-`APPEND_SYSTEM.md` cannot suppress it; only a cwd outside `$HOME` would. `AGENTS.md` tells the
-agent to treat those facts as context, not orders.
