@@ -17,7 +17,7 @@ To insert this home as its own agent: copy and rename the container, pick a free
 | Instructions | `AGENTS.md` — "instructions come from the user" plus generic hygiene. `APPEND_SYSTEM.md` — **zero bytes, frozen** |
 | Usage | `logs/ledger.sqlite`, filled from `sessions/` by ingest; dashboard default `http://127.0.0.1:8792` |
 
-Ports 8786–8791 are already taken (control, COS, image-describer, web-master, keep, tasks). Override
+Ports in use are 8786 (control), 8787 (COS), 8788 (image-describer), 8789 (web-master), and 8791 (tasks). `:8790` is free and must not be reused for keep-agent. This seed stays on `:8792`. Override
 with `DASHBOARD_PORT` when inserting.
 
 ## Call
@@ -50,7 +50,7 @@ npm run dashboard   # http://127.0.0.1:8792 unless DASHBOARD_PORT is set
 | Every extension (`extensions/`) | Calendar and reminder nodes share `~/.pi/config.json`, `~/.pi/decision-nodes/` and `reminders.jsonl` with the orchestrator and could double-write. Restore from COS, not from this home |
 | Routing source (`src/calendar-node.ts`, `reminder-node.ts`, `jev-classify.ts`, `jev-feedback.ts`, `telegram-delivery.ts`, `input-contains-*.ts`, `less-than-input-words.ts`, `global-config.ts`) | Same double-write risk. This seed stays lean |
 | `skills/` | Every `SKILL.md` was re-sent each turn. Instructions come from the user |
-| Roster publication | `"publish": false` — this is not keep-agent and must not appear as a second keep row |
+| Roster publication | `"publish": false` — the seed stays off the COS roster |
 
 `APPEND_SYSTEM.md` being empty is the freeze. This home has no `fetch:publications` script
 and neither publishes nor consumes a sibling roster.

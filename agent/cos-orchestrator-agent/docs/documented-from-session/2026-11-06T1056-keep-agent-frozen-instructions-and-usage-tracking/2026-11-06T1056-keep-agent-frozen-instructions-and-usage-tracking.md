@@ -1,5 +1,7 @@
 # keep-agent — Lean Sibling Agent with Frozen Instructions & Usage Tracking — Setup & Implementation Report
 
+> Removed 2026-11-07. Do not restore. This file is the creation record only.
+
 **Date:** 2026-11-06
 **System:** Ubuntu 24.04.5 LTS (thinkpad `pmpmt-ThinkPad-T15-Gen-2i`), Pi v1.4.0, Node v24.21.0
 **Location:** `~/.pi/agent-keep-agent/keep-agent/` (agent home) · `~/.pi/agent-keep-agent/.env` (keys) ·

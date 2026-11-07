@@ -59,7 +59,7 @@ Paths
   promptBuild.<${promptBuildOptions.join("|")}>.{enabled,prompt,config}
                                  config takes a JSON object
   agent.<id>.{provider,model,thinking,tools,enabledModels,extensions,packages}
-                                 <id>: cos · image-describer · web-master · keep · google-workspace
+                                 <id>: cos · image-describer · web-master · tasks · google-workspace
                                  tools/enabledModels take a comma list, extensions/packages a JSON array
 
 Booleans accept true/false, on/off, yes/no, 1/0. A value with spaces is joined from the

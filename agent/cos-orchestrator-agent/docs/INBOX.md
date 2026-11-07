@@ -209,27 +209,16 @@ by default; refuses the current Cursor files by name).
       `false` the node routes nothing at all — no row in `reminders.jsonl`, no event, no done
       op. JEV still classifies and the verdict still lands in `verdicts.jsonl`.
 - [ ] The reminder path should have three destinations, in this order: (1) the calendar event,
-      today's custom path, behind `reminderNode.writes`; (2) a Google Keep note, the new
-      option; (3) the fallback, an ordinary model turn with nothing written. Config chooses
-      one, the other, or both in sequence. Blocker found 2026-11-06: the official Keep API is
-      Workspace only — `gog keep` (v0.34.0: list, get, search, create --title/--text/--item,
-      delete, attachment) sits under "Workspace service-account-only services" and this host's
-      only account is the personal `neopmpmtj@gmail.com`. **Resolved the same day, differently:**
-      the internal `notes/v1` API works for personal accounts with a master token, and it now
-      exists as `keep-cli` in keep-agent (`--add`, `--item-add`, `--check`), so destination (2)
-      is unblocked — the node can shell out to `keep-cli` instead of `gog keep`.
+      today's custom path, behind `reminderNode.writes`; (2) a Google Keep note; (3) the
+      fallback, an ordinary model turn with nothing written. Config chooses one, the other,
+      or both in sequence. The official Keep API is Workspace only, and `gog keep` does not
+      serve the personal account `neopmpmtj@gmail.com`. On 2026-11-07 keep-cli was removed
+      with keep-agent and must not be restored, so destination (2) is blocked again.
       Home: `extensions/reminder-node/index.ts`, `~/.pi/decision-nodes/reminder/config.py`.
-- [ ] `keep-agent` (built 2026-11-06, home `~/.pi/agent-keep-agent/keep-agent`, launcher
-      `pi-keep-agent`): a functional copy of this agent whose `AGENTS.md` says only that
-      instructions come from the user and whose `APPEND_SYSTEM.md` is zero bytes and frozen.
-      Two things are deliberately off and stay off until decided: the Telegram bridge has no
-      `TELEGRAM_BOT_TOKEN` (one polling owner per bot token — needs a **second** bot from
-      BotFather), and the calendar/reminder/jev routing extensions are dot-hidden
-      (`extensions/.calendar-node/` etc.) because they would share `~/.pi/config.json` gates,
-      `~/.pi/decision-nodes/` and `reminders.jsonl` with this agent and could double-write.
-      Its `auto-sync.ts` is `.disabled`: two processes pushing the same `~/.pi` repo is the
-      hazard that actually bit during verification. Its dashboard defaults to `8788`.
-      Contract: `~/.pi/agent-keep-agent/keep-agent/docs/CALLING.md`.
+- [x] ~~`keep-agent` (built 2026-11-06, home `~/.pi/agent-keep-agent/keep-agent`, launcher
+      `pi-keep-agent`).~~ Removed 2026-11-07 together with keep-cli. Will not return: no home,
+      no roster row, no `control/agents.ts` row, no `:8790` unit, no launcher. Creation report:
+      `docs/documented-from-session/2026-11-06T1056-keep-agent-frozen-instructions-and-usage-tracking/`.
 
 ## tasks-agent (2026-11-07)
 - [x] Lean sibling at `~/.pi/agent-tasks-agent/tasks-agent`, launcher `pi-tasks-agent`,
@@ -239,10 +228,11 @@ by default; refuses the current Cursor files by name).
       `~/.pi/agent-tasks-agent/tasks-agent/docs/CALLING.md`.
 
 ## Google Keep via `keep-cli` (2026-11-06)
+
+Removed 2026-11-07 with keep-agent. Do not restore. The checked items record what shipped that week. The open items are cancelled.
+
 - [x] ~~`keep-cli --read-all-items` — read every Keep entry.~~ Shipped 2026-11-06 as
-      `keep-agent`'s own tool (`~/.pi/agent-keep-agent/keep-agent/scripts/keep_cli.py`, command
-      `~/.local/bin/keep-cli`); personal account `neopmpmtj@gmail.com` authenticated with a
-      stored master token, `--login`/`--web-token` for re-auth. Docs:
+      keep-agent's tool, then removed with that agent on 2026-11-07. Historical runbook:
       `docs/runbooks/google-keep-read-all.md` here.
 - [x] ~~Create notes and lists (`--add`, `--add-list`), bin them (`--trash`, `--restore`).~~
       Shipped 2026-11-06 after the payload diff against real `gkeepapi` node serialisation
@@ -251,20 +241,18 @@ by default; refuses the current Cursor files by name).
 - [x] ~~Edit rows in place: append to an existing list, tick and untick.~~ Shipped 2026-11-06
       (`--item-add TEXT --list NAME`, `--check=#1:2`, `--uncheck=#1:2`, `--rows`). Appended rows
       carry the **list's** `serverId` as `parentServerId`; ticking bumps `updated`+`userEdited`.
-- [ ] Telegram capture: a message starting `keep:` files a note or appends a row
-      (`keep-cli --item-add`) with no model turn. Needs a canned command in the bridge
-      extension and a target list per chat.
-- [ ] Morning brief that acts: cron 07:00 — unchecked rows of "Today", rows untouched for
-      >7 days, plus `gog` calendar, in one Telegram message. Uses `keep-cli --rows --json`.
-- [ ] Sunday reset: uncheck every row of a list, move checked rows into a "Bought <week>" note,
-      archive it. Needs a `--checked-rows` output mode and `--item-add` loops over `--json`.
-- [ ] Write-back sinks for other tools: `yt-dlp` download log, LAN storage inventory,
-      image-describer receipt totals → `keep-cli --add`. One line per tool, no new API.
-- [ ] Searchable memory for the orchestrator: `keep-cli --search <term>` instead of reading
-      old screenshots; decide whether the CoS agent should call it directly (it is another
-      agent's tool) or route through `pi-keep-agent`.
-- [ ] Tasks bridge: unchecked Keep rows → `gog tasks` entries, completed → back as ticked rows.
-      Needs idempotency (a row→task id map) before it can be scheduled.
+- [x] ~~Telegram capture: a message starting `keep:` files a note or appends a row.~~
+      Cancelled 2026-11-07. keep-cli was removed with keep-agent and will not return.
+- [x] ~~Morning brief that acts: cron 07:00 — unchecked rows of "Today", rows untouched for
+      >7 days, plus `gog` calendar.~~ Cancelled 2026-11-07 with keep-cli.
+- [x] ~~Sunday reset: uncheck every row of a list, move checked rows into a "Bought <week>"
+      note.~~ Cancelled 2026-11-07 with keep-cli.
+- [x] ~~Write-back sinks for other tools: `yt-dlp` download log, LAN storage inventory,
+      image-describer receipt totals.~~ Cancelled 2026-11-07 with keep-cli.
+- [x] ~~Searchable memory for the orchestrator via Keep search.~~ Cancelled 2026-11-07
+      with keep-cli.
+- [x] ~~Tasks bridge: unchecked Keep rows → `gog tasks` entries.~~ Cancelled 2026-11-07
+      with keep-cli.
 
 ## VPS parity (2026-11-06)
 - [x] ~~`pi-agent.service` on the VPS is `inactive` + `disabled`, while an orphan `pi` process
@@ -278,9 +266,10 @@ by default; refuses the current Cursor files by name).
       bot token stripped from `~/.pi/agent/.env`. `pi-cos.service` is now the single owner,
       `telegram connected`, one pi process. Lesson written up in
       `docs/runbooks/vps-agent-parity.md`.
-- [ ] keep-agent on the VPS has no dashboard/ledger units (`pi-keep-agent-dashboard.service`,
-      `pi-keep-agent-ledger.timer`), so its token usage is not tracked there. Install them, or
-      decide keep-agent stays laptop-only and the VPS just borrows `keep-cli`.
+- [x] ~~keep-agent on the VPS has no dashboard/ledger units.~~ Cancelled 2026-11-07:
+      keep-agent and keep-cli were removed and will not return. The launcher, symlink,
+      credentials, and `.env` were deleted on the VPS the same day. The git tree there still
+      has the folder until this removal is committed, pushed, and pulled.
 
 ## Agent home restore & rename audit (2026-11-06)
 - [x] ~~`/archive /home/pmpmt/.pi/agent` moved the live home into `z.old/` and the deletion
@@ -313,8 +302,8 @@ by default; refuses the current Cursor files by name).
       `OnCalendar=08:00 Europe/Lisbon`, `Persistent=true`; a real run reports `Result=success`,
       probe ~615 ms). Both hosts' units are written up in
       `docs/runbooks/gog-token-keepalive.md`.
-- [ ] **Login lingering on the laptop.** `Linger=no`, so every user timer here (the gog probe and
-      the keep-agent ledger timer) only exists while `pmpmt` is logged in; a missed run replays at
+- [ ] **Login lingering on the laptop.** `Linger=no`, so the gog probe user timer only exists
+      while `pmpmt` is logged in; a missed run replays at
       the next login. `sudo loginctl enable-linger pmpmt` makes them fire with nobody logged in,
       but it needs a password, so it is left for Pedro.
 - [x] ~~Two cron jobs are overdue since 2026-11-03 (Daily Laptop Backup, gog-token-keepalive),

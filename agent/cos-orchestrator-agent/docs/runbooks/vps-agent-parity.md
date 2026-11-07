@@ -10,53 +10,40 @@ pull cannot supply.
 | Kind | Where | In git? | Sync |
 | --- | --- | --- | --- |
 | Agent homes (instructions, scripts, contracts, docs) | `~/.pi/agent-*/…` | yes | `git -C ~/.pi pull --ff-only` |
-| Launchers (`pi`, `pi-keep-agent`, …) | `~/.local/bin/` | **no** | copy by hand (below) |
+| Launchers (`pi`, `pi-tasks-agent`, …) | `~/.local/bin/` | **no** | copy by hand (below) |
 | Provider keys | `~/.pi/agent-*/.env` | no (`.env` ignored) | copy on the host, from another `.env` already there |
 | Model auth | `~/.pi/agent*/auth.json` | no | often `{}`; only copy when non-empty |
-| Tool logins (keep, gog) | `~/.config/keep-cli/`, `~/.config/gogcli/` | no | copy over `ssh` (secrets) |
+| Tool logins (gog) | `~/.config/gogcli/` | no | copy over `ssh` (secrets) |
 | `node_modules`, ledgers, sessions, caches | inside homes | no | rebuild: `npm install`, timers |
 | systemd user units (dashboards, ledger timer, agent service) | `~/.config/systemd/user/` | no | reinstall per agent |
 
 ## Procedure
 
+keep-agent and keep-cli were removed on 2026-11-07 and must not be copied back. That includes `pi-keep-agent`, `keep-cli`, `~/.config/keep-cli`, and `~/.pi/agent-keep-agent/.env`.
+
 ```bash
 # 1. Repo
 ssh neopmpmtj 'cd ~/.pi && git pull --ff-only && git log --oneline -1'
 
-# 2. Launchers: diff both sides, copy what is missing AND whose home exists on the VPS
+# 2. Launchers: diff both sides. Copy a missing launcher only when that agent's home
+#    exists on the VPS. Do not copy pi-keep-agent.
 ls -1 ~/.local/bin | grep -E '^pi' | sort > /tmp/laptop_pi.txt
 ssh neopmpmtj 'ls -1 ~/.local/bin | grep -E "^pi" | sort' > /tmp/vps_pi.txt
 diff /tmp/laptop_pi.txt /tmp/vps_pi.txt          # '<' = missing on the VPS
-ssh neopmpmtj 'cat > ~/.local/bin/pi-keep-agent && chmod +x ~/.local/bin/pi-keep-agent' \
-  < ~/.local/bin/pi-keep-agent
-md5sum ~/.local/bin/pi-keep-agent                 # must match both hosts
 
 # 3. Env: never transfer keys over the wire when the VPS already has them.
-#    Build the agent's .env from an .env already on that host.
-ssh neopmpmtj 'src=~/.pi/agent/.env; dst=~/.pi/agent-keep-agent/.env; \
-  umask 077; { grep -E "^(DEEPSEEK_API_KEY|GEMINI_API_KEY|OPENAI_API_KEY)=" $src; \
-  echo DASHBOARD_PORT=8788; echo DASHBOARD_ORIGIN=http://127.0.0.1:8788; \
-  grep -E "^(GOG_ACCOUNT|GOG_KEYRING_PASSWORD)=" ~/.pi/agent/.env; } > $dst; chmod 600 $dst'
-
-# 4. Tool logins: keep-cli needs its credentials file (secret; streams over the SSH channel)
-ssh neopmpmtj 'umask 077; mkdir -p ~/.config/keep-cli && cat > ~/.config/keep-cli/credentials.json' \
-  < ~/.config/keep-cli/credentials.json
-
-# 5. Command symlink (the script comes from git, the command does not)
-ssh neopmpmtj 'ln -sfn ~/.pi/agent-keep-agent/keep-agent/scripts/keep_cli.py ~/.local/bin/keep-cli'
-
-# 6. Verify with the PATH the agent actually has, not the bare ssh PATH
-ssh neopmpmtj 'pid=$(pgrep -u $USER -f "^pi$" | head -1); \
-  agentpath=$(tr "\0" "\n" < /proc/$pid/environ | grep -m1 "^PATH=" | cut -d= -f2-); \
-  env -i HOME=$HOME PATH="$agentpath" bash -c "command -v keep-cli && keep-cli --count"'
+#    Build a live agent's .env from an .env already on that host.
+#    Do not recreate ~/.pi/agent-keep-agent/.env.
 ```
 
 A non-interactive `ssh` shell has a minimal PATH that excludes `~/.local/bin`, so
-`keep-cli: command not found` there proves nothing. The supervisor starts pi with
+`command not found` there for a launcher under `~/.local/bin` proves nothing. The supervisor starts pi with
 `bash -lc`, so the agent's own bash **does** see `~/.local/bin`. Check `/proc/<pid>/environ`
 before believing a PATH failure.
 
 ## State after 2026-11-06 (what was actually fixed)
+
+Removed 2026-11-07. Do not restore. The keep-agent rows record what was installed that day. The launcher, symlink, credentials, and `.env` were deleted on both hosts on 2026-11-07. Still current: `agent-lan-agent` and `explore-discover-pi` stay off the VPS, and their launchers must not be copied either.
 
 | Item | Result |
 | --- | --- |

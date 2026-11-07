@@ -1,5 +1,7 @@
 # Reading and writing Google Keep from the terminal (`keep-cli`)
 
+> Removed 2026-11-07. Do not restore. The steps below are the record of the tool that was deleted with keep-agent. Do not run them.
+
 The tool belongs to **keep-agent**, which is the agent that runs it:
 
 - script: `~/.pi/agent-keep-agent/keep-agent/scripts/keep_cli.py`

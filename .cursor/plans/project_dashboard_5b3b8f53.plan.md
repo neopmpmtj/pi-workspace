@@ -19,6 +19,8 @@ isProject: false
 
 # Project dashboard
 
+> keep-agent, named in this plan, was removed on 2026-11-07. Do not restore.
+
 The `~/.pi` project is not an agent and has no dashboard. Each live agent already has one. This adds a project dashboard on `http://127.0.0.1:8786`. The landing page starts and stops those dashboards. The settings page is a sectioned editor of the project's control plane: every field on that page can be changed, and fields that do not belong together stay in their own section.
 
 ## What you asked for

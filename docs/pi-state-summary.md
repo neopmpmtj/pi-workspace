@@ -29,7 +29,8 @@ They overlap. They are allowed to differ.
 - COS itself is on the settings list only (it is the caller, not a sibling).
 - **lan-agent** is roster-only (own repo, gitignored here).
 - **template-new-agent** is `"publish": false` — on neither list.
-- image-describer, web-master, keep-agent, and sm-google-workspace are on both.
+- image-describer, web-master, tasks-agent, and sm-google-workspace are on both.
+- **keep-agent** and **keep-cli** were removed on 2026-11-07 and must not be restored. Port `:8790` is unused.
 
 Adding a sibling: `fetch:publications`, then a row in `control/agents.ts` if it should appear on `:8786`.
 
@@ -56,9 +57,9 @@ Gates in `config.json`: `modeSwitch`, `lessThanInputWords`, `inputContainsPath` 
 | COS | `agent/cos-orchestrator-agent` | `pi` | `:8787` |
 | image-describer | `agent-image-describer/image-describer` | `pi-image-describer` | `:8788` (Vite UI `:5173`) |
 | web-master | `agent-web-master/web-master` | `pi-web-master` | `:8789` |
-| keep-agent | `agent-keep-agent/keep-agent` | `pi-keep-agent` | `:8790` (user unit `pi-keep-agent-dashboard.service`) |
+| tasks-agent | `agent-tasks-agent/tasks-agent` | `pi-tasks-agent` | `:8791` |
 | sm-google-workspace | `agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace` | `pi-sm-google-workspace` | none |
-| template-new-agent | `agent-template-new-agent/template-new-agent` | `pi-template-new-agent` (seed, not a live sibling) | default `:8791` if you run it |
+| template-new-agent | `agent-template-new-agent/template-new-agent` | `pi-template-new-agent` (seed, not a live sibling) | default `:8792` if you run it |
 | lan-agent | `agent-lan-agent/lan-agent` (not in this git) | `pi-lan-agent` | none |
 
 Each live sibling has its own `.env`, `PI_CODING_AGENT_DIR`, and `logs/ledger.sqlite`. COS delegates with `cd <home> && <launcher> -p "<defaultPrompt>"`. Web-master default is `/ask`. Google Workspace and lan-agent use a plain-language chat turn so they have tools.
@@ -83,7 +84,7 @@ A user message can be answered without a model turn:
 
 1. **mode-switch** — `pi-config get/use promptBuild` (off unless `modeSwitch.enabled`).
 2. **JEV** — `jev-classifier/` (submodule; `classify.py`). Key: `jev-classifier/.env` (`TYPESAFE_API_KEY`).
-3. **calendar / reminder nodes** — `decision-nodes/calendar/` and `decision-nodes/reminder/` (Python). Shared `reminders.jsonl`. Fail-open. Only COS must load these hooks (keep does not, so it cannot double-write).
+3. **calendar / reminder nodes** — `decision-nodes/calendar/` and `decision-nodes/reminder/` (Python). Shared `reminders.jsonl`. Fail-open. Only COS loads these hooks. A sibling that loads them double-writes `reminders.jsonl`.
 
 JEV details: `docs/pi-state-of-jev.md`.
 
@@ -98,7 +99,8 @@ JEV details: `docs/pi-state-of-jev.md`.
 | 8788 | image-describer API | same |
 | 5173 | image-describer page | Vite; also the leftover bash helper |
 | 8789 | web-master usage | `npm run dashboard` or `:8786` Start |
-| 8790 | keep usage | user systemd, or `:8786` Start |
+| 8790 | unused | keep-agent was removed 2026-11-07; do not restore a dashboard here |
+| 8791 | tasks-agent usage | `npm run dashboard` or `:8786` Start |
 
 `xtra/bash-system-scripts/start-dashboards.sh` is a **hand-run leftover**. It starts 8787, 8788, 8789, 5173 only. It is not an agent list. See `xtra/xtra-info.md`.
 

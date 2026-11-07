@@ -101,11 +101,12 @@ milk", "já paguei a luz" mark the matching pending reminder done.
 
 These were real bugs in this tree. Do not put them back.
 
-- Only this home loads calendar, reminder, JEV, and mode-switch. keep-agent and
-  template-new-agent stay tools-only. Turning those hooks on in a sibling double-writes
-  `reminders.jsonl`.
-- `agent-template-new-agent` is a seed (`publish: false`, dashboard default :8791). It is not
-  keep-agent and not the COS scaffold (`skills/agent-creator/scripts/scaffold.ts`).
+- keep-agent and keep-cli were removed on 2026-11-07 and must not be restored (no home,
+  roster row, `control/agents.ts` row, `:8790` unit, or launcher). Only this home loads
+  calendar, reminder, JEV, and mode-switch. Other siblings stay tools-only. Turning those
+  hooks on in a sibling double-writes `reminders.jsonl`.
+- `agent-template-new-agent` is a seed (`publish: false`, dashboard default :8792). It is not
+  the COS scaffold (`skills/agent-creator/scripts/scaffold.ts`).
 - Two agent lists: the COS roster (`APPEND_SYSTEM.md`, from `agent.json`) and
   `control/agents.ts`. A new sibling is both, unless `publish: false`.
   `xtra/bash-system-scripts/start-dashboards.sh` is a leftover, not a third list.

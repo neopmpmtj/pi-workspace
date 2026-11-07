@@ -71,7 +71,7 @@ Every turn is recorded, including the ones that happened before the tracker was 
   which starts `pi-tasks-agent-ledger.service`. Output is appended to `logs/ingest.log`.
 - **How to look:** `pi-tasks-agent-dashboard.service` serves the dashboard on
   `http://127.0.0.1:8791` and ingests on every `/api/data` request. Port 8787 stays the
-  orchestrator's, 8788 the image describer's, 8789 web-master, 8790 keep-agent, and
+  orchestrator's, 8788 the image describer's, 8789 web-master. `:8790` is unused.
   `DASHBOARD_ORIGIN` in the `.env` allows the 8791 origin.
 
 ```bash

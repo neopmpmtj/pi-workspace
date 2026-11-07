@@ -1,5 +1,7 @@
 # Terminal control plane and the mode switch above JEV — Setup & Implementation Report
 
+> keep-agent and its `:8790` unit, named in this report, were removed on 2026-11-07. Do not restore.
+
 **Date:** 2026-11-07
 **System:** Ubuntu 24.04.5 LTS, Pi v1.5.0, Node v24.21.0 (`~/.nvm/versions/node/v24.21.0`), DeepSeek `deepseek-flash` + `deepseek-v4-pro`
 **Location:** `~/.pi/control/` (project control plane), `~/.local/bin/pi-config` (launcher), `~/.pi/agent/cos-orchestrator-agent/{src,extensions,test,docs}/`, `~/.pi/{config,input-phrase-config,prompt-build-config}.json`, `~/.config/systemd/user/pi-keep-agent-dashboard.service`

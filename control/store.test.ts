@@ -43,7 +43,6 @@ async function fixture(): Promise<string> {
   for (const homePath of [
     "agent-image-describer/image-describer",
     "agent-web-master/web-master",
-    "agent-keep-agent/keep-agent",
     "agent-tasks-agent/tasks-agent",
     "agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace",
   ]) {

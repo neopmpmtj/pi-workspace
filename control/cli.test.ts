@@ -54,7 +54,6 @@ async function fixture(): Promise<string> {
   for (const home of [
     "agent-image-describer/image-describer",
     "agent-web-master/web-master",
-    "agent-keep-agent/keep-agent",
     "agent-tasks-agent/tasks-agent",
     "agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace",
   ]) {
@@ -221,7 +220,7 @@ describe("pi-config", () => {
       assert.equal(plane.gates.length, 7);
       assert.equal(plane.inputPhrase.append1, "hello");
       assert.equal(plane.promptBuild.options.length, promptBuildOptions.length);
-      assert.equal(plane.agents.length, 6);
+      assert.equal(plane.agents.length, 5);
 
       const text = await run(root, ["list"]);
       assert.match(text.out.join("\n"), /reminderNode\s+enabled=true/);
@@ -251,14 +250,14 @@ describe("pi-config on a damaged tree", () => {
   it("still lists the files it can read, and marks the ones it cannot", async () => {
     const root = await fixture();
     try {
-      await rm(path.join(root, "agent-keep-agent/keep-agent/settings.json"));
+      await rm(path.join(root, "agent-web-master/web-master/settings.json"));
       const listed = await run(root, ["list"]);
       assert.equal(listed.code, 0);
       const text = listed.out.join("\n");
-      assert.match(text, /keep\s+\(unreadable: Cannot read settings\.json/);
+      assert.match(text, /web-master\s+\(unreadable: Cannot read settings\.json/);
       assert.match(text, /skipped files/);
-      assert.match(text, /agent\.keep/);
-      assert.match(listed.err.join("\n"), /\[note\] agent\.keep: Cannot read settings\.json/);
+      assert.match(text, /agent\.web-master/);
+      assert.match(listed.err.join("\n"), /\[note\] agent\.web-master: Cannot read settings\.json/);
       assert.match(listed.err.join("\n"), /1 file\(s\) could not be read/);
     } finally {
       await rm(root, { recursive: true, force: true });

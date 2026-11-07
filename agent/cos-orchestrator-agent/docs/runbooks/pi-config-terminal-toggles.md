@@ -172,17 +172,15 @@ cd ~/.pi/control && node --experimental-strip-types --test '*.test.ts'   # the s
 - `~/.pi/cron/jobs.json` — `/cron` inside a chat is the only editor; `pi -p "/cron list"` from a
   shell is the terminal path. No `pi-config` path, deliberately (the scheduler owns the file).
 - `telegram.json` (bot token / polling owner) and `.env` — secrets, no toggle.
-- Dashboard **process** start/stop: the web page can do it; from a shell it is
-  `cd <agent home> && npm run dashboard`, or `systemctl --user start pi-keep-agent-dashboard`.
+- Dashboard **process** start/stop: the web page on `:8786` can do it; from a shell it is
+  `cd <agent home> && npm run dashboard`.
 
 ## Sweep findings and what was done about them (2026-11-07)
 
-1. **Port 8788 was claimed twice** — `control/agents.ts` gives it to image-describer, while
-   `pi-keep-agent-dashboard.service` pinned keep-agent to it. Fixed: the unit now sets
-   `DASHBOARD_PORT=8790` (plus Description and `DASHBOARD_ORIGIN`), keep-agent's `.env`
-   matches, `daemon-reload` + restart done; keep-agent's `docs/CALLING.md` and `agent.json`
-   updated and the roster republished (`npm run fetch:publications` here). Verified: 8790
-   serving, 8788 free.
+1. **Port 8788 was claimed twice** — `control/agents.ts` gave it to image-describer, while
+   `pi-keep-agent-dashboard.service` pinned keep-agent to it. That day the unit was moved to
+   `DASHBOARD_PORT=8790`. On 2026-11-07 keep-agent, keep-cli, and those user units were
+   removed and must not be restored. `:8790` is unused. `:8788` stays image-describer.
 2. **Two project dashboard servers** — pid 275502 held :8786, pid 271193 held no port. Fixed:
    the inert one was killed.
 3. **The project dashboard folder was outside every typecheck** — it was not under the agent
@@ -197,7 +195,7 @@ cd ~/.pi/control && node --experimental-strip-types --test '*.test.ts'   # the s
    `"publish": false` is skipped by `scripts/fetch-publications.ts` (tested). COS still
    creates live siblings from `skills/agent-creator/scripts/scaffold.ts`, not from this
    folder. A future scaffold should carry `"publish": false` until it is meant to be on
-   the roster.
+   the roster. keep-agent itself was removed on 2026-11-07 and must not be restored.
 5. **Formatting of written files** — a write re-serializes the whole file with two-space
    indentation (the web page's own serializer). `prompt-build-config.json` was committed with
    one line per option, so the first write produced a wide diff; it has been rewritten

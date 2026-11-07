@@ -22,6 +22,8 @@ isProject: false
 
 # Exclusive reminder writers
 
+> Cancelled 2026-11-07. keep-agent and keep-cli were removed and must not be restored. Do not execute this plan.
+
 `reminderNode.writes` becomes a single choice. A reminder runs one writer. The other is not called.
 
 ```mermaid
