@@ -307,7 +307,7 @@ pkill -f "dashboard/server.ts"
 pkill -f "npm run dashboard"
 ```
 
-A second copy can use another port instead: `DASHBOARD_PORT=8790 npm run dashboard`.
+A second copy can use another port instead: `DASHBOARD_PORT=8793 npm run dashboard`. `:8790` stays unused.
 
 ## Design rules
 
