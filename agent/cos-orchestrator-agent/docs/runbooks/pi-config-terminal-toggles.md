@@ -93,6 +93,34 @@ agent.<id>.{provider,model,thinking,tools,enabledModels,extensions,packages}
   model/thinking land in default-model.json when it exists, else in settings.json
 ```
 
+### The three store files are per-machine, not tracked (2026-11-07)
+
+`config.json`, `input-phrase-config.json` and `prompt-build-config.json` hold **host state** —
+which mode is on, which phrase, the gate values — so tracking them in `pi-workspace` made every
+laptop/VPS pull conflict. They are now root-anchored in `.gitignore` and only the schema copies
+are tracked:
+
+```text
+config.sample.json
+input-phrase-config.sample.json
+prompt-build-config.sample.json
+```
+
+Seed or reset a machine (overwrites its local state):
+
+```bash
+cd ~/.pi
+cp config.sample.json config.json
+cp input-phrase-config.sample.json input-phrase-config.json
+cp prompt-build-config.sample.json prompt-build-config.json
+```
+
+A missing file still breaks `pi-config` (`SettingsError: Cannot read …`, `control/store.ts`) while
+the hooks merely stay off — so seed before using the CLI. Untracking does **not** delete the
+working file, but a *pull* of the commit that untracked it does: back the three files up on the
+other host first, pull, then restore. The launcher `~/.local/bin/pi-config` is not in the repo;
+copy it to a new host by hand.
+
 Value forms: booleans `true|false|on|off|yes|no|1|0`; `tools`/`enabledModels` a comma list;
 `extensions` a JSON array of `"+path"`/`"-path"` (or `{path, enabled}`);
 `packages` a JSON array of names or `{kind, value, extensions}`; everything else a string, and
