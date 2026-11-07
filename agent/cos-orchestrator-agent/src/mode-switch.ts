@@ -20,8 +20,8 @@
 // output, or a read-back that disagrees with the change all produce an acknowledgement
 // that says the mode did NOT change, quoting the CLI's own words.
 //
-// Detection is deterministic (no classifier, no model). Both surfaces of the mode live in
-// input-phrase-config.json, which the web page and `pi-config` edit with the same store.
+// Detection is deterministic (no classifier, no model). The mode lives in
+// prompt-build-config.json, which the web page and `pi-config` edit with the same store.
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { repoRoot } from "../ledger/env.ts";
