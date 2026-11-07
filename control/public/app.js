@@ -88,11 +88,27 @@ async function initSettings() {
     main.append(el("p", { class: "status error" }, [error.message]));
     return;
   }
+  // A file that could not be read is reported, not hidden: the page stays usable with the rest.
+  for (const problem of plane.problems || []) {
+    main.append(el("p", { class: "status error" }, [`${problem.file}: ${problem.message}`]));
+  }
   main.append(section("Project gates", plane.gates.map(gateCard)));
-  main.append(section("Input phrase", [inputPhraseCard(plane.inputPhrase)]));
-  main.append(section("Prompt build", [promptBuildCard(plane.promptBuild)]));
+  main.append(section("Input phrase", [plane.inputPhrase
+    ? inputPhraseCard(plane.inputPhrase)
+    : unreadableCard("Input phrase", "input-phrase-config.json")]));
+  main.append(section("Prompt build", [plane.promptBuild
+    ? promptBuildCard(plane.promptBuild)
+    : unreadableCard("Prompt build", "prompt-build-config.json")]));
   main.append(section("Agents", plane.agents.map(agentCard)));
   if (note) main.prepend(note);
+}
+
+/** A card for a section whose file is missing or unreadable, with no form to submit. */
+function unreadableCard(title, file) {
+  return el("div", { class: "card" }, [
+    el("h3", {}, [title]),
+    el("p", { class: "status error" }, [`${file} could not be read — see the note at the top.`]),
+  ]);
 }
 
 function section(title, cards) {
@@ -231,6 +247,12 @@ function optionBlock(option) {
 }
 
 function agentCard(agent) {
+  if (agent.readable === false) {
+    return el("div", { class: "card" }, [
+      el("h3", {}, [agent.name]),
+      el("p", { class: "status error" }, [agent.error || "settings.json could not be read."]),
+    ]);
+  }
   const status = el("p", { class: "status" });
   const tools = el("textarea", { "data-key": "tools" }, [agent.tools.join("\n")]);
   const models = agent.enabledModels === null ? null : el("textarea", { "data-key": "enabledModels" }, [agent.enabledModels.join("\n")]);

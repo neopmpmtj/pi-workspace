@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PROJECT_PORT } from "./agents.ts";
 import { listRuns, openAgent, startAgent, startAll, stopAgent, stopAll } from "./processes.ts";
-import { readControlPlane, SettingsError, writeAgentSettings, writeGate, writeInputPhrase, writePromptBuild } from "./store.ts";
+import { readControlPlane, SettingsError, writeAgentSettings, writeGate, writeInputPhrase, writePromptBuild, type ControlPlane } from "./store.ts";
 
 const PUBLIC_DIR = path.join(import.meta.dirname, "public");
 const MAX_BODY = 256_000;
@@ -59,7 +59,9 @@ async function route(request: IncomingMessage, response: ServerResponse): Promis
     return;
   }
   if (method === "GET" && url.pathname === "/api/settings") {
-    sendJson(response, 200, await readControlPlane());
+    const plane = await readControlPlane();
+    logNotes(plane);
+    sendJson(response, 200, plane);
     return;
   }
   const gate = url.pathname.match(/^\/api\/settings\/gates\/([A-Za-z0-9]+)$/);
@@ -81,6 +83,20 @@ async function route(request: IncomingMessage, response: ServerResponse): Promis
     return;
   }
   sendJson(response, 404, { error: "Not found." });
+}
+
+/** Reports skipped files in the server log, once per change of state (the page is polled). */
+let lastNotes = "";
+
+function logNotes(plane: ControlPlane): void {
+  const notes = [
+    ...plane.seeded.map((message) => `[note] ${message}`),
+    ...plane.problems.map((problem) => `[note] ${problem.file}: ${problem.message}`),
+  ];
+  const joined = notes.join("\n");
+  if (joined === lastNotes) return;
+  lastNotes = joined;
+  for (const line of notes) console.error(line);
 }
 
 async function sendFile(response: ServerResponse, name: string): Promise<void> {

@@ -1,6 +1,6 @@
 // Reads and writes the project control plane. A rejected value throws SettingsError
 // before any file is replaced.
-import { access, readFile, rename, writeFile } from "node:fs/promises";
+import { readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AGENTS, PI_ROOT, THINKING_LEVELS, agentById, agentDir, type AgentSpec } from "./agents.ts";
 
@@ -42,6 +42,13 @@ export interface PromptBuildView {
   options: PromptBuildOptionView[];
 }
 
+/** A store file that could not be read, and why. The rest of the plane is still returned. */
+export interface PlaneProblem {
+  /** The file's base name, or `agent.<id>` for an agent's settings. */
+  file: string;
+  message: string;
+}
+
 export interface ExtensionView {
   path: string;
   enabled: boolean;
@@ -65,28 +72,114 @@ export interface AgentSettingsView {
   enabledModels: string[] | null;
   extensions: ExtensionView[] | null;
   packages: PackageView[] | null;
+  /** False when settings.json or default-model.json could not be read; the view is then empty. */
+  readable: boolean;
+  error: string | null;
 }
 
 export interface ControlPlane {
   gates: GateView[];
-  inputPhrase: InputPhraseView;
-  promptBuild: PromptBuildView;
+  /** Null when input-phrase-config.json could not be read; see problems. */
+  inputPhrase: InputPhraseView | null;
+  /** Null when prompt-build-config.json could not be read; see problems. */
+  promptBuild: PromptBuildView | null;
   agents: AgentSettingsView[];
+  /** Every file that was skipped, in a stable order. Empty on a healthy tree. */
+  problems: PlaneProblem[];
+  /** Human notes about files this call created from a sample, e.g. "config.json was missing — seeded from config.sample.json". */
+  seeded: string[];
 }
 
 const OPTION_NAMES = ["normal", "advanced"] as const;
 const PROMPT_BUILD_OPTIONS = ["1-Personal", "2-Development", "3-Work", "4-Automatic"] as const;
 
 export async function readControlPlane(root = PI_ROOT): Promise<ControlPlane> {
-  const config = await readObject(path.join(root, "config.json"));
-  const modes = await readObject(path.join(root, "input-phrase-config.json"));
-  const promptBuild = await readObject(path.join(root, "prompt-build-config.json"));
-  const gates = Object.keys(config).map((name) => gateView(name, config[name]));
+  const problems: PlaneProblem[] = [];
+  const seeded: string[] = [];
+  const note = (message: string) => { seeded.push(message); };
+
+  // One unreadable file must not take the whole plane down: each section is read on its own
+  // and a failure becomes a problem plus an empty section, so `pi-config list` still shows
+  // every file it *can* read. Writes stay strict — they need the file they are about to edit.
+  const readSection = async <T>(file: string, work: (note: (message: string) => void) => Promise<T>, empty: T): Promise<T> => {
+    const result = await attempt(file, () => work(note));
+    if (result.ok) return result.value;
+    problems.push(result.problem);
+    return empty;
+  };
+
+  const gates = await readSection("config.json", async (tellNote) => {
+    const config = await readObject(path.join(root, "config.json"), tellNote);
+    return Object.keys(config).map((name) => gateView(name, config[name]));
+  }, [] as GateView[]);
+
+  const inputPhrase = await readSection("input-phrase-config.json", async (tellNote) => {
+    const modes = await readObject(path.join(root, "input-phrase-config.json"), tellNote);
+    return inputPhraseView(modes.inputPhrase);
+  }, null);
+
+  const promptBuild = await readSection("prompt-build-config.json", async (tellNote) => {
+    const file = await readObject(path.join(root, "prompt-build-config.json"), tellNote);
+    return promptBuildView(file.promptBuild);
+  }, null);
+
+  // Agents in parallel, problems collected in roster order so the report is stable.
+  const agents = await Promise.all(AGENTS.map((agent) => attempt(`agent.${agent.id}`, () => readAgent(root, agent))));
+  const views = agents.map((result, index) => {
+    if (result.ok) return result.value;
+    problems.push(result.problem);
+    return unreadableAgent(AGENTS[index], result.problem);
+  });
+
+  return { gates, inputPhrase, promptBuild, agents: views, problems, seeded };
+}
+
+/** The problem recorded for one of the plane's files, if it was skipped. */
+export function planeProblem(plane: ControlPlane, file: string): PlaneProblem | undefined {
+  return plane.problems.find((problem) => problem.file === file);
+}
+
+interface AttemptOk<T> {
+  ok: true;
+  value: T;
+}
+
+interface AttemptFailed {
+  ok: false;
+  problem: PlaneProblem;
+}
+
+/** Runs one read, turning any failure into a problem. The caller decides where to report it. */
+async function attempt<T>(file: string, work: () => Promise<T>): Promise<AttemptOk<T> | AttemptFailed> {
+  try {
+    return { ok: true, value: await work() };
+  } catch (error) {
+    return { ok: false, problem: { file, message: messageOf(error) } };
+  }
+}
+
+function messageOf(error: unknown): string {
+  if (error instanceof SettingsError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "unreadable.";
+}
+
+/** An agent whose settings could not be read: listed, marked, never editable. */
+function unreadableAgent(agent: AgentSpec, problem: PlaneProblem): AgentSettingsView {
   return {
-    gates,
-    inputPhrase: inputPhraseView(modes.inputPhrase),
-    promptBuild: promptBuildView(promptBuild.promptBuild),
-    agents: await Promise.all(AGENTS.map((agent) => readAgent(root, agent))),
+    id: agent.id,
+    name: agent.name,
+    port: agent.port,
+    modelSource: "settings",
+    provider: "",
+    model: "",
+    thinking: "",
+    tools: [],
+    enabledModels: null,
+    extensions: null,
+    packages: null,
+    readable: false,
+    error: problem.message,
   };
 }
 
@@ -232,6 +325,8 @@ async function readAgent(root: string, agent: AgentSpec): Promise<AgentSettingsV
     enabledModels: "enabledModels" in settings ? stringList(settings.enabledModels) : null,
     extensions: "extensions" in settings ? extensionList(settings.extensions) : null,
     packages: "packages" in settings ? packageList(settings.packages) : null,
+    readable: true,
+    error: null,
   };
 }
 
@@ -497,14 +592,16 @@ function isPrimitive(value: unknown): boolean {
   return typeof value === "boolean" || typeof value === "number" || typeof value === "string";
 }
 
-async function readObject(file: string): Promise<Record<string, unknown>> {
+async function readObject(file: string, note?: (message: string) => void): Promise<Record<string, unknown>> {
   let text: string;
   try {
-    text = await readFile(file, "utf8");
+    text = await readText(file);
   } catch (error) {
+    // A timeout, a directory or a permission problem is already a finished message.
+    if (error instanceof SettingsError) throw error;
     // The store files are per-machine and gitignored, so a fresh host has none of them.
     // Seed from the tracked <name>.sample.json instead of failing the whole CLI.
-    const seeded = isMissing(error) ? await seedFromSample(file) : null;
+    const seeded = isMissing(error) ? await seedFromSample(file, note) : null;
     if (seeded === null) throw new SettingsError(`Cannot read ${path.basename(file)}.`);
     text = seeded;
   }
@@ -527,24 +624,24 @@ function samplePath(file: string): string {
  * The sample itself is never written; the copy is exclusive, so a file another process created
  * in the meantime wins the race and is read instead.
  */
-async function seedFromSample(file: string): Promise<string | null> {
+async function seedFromSample(file: string, note?: (message: string) => void): Promise<string | null> {
   const sample = samplePath(file);
   let text: string;
   try {
-    text = await readFile(sample, "utf8");
+    text = await readText(sample);
   } catch {
     return null;
   }
   try {
-    await writeFile(file, text, { encoding: "utf8", flag: "wx" });
+    await writeText(file, text, "wx");
   } catch {
     try {
-      return await readFile(file, "utf8");
+      return await readText(file);
     } catch {
       return null;
     }
   }
-  process.stderr.write(`[note] ${path.basename(file)} was missing — seeded from ${path.basename(sample)}\n`);
+  note?.(`${path.basename(file)} was missing — seeded from ${path.basename(sample)}`);
   return text;
 }
 
@@ -552,17 +649,78 @@ function isMissing(error: unknown): boolean {
   return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT";
 }
 
-async function writeObject(file: string, value: Record<string, unknown>): Promise<void> {
-  const tmp = `${file}.${process.pid}.tmp`;
-  await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-  await rename(tmp, file);
+/**
+ * How long one file operation may take before it is abandoned. A hung network home or a
+ * dead mount would otherwise block `pi-config` forever; the answer is a clear failure.
+ */
+const DEFAULT_TIMEOUT_MS = 5_000;
+
+function timeoutMs(): number {
+  const raw = Number(process.env.PI_CONFIG_TIMEOUT_MS ?? "");
+  return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : DEFAULT_TIMEOUT_MS;
 }
 
+/** Reads a file, telling a slow or hung file system apart from a missing file. */
+async function readText(file: string): Promise<string> {
+  try {
+    return await readFile(file, { encoding: "utf8", signal: AbortSignal.timeout(timeoutMs()) });
+  } catch (error) {
+    throw describeFsError(file, error);
+  }
+}
+
+/** Writes a file with the same deadline; `flag: "wx"` makes an existing file win. */
+async function writeText(file: string, text: string, flag?: "wx"): Promise<void> {
+  try {
+    await writeFile(file, text, { encoding: "utf8", flag, signal: AbortSignal.timeout(timeoutMs()) });
+  } catch (error) {
+    throw describeFsError(file, error);
+  }
+}
+
+/** Turns the file-system failures that are not "missing" into a message a person can act on. */
+function describeFsError(file: string, error: unknown): unknown {
+  const name = path.basename(file);
+  if (isAbort(error)) {
+    return new SettingsError(`${name}: no answer within ${timeoutMs()} ms — the file system is slow or hung.`);
+  }
+  const code = (error as { code?: unknown } | null)?.code;
+  if (code === "EISDIR") return new SettingsError(`${name} is a directory, not a JSON file.`);
+  if (code === "EACCES" || code === "EPERM") return new SettingsError(`${name} is not readable (permission denied).`);
+  if (code === "EROFS") return new SettingsError(`${name}: the file system is read-only.`);
+  if (code === "ENOSPC") return new SettingsError(`${name} could not be written: no space left on device.`);
+  if (code === "EDQUOT") return new SettingsError(`${name} could not be written: disk quota exceeded.`);
+  return error;
+}
+
+function isAbort(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const name = (error as { name?: unknown }).name;
+  return name === "AbortError" || name === "TimeoutError";
+}
+
+async function writeObject(file: string, value: Record<string, unknown>): Promise<void> {
+  // Write beside the target and rename, so a crash mid-write cannot truncate the real file.
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  const text = `${JSON.stringify(value, null, 2)}\n`;
+  try {
+    await writeText(tmp, text);
+    await rename(tmp, file);
+  } catch (error) {
+    await rm(tmp, { force: true }).catch(() => undefined);
+    const described = describeFsError(file, error);
+    if (described instanceof SettingsError) throw described;
+    throw new SettingsError(`${path.basename(file)} could not be written.`);
+  }
+}
+
+/** True when the file can be read. A missing file is false; a hung or denied one throws. */
 async function exists(file: string): Promise<boolean> {
   try {
-    await access(file);
+    await readText(file);
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    if (isMissing(error)) return false;
+    throw error;
   }
 }

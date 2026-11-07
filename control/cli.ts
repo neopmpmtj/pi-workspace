@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PI_ROOT } from "./agents.ts";
 import {
+  planeProblem,
   readControlPlane,
   SettingsError,
   writeAgentSettings,
@@ -16,7 +17,9 @@ import {
   type ControlPlane,
   type ExtensionView,
   type FieldView,
+  type InputPhraseView,
   type PackageView,
+  type PromptBuildView,
 } from "./store.ts";
 
 export interface Io {
@@ -38,6 +41,8 @@ const USAGE = `pi-config — terminal control plane for ~/.pi. The same values a
   pi-config help                           this text
 
 Flags: --json (machine output) · --dry-run (print the payload, write nothing) · --root <dir> (another ~/.pi tree)
+Two deadlines: PI_CONFIG_TIMEOUT_MS (one file read/write, default 5000) and
+PI_CONFIG_WATCHDOG_MS (a whole command, default 15000).
 
 Paths
   <gate>.<field>                 config.json gates: lessThanInputWords{enabled,words,print},
@@ -106,6 +111,12 @@ export async function main(argv: readonly string[], io: Io = stdio): Promise<num
       if (rest.length > 0) throw new SettingsError("list takes no path.");
       const plane = await readControlPlane(root);
       io.out(json ? JSON.stringify(plane, null, 2) : formatPlane(plane));
+      // Skipped and repaired files are reported, but `list` still exits 0 with what it read.
+      for (const message of plane.seeded) io.err(`[note] ${message}`);
+      for (const problem of plane.problems) io.err(`[note] ${problem.file}: ${problem.message}`);
+      if (plane.problems.length > 0) {
+        io.err(`[note] ${plane.problems.length} file(s) could not be read — the rest is shown above.`);
+      }
       return 0;
     }
     if (command === "get") {
@@ -160,11 +171,12 @@ export async function setValue(root: string, dotted: string, raw: string, dryRun
   const parts = dotted.split(".").filter((part) => part.length > 0);
   if (parts[0] === "gates") parts.shift();
   if (parts.length === 0) throw new SettingsError("set needs a path.");
+  assertReadable(plane, parts[0]);
 
   const gate = plane.gates.find((candidate) => candidate.name === parts[0]);
   if (gate) return setGate(root, gate, parts, raw, dryRun);
-  if (parts[0] === "inputPhrase") return setInputPhrase(root, plane.inputPhrase, parts, raw, dryRun);
-  if (parts[0] === "promptBuild") return setPromptBuild(root, plane.promptBuild, parts, raw, dryRun);
+  if (parts[0] === "inputPhrase") return setInputPhrase(root, inputPhraseOf(plane), parts, raw, dryRun);
+  if (parts[0] === "promptBuild") return setPromptBuild(root, promptBuildOf(plane), parts, raw, dryRun);
   if (parts[0] === "agent") return setAgent(root, plane, parts, raw, dryRun);
   throw new SettingsError(`No gate or section named ${parts[0]}.`);
 }
@@ -260,6 +272,7 @@ async function setAgent(root: string, plane: ControlPlaneOf, parts: string[], ra
     const known = plane.agents.map((candidate) => candidate.id).join(", ");
     throw new SettingsError(`No agent ${id}. Agents: ${known}.`);
   }
+  if (!view.readable) throw new SettingsError(`agent.${id}: ${view.error ?? "settings.json is unreadable."}`);
   const body = {
     provider: view.provider,
     model: view.model,
@@ -306,7 +319,7 @@ export async function useOption(root: string, section: string, option: string, d
   const plane = await readControlPlane(root);
 
   if (section === "inputPhrase") {
-    const view = plane.inputPhrase;
+    const view = inputPhraseOf(plane);
     if (!view.options.some((candidate) => candidate.name === option)) {
       throw new SettingsError(`inputPhrase has no option ${option}. Options: ${view.options.map((candidate) => candidate.name).join(", ")}.`);
     }
@@ -320,7 +333,7 @@ export async function useOption(root: string, section: string, option: string, d
   }
 
   if (section === "promptBuild") {
-    const view = plane.promptBuild;
+    const view = promptBuildOf(plane);
     if (!view.options.some((candidate) => candidate.name === option)) {
       throw new SettingsError(`promptBuild has no option ${option}. Options: ${view.options.map((candidate) => candidate.name).join(", ")}.`);
     }
@@ -343,6 +356,7 @@ export function readValue(plane: ControlPlaneOf, dotted: string): unknown {
     if (parts.length === 0) return plane.gates;
   }
   if (parts.length === 0) throw new SettingsError("get needs a path.");
+  assertReadable(plane, parts[0]);
 
   const gate = plane.gates.find((candidate) => candidate.name === parts[0]);
   if (gate) {
@@ -367,6 +381,7 @@ export function readValue(plane: ControlPlaneOf, dotted: string): unknown {
     if (!id) return plane.agents;
     const view = plane.agents.find((candidate) => candidate.id === id);
     if (!view) throw new SettingsError(`No agent ${id}.`);
+    if (!view.readable) throw new SettingsError(`agent.${id}: ${view.error ?? "settings.json is unreadable."}`);
     if (parts.length === 2) return view;
     const value = (view as unknown as Record<string, unknown>)[parts[2]];
     if (value === undefined) throw new SettingsError(`agent.${id} has no field ${parts[2]}.`);
@@ -374,7 +389,7 @@ export function readValue(plane: ControlPlaneOf, dotted: string): unknown {
   }
 
   if (parts[0] === "inputPhrase") {
-    const view = plane.inputPhrase;
+    const view = inputPhraseOf(plane);
     if (parts.length === 1) return view;
     if (parts.length === 2) {
       if (parts[1] === "enabled" || parts[1] === "append1") return view[parts[1]];
@@ -393,7 +408,7 @@ export function readValue(plane: ControlPlaneOf, dotted: string): unknown {
   }
 
   if (parts[0] === "promptBuild") {
-    const view = plane.promptBuild;
+    const view = promptBuildOf(plane);
     if (parts.length === 1) return view;
     if (parts.length === 2 && parts[1] === "enabled") return view.enabled;
     const option = view.options.find((candidate) => candidate.name === parts[1]);
@@ -414,22 +429,37 @@ export function readValue(plane: ControlPlaneOf, dotted: string): unknown {
 /** Human table for `pi-config list`. */
 export function formatPlane(plane: ControlPlaneOf): string {
   const lines: string[] = ["gates (config.json)"];
+  if (plane.problems.some((problem) => problem.file === "config.json")) {
+    lines.push("  (unreadable — see the note on stderr)");
+  }
   for (const gate of plane.gates) {
     const fields = gate.fields.map((field) => `${field.key}=${display(field.value)}`).join(" ");
     lines.push(`  ${gate.name.padEnd(20)} ${fields}`);
   }
   lines.push("", "inputPhrase (input-phrase-config.json)");
-  lines.push(`  enabled=${plane.inputPhrase.enabled} append1=${display(plane.inputPhrase.append1)}`);
-  for (const option of plane.inputPhrase.options) {
-    lines.push(`  ${option.name.padEnd(20)} enabled=${option.enabled} allowBlank=${option.allowBlank} phrase=${display(option.phrase)}`);
+  if (plane.inputPhrase === null) {
+    lines.push("  (unreadable — see the note on stderr)");
+  } else {
+    lines.push(`  enabled=${plane.inputPhrase.enabled} append1=${display(plane.inputPhrase.append1)}`);
+    for (const option of plane.inputPhrase.options) {
+      lines.push(`  ${option.name.padEnd(20)} enabled=${option.enabled} allowBlank=${option.allowBlank} phrase=${display(option.phrase)}`);
+    }
   }
   lines.push("", "promptBuild (prompt-build-config.json)");
-  lines.push(`  enabled=${plane.promptBuild.enabled}`);
-  for (const option of plane.promptBuild.options) {
-    lines.push(`  ${option.name.padEnd(20)} enabled=${option.enabled} prompt=${display(option.prompt)} config=${compact(option.config)}`);
+  if (plane.promptBuild === null) {
+    lines.push("  (unreadable — see the note on stderr)");
+  } else {
+    lines.push(`  enabled=${plane.promptBuild.enabled}`);
+    for (const option of plane.promptBuild.options) {
+      lines.push(`  ${option.name.padEnd(20)} enabled=${option.enabled} prompt=${display(option.prompt)} config=${compact(option.config)}`);
+    }
   }
   lines.push("", "agents");
   for (const agent of plane.agents) {
+    if (!agent.readable) {
+      lines.push(`  ${agent.id.padEnd(20)} (unreadable: ${agent.error ?? "settings.json"})`);
+      continue;
+    }
     const port = agent.port === null ? "-" : `:${agent.port}`;
     const models = agent.provider === "" && agent.model === "" ? "-" : `${agent.provider}/${agent.model}`;
     const counts = [
@@ -439,7 +469,44 @@ export function formatPlane(plane: ControlPlaneOf): string {
     ].join(" · ");
     lines.push(`  ${agent.id.padEnd(20)} ${port.padEnd(6)} ${models} thinking=${agent.thinking} ${counts}`);
   }
+  if (plane.problems.length > 0) {
+    lines.push("", "skipped files");
+    for (const problem of plane.problems) lines.push(`  ${problem.file.padEnd(28)} ${problem.message}`);
+  }
   return lines.join("\n");
+}
+
+/**
+ * Throws the recorded problem when the file a path belongs to could not be read, so a `get`
+ * or `set` says which file is broken instead of "no gate or section named ...".
+ */
+function assertReadable(plane: ControlPlaneOf, head: string): void {
+  if (head === "inputPhrase") {
+    if (plane.inputPhrase === null) throw unavailable("input-phrase-config.json", plane);
+    return;
+  }
+  if (head === "promptBuild") {
+    if (plane.promptBuild === null) throw unavailable("prompt-build-config.json", plane);
+    return;
+  }
+  // An agent is checked by id (setAgent / readValue); only the gates live in config.json.
+  if (head === "agent" || head === "agents") return;
+  if (planeProblem(plane, "config.json")) throw unavailable("config.json", plane);
+}
+
+function unavailable(file: string, plane: ControlPlaneOf): SettingsError {
+  const problem = planeProblem(plane, file);
+  return new SettingsError(problem ? `${problem.file}: ${problem.message}` : `${file} is unavailable.`);
+}
+
+function inputPhraseOf(plane: ControlPlaneOf): InputPhraseViewOf {
+  if (plane.inputPhrase === null) throw unavailable("input-phrase-config.json", plane);
+  return plane.inputPhrase;
+}
+
+function promptBuildOf(plane: ControlPlaneOf): PromptBuildViewOf {
+  if (plane.promptBuild === null) throw unavailable("prompt-build-config.json", plane);
+  return plane.promptBuild;
 }
 
 function parseForField(field: FieldView, raw: string, label: string): unknown {
@@ -540,10 +607,40 @@ function format(value: unknown): string {
 // store.ts spells its exports.
 type ControlPlaneOf = ControlPlane;
 type GateViewOf = ControlPlane["gates"][number];
-type InputPhraseViewOf = ControlPlane["inputPhrase"];
-type PromptBuildViewOf = ControlPlane["promptBuild"];
+type InputPhraseViewOf = InputPhraseView;
+type PromptBuildViewOf = PromptBuildView;
+
+/**
+ * The last-resort bound on one command. Per-operation deadlines (store.ts) cover a slow file
+ * system, but a read blocked inside the kernel — a dead NFS/sshfs mount, an open FIFO — cannot
+ * be aborted from JavaScript, only abandoned: even process.exit() waits for that request to
+ * drain, so the watchdog signals itself. Writes go through a temp file and a rename, so the real
+ * file is whole. Exit code is 137 (SIGKILL) by design.
+ */
+function watchdog(): NodeJS.Timeout {
+  const raw = Number(process.env.PI_CONFIG_WATCHDOG_MS ?? "");
+  const ms = Number.isFinite(raw) && raw >= 100 ? Math.floor(raw) : 15_000;
+  const timer = setTimeout(() => {
+    process.stderr.write(
+      `[FAIL] no answer within ${ms} ms — the file system may be hung (exit 137). ` +
+        `Nothing was left half-written; run again with PI_CONFIG_WATCHDOG_MS=<ms> to wait longer.\n`,
+    );
+    process.kill(process.pid, "SIGKILL");
+  }, ms);
+  timer.unref();
+  return timer;
+}
 
 const invoked = process.argv[1] ? path.resolve(process.argv[1]) : "";
 if (invoked !== "" && path.resolve(fileURLToPath(import.meta.url)) === invoked) {
-  process.exitCode = await main(process.argv.slice(2));
+  const timer = watchdog();
+  // A last-resort guard: main already reports every expected failure as [FAIL].
+  try {
+    process.exitCode = await main(process.argv.slice(2));
+  } catch (error) {
+    process.stderr.write(`[FAIL] ${error instanceof Error ? error.message : "Command failed."}\n`);
+    process.exitCode = 1;
+  } finally {
+    clearTimeout(timer);
+  }
 }

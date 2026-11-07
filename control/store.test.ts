@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
@@ -194,8 +194,75 @@ describe("a store file that is missing (per-machine files, seeded from the sampl
     const root = await sampleOnly();
     try {
       await rm(path.join(root, "config.sample.json"));
-      await assert.rejects(() => readControlPlane(root), /Cannot read config\.json/);
+      // Reads degrade to a problem; a write, which needs the file it edits, still fails.
+      const plane = await readControlPlane(root);
+      assert.deepEqual(plane.gates, []);
+      assert.match(plane.problems[0]?.message ?? "", /Cannot read config\.json/);
       await assert.rejects(() => writeGate("lessThanInputWords", { fields: { words: 3 } }, root), SettingsError);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("a file that cannot be read is skipped, never fatal", () => {
+  it("keeps the other agents when one settings.json is missing", async () => {
+    const root = await fixture();
+    try {
+      await rm(path.join(root, "agent-web-master/web-master/settings.json"));
+      const plane = await readControlPlane(root);
+      const broken = plane.agents.find((agent) => agent.id === "web-master");
+      assert.equal(broken?.readable, false);
+      assert.match(broken?.error ?? "", /Cannot read settings\.json/);
+      assert.deepEqual(broken?.tools, []);
+      const healthy = plane.agents.find((agent) => agent.id === "cos");
+      assert.equal(healthy?.readable, true);
+      assert.equal(healthy?.model, "deepseek-flash");
+      assert.deepEqual(plane.problems.map((problem) => problem.file), ["agent.web-master"]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the sections that are readable when config.json is not", async () => {
+    const root = await fixture();
+    try {
+      await rm(path.join(root, "config.json"));
+      await writeFile(path.join(root, "config.json"), "{ not json\n");
+      const plane = await readControlPlane(root);
+      assert.deepEqual(plane.gates, []);
+      assert.match(plane.problems[0]?.message ?? "", /not valid JSON/);
+      assert.equal(plane.inputPhrase?.enabled, true);
+      assert.ok(plane.promptBuild);
+      assert.equal(plane.agents.find((agent) => agent.id === "cos")?.readable, true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("names a directory where a file belongs", async () => {
+    const root = await fixture();
+    try {
+      await rm(path.join(root, "prompt-build-config.json"));
+      await mkdir(path.join(root, "prompt-build-config.json"));
+      const plane = await readControlPlane(root);
+      assert.equal(plane.promptBuild, null);
+      assert.match(plane.problems[0]?.message ?? "", /is a directory/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+});
+
+describe("the write path", () => {
+  it("leaves the directory clean and the file whole after a write", async () => {
+    const root = await fixture();
+    try {
+      await writeGate("lessThanInputWords", { fields: { words: 3 } }, root);
+      const names = await readdir(root);
+      assert.deepEqual(names.filter((name) => name.endsWith(".tmp")), []);
+      assert.equal(JSON.parse(await readFile(path.join(root, "config.json"), "utf8")).lessThanInputWords.words, 3);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

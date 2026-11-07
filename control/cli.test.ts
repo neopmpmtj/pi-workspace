@@ -2,6 +2,7 @@
 // so these tests check the two things that matter: it writes what the store accepts and
 // it refuses, leaving the file alone, what the store rejects.
 import assert from "node:assert/strict";
+import { execFileSync, spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -225,6 +226,114 @@ describe("pi-config", () => {
       assert.equal(dry.code, 0);
       assert.match(dry.out.join("\n"), /\[dry-run\]/);
       assert.equal(await readFile(path.join(root, "input-phrase-config.json"), "utf8"), before);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("pi-config on a damaged tree", () => {
+  it("still lists the files it can read, and marks the ones it cannot", async () => {
+    const root = await fixture();
+    try {
+      await rm(path.join(root, "agent-keep-agent/keep-agent/settings.json"));
+      const listed = await run(root, ["list"]);
+      assert.equal(listed.code, 0);
+      const text = listed.out.join("\n");
+      assert.match(text, /keep\s+\(unreadable: Cannot read settings\.json/);
+      assert.match(text, /skipped files/);
+      assert.match(text, /agent\.keep/);
+      assert.match(listed.err.join("\n"), /\[note\] agent\.keep: Cannot read settings\.json/);
+      assert.match(listed.err.join("\n"), /1 file\(s\) could not be read/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("names the file a broken section lives in instead of 'no gate or section'", async () => {
+    const root = await fixture();
+    try {
+      await rm(path.join(root, "input-phrase-config.json"));
+      await mkdir(path.join(root, "input-phrase-config.json"));
+      const got = await run(root, ["get", "inputPhrase.enabled"]);
+      assert.equal(got.code, 1);
+      assert.match(got.err.join("\n"), /input-phrase-config\.json is a directory/);
+
+      const set = await run(root, ["set", "inputPhrase.enabled", "off"]);
+      assert.equal(set.code, 1);
+      assert.match(set.err.join("\n"), /\[FAIL\] input-phrase-config\.json: input-phrase-config\.json is a directory/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("refuses to edit an agent whose settings are missing, and names it", async () => {
+    const root = await fixture();
+    try {
+      await rm(path.join(root, "agent-web-master/web-master/settings.json"));
+      const got = await run(root, ["get", "agent.web-master.model"]);
+      assert.equal(got.code, 1);
+      assert.match(got.err.join("\n"), /agent\.web-master: Cannot read settings\.json/);
+
+      const set = await run(root, ["set", "agent.web-master.thinking", "low"]);
+      assert.equal(set.code, 1);
+      assert.match(set.err.join("\n"), /agent\.web-master/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("seeds the three store files on a bare tree and lists it", async () => {
+    const root = await fixture();
+    try {
+      for (const name of ["config", "input-phrase-config", "prompt-build-config"]) {
+        const file = path.join(root, `${name}.json`);
+        await writeFile(path.join(root, `${name}.sample.json`), await readFile(file, "utf8"));
+        await rm(file);
+      }
+      const listed = await run(root, ["list"]);
+      assert.equal(listed.code, 0);
+      assert.match(listed.out.join("\n"), /gates \(config\.json\)/);
+      assert.match(listed.out.join("\n"), /lessThanInputWords/);
+      assert.equal((await run(root, ["get", "lessThanInputWords.words"])).code, 0);
+      // The three files now exist, so a second read has nothing left to report.
+      assert.equal(JSON.parse(await readFile(path.join(root, "config.json"), "utf8")).lessThanInputWords.enabled, true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("pi-config against a file system that stops answering", () => {
+  it("exits with a clear failure instead of hanging on a blocking read", async () => {
+    const root = await fixture();
+    try {
+      await rm(path.join(root, "config.json"));
+      try {
+        // A FIFO with no writer blocks inside open(2): JavaScript cannot abort that, only exit.
+        execFileSync("mkfifo", [path.join(root, "config.json")]);
+      } catch {
+        return; // no mkfifo on this host
+      }
+      const cli = path.join(import.meta.dirname, "cli.ts");
+      const result = await new Promise<{ signal: string | null; stderr: string; ms: number }>((resolve) => {
+        const started = Date.now();
+        const child = spawn(process.execPath, ["--experimental-strip-types", cli, "--root", root, "list"], {
+          env: { ...process.env, PI_CONFIG_WATCHDOG_MS: "800" },
+          stdio: ["ignore", "ignore", "pipe"],
+        });
+        let stderr = "";
+        child.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString("utf8"); });
+        const killer = setTimeout(() => child.kill("SIGKILL"), 8_000);
+        child.on("close", (code, signal) => {
+          clearTimeout(killer);
+          resolve({ signal: signal ?? (code === null ? null : "none"), stderr, ms: Date.now() - started });
+        });
+      });
+      // The watchdog ends the command itself (exit 137) instead of waiting for a hung read.
+      assert.ok(result.ms < 7_000, `should give up quickly, took ${result.ms} ms`);
+      assert.equal(result.signal, "SIGKILL");
+      assert.match(result.stderr, /\[FAIL\] no answer within 800 ms/);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

@@ -199,3 +199,33 @@ cd ~/.pi/control && node --experimental-strip-types --test '*.test.ts'   # the s
    indentation (the web page's own serializer). `prompt-build-config.json` was committed with
    one line per option, so the first write produced a wide diff; it has been rewritten
    canonically once, and later writes change single lines.
+
+## When something is broken (2026-11-07 hardening)
+
+One bad file no longer takes the control plane down. `readControlPlane` reads each section on its
+own; a failure becomes a problem, and the rest is still returned.
+
+| Situation | What happens |
+| --- | --- |
+| `config.json` / `input-phrase-config.json` / `prompt-build-config.json` missing | seeded from `<name>.sample.json`, `[note] <name> was missing — seeded from …` |
+| one of them unreadable, malformed, or a directory | that section is empty (`gates: []`, `inputPhrase: null`, `promptBuild: null`), listed under `skipped files`; the other sections still print |
+| an agent's `settings.json` unreadable | that agent shows `(unreadable: …)`, is read-only in the page, and `get`/`set agent.<id>…` fails naming it — the other agents are unaffected |
+| `list` with any problem | exit **0**, notes on stderr, `N file(s) could not be read — the rest is shown above.` |
+| `get`/`set` a path in a broken file | exit **1**, `[FAIL] input-phrase-config.json: <reason>` (not "no gate or section named …") |
+
+The JSON in `/api/settings` carries `problems: [{file, message}]` and `seeded: [message]`; the
+settings page prints both at the top. The server logs them once per change of state.
+
+**Deadlines.** Every file operation has one, and so does the whole command:
+
+- `PI_CONFIG_TIMEOUT_MS` (default 5000) — one read or write. Exceeding it fails with
+  `<file>: no answer within N ms — the file system is slow or hung.`
+- `PI_CONFIG_WATCHDOG_MS` (default 15000) — the whole command. When a read is blocked *inside the
+  kernel* (dead NFS/sshfs mount, an open FIFO) JavaScript cannot abort it, and even
+  `process.exit()` waits for that request to drain, so the watchdog writes
+  `[FAIL] no answer within N ms — the file system may be hung (exit 137).` and sends itself
+  `SIGKILL`. Exit code **137** is correct, not a crash. Writes go through a temp file plus a
+  rename and the temp file is removed on failure, so the real file is never half-written.
+
+Tests for all of this: `npm run test:dashboard` in the agent home — 25 tests, including a FIFO
+that never answers (the watchdog test) and a tree with a missing agent.
