@@ -3,6 +3,8 @@
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AGENTS, PI_ROOT, THINKING_LEVELS, agentById, agentDir, type AgentSpec } from "./agents.ts";
+import { inputPhraseOptions } from "./input-phrase-options.ts";
+import { promptBuildOptions } from "./prompt-build-options.ts";
 
 export class SettingsError extends Error {}
 
@@ -90,8 +92,8 @@ export interface ControlPlane {
   seeded: string[];
 }
 
-const OPTION_NAMES = ["normal", "advanced"] as const;
-const PROMPT_BUILD_OPTIONS = ["1-Personal", "2-Development", "3-Work", "4-Automatic"] as const;
+const OPTION_NAMES = inputPhraseOptions;
+const PROMPT_BUILD_OPTIONS = promptBuildOptions;
 
 export async function readControlPlane(root = PI_ROOT): Promise<ControlPlane> {
   const problems: PlaneProblem[] = [];

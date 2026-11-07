@@ -6,6 +6,7 @@ import { describe, it } from "node:test";
 import { readModeSwitch } from "../src/global-config.ts";
 import { classifyPrompt, resetJevClassify, winnerLine } from "../src/jev-classify.ts";
 import { isModeAck, markModeAck, resetModeAck } from "../src/mode-ack.ts";
+import { promptBuildOptions } from "../src/prompt-build.ts";
 import {
   cliRunner,
   detectModeRequest,
@@ -17,7 +18,7 @@ import {
   type CliRunner,
 } from "../src/mode-switch.ts";
 
-const MODES = ["1-Personal", "2-Development", "3-Work", "4-Automatic"];
+const MODES = [...promptBuildOptions];
 
 const STATE = (mode: string, enabled = true): string => JSON.stringify({
   enabled,
@@ -147,7 +148,7 @@ describe("parseModeState", () => {
 });
 
 describe("resolveModeOption", () => {
-  const modes = ["1-Personal", "2-Development", "3-Work", "4-Automatic"];
+  const modes = [...promptBuildOptions];
 
   it("matches the full name, the bare name, the number, or a unique prefix", () => {
     assert.equal(resolveModeOption("2-Development", modes), "2-Development");
@@ -158,6 +159,8 @@ describe("resolveModeOption", () => {
     assert.equal(resolveModeOption("3-work", modes), "3-Work");
     assert.equal(resolveModeOption("auto", modes), "4-Automatic");
     assert.equal(resolveModeOption("dev", modes), "2-Development");
+    assert.equal(resolveModeOption("research", modes), "5-Research");
+    assert.equal(resolveModeOption("5", modes), "5-Research");
   });
 
   it("rejects an unknown name, an empty one, and an ambiguous prefix", () => {
@@ -200,7 +203,7 @@ describe("runModeRequest", () => {
   });
 
   it("takes the number, the bare name, or the full name", async () => {
-    for (const [said, resolved] of [["3", "3-Work"], ["work", "3-Work"], ["3-work", "3-Work"]] as const) {
+    for (const [said, resolved] of [["3", "3-Work"], ["work", "3-Work"], ["3-work", "3-Work"], ["research", "5-Research"]] as const) {
       const cli = fakeCli([OK(STATE("1-Personal")), OK("ok\n"), OK(STATE(resolved))]);
       const outcome = await runModeRequest(`change your mode to ${said}`, { run: cli.run });
       assert.ok(outcome);
@@ -216,7 +219,7 @@ describe("runModeRequest", () => {
     assert.equal(outcome.ok, false);
     assert.equal(cli.calls.length, 1, "an unknown mode never reaches `use`");
     assert.match(outcome.reason ?? "", /no mode "turbo"/);
-    assert.match(outcome.reason ?? "", /1-Personal, 2-Development, 3-Work, 4-Automatic/);
+    assert.match(outcome.reason ?? "", new RegExp(promptBuildOptions.join(", ")));
     assert.match(outcome.ack, /which FAILED/);
     assert.match(outcome.ack, /did not happen/);
     assert.match(outcome.ack, /Do not claim success/);

@@ -84,9 +84,9 @@ input-phrase-config.json
 
 prompt-build-config.json
   promptBuild.enabled
-  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic>.enabled   exactly one
-  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic>.prompt
-  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic>.config    a JSON object, stored as an object
+  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic|5-Research>.enabled   exactly one
+  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic|5-Research>.prompt
+  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic|5-Research>.config    a JSON object, stored as an object
 
 agent.<id>.{provider,model,thinking,tools,enabledModels,extensions,packages}
   <id>: cos | image-describer | web-master | keep | google-workspace

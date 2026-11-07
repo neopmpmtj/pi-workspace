@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { main, type Io } from "./cli.ts";
+import { promptBuildOptions } from "./prompt-build-options.ts";
 
 const GATES = {
   lessThanInputWords: { enabled: true, words: 6, print: true },
@@ -37,6 +38,7 @@ async function fixture(): Promise<string> {
       "2-Development": { enabled: false, prompt: "dev rules", config: { b: 2 } },
       "3-Work": { enabled: false, prompt: "work rules", config: {} },
       "4-Automatic": { enabled: false, prompt: "", config: {} },
+      "5-Research": { enabled: false, prompt: "", config: {} },
     },
   }, null, 2)}\n`);
   const homes: Record<string, Record<string, unknown>> = {
@@ -149,6 +151,10 @@ describe("pi-config", () => {
       assert.equal(promptBuild["4-Automatic"].enabled, true);
       assert.equal(promptBuild["1-Personal"].enabled, false);
       assert.equal(promptBuild.enabled, true);
+      assert.equal((await run(root, ["use", "promptBuild", "5-Research"])).code, 0);
+      const research = (await readJson(path.join(root, "prompt-build-config.json"))).promptBuild;
+      assert.equal(research["5-Research"].enabled, true);
+      assert.equal(research["4-Automatic"].enabled, false);
       assert.equal((await run(root, ["use", "promptBuild.nope"])).code, 1);
       assert.equal((await run(root, ["use", "calendarNode"])).code, 1);
     } finally {
@@ -213,7 +219,7 @@ describe("pi-config", () => {
       const plane = JSON.parse(all.out.join("\n")) as Record<string, any>;
       assert.equal(plane.gates.length, 7);
       assert.equal(plane.inputPhrase.append1, "hello");
-      assert.equal(plane.promptBuild.options.length, 4);
+      assert.equal(plane.promptBuild.options.length, promptBuildOptions.length);
       assert.equal(plane.agents.length, 5);
 
       const text = await run(root, ["list"]);

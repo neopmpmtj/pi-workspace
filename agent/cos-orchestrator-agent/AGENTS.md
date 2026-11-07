@@ -35,7 +35,7 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 A hook above the JEV classifier, off unless `modeSwitch.enabled` is true in `~/.pi/config.json`.
 While it is on, the classifier itself refuses mode requests, so no extension load order matters.
 
-- A mode is the enabled `promptBuild` option: 1-Personal, 2-Development, 3-Work, 4-Automatic.
+- A mode is the enabled `promptBuild` option: 1-Personal, 2-Development, 3-Work, 4-Automatic, 5-Research.
   "what mode are you on", "change your mode to work": answered by the control plane's CLI, not
   by JEV and not by a decision node — `pi-config get promptBuild --json` for a status,
   `pi-config use promptBuild.<mode>` then the same read for a change. The message then arrives

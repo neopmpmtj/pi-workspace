@@ -1,7 +1,7 @@
 // The mode switch: the hook above the JEV classifier.
 //
 // A mode is the enabled promptBuild option in ~/.pi/prompt-build-config.json
-// (1-Personal, 2-Development, 3-Work, 4-Automatic). It is the session-level layer: the
+// (names in control/prompt-build-options.ts). It is the session-level layer: the
 // selected option contributes one section to the system prompt. inputPhrase (normal and
 // advanced) is a different, per-turn feature and is untouched here.
 //
