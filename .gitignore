@@ -92,6 +92,18 @@ cron/runs/
 agent/tmp/
 agent/pi-web-access/
 
+# ── Control-plane store (per-machine state, never synced) ─────────
+# Which mode/phrase is on and the gate values differ per host; tracking them made
+# every pull conflict between laptop and VPS. The *.sample.json copies are the
+# tracked schema. Seed or reset a machine with:
+#   cd ~/.pi && cp config.sample.json config.json \
+#     && cp input-phrase-config.sample.json input-phrase-config.json \
+#     && cp prompt-build-config.sample.json prompt-build-config.json
+# Anchored to the repo root: nested config.json files stay tracked.
+/config.json
+/input-phrase-config.json
+/prompt-build-config.json
+
 # Per-machine Telegram bot config (botToken ref + owner id) — never shared
 agent/telegram.json
 

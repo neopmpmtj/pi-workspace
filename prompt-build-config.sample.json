@@ -2,12 +2,12 @@
   "promptBuild": {
     "enabled": true,
     "1-Personal": {
-      "enabled": true,
+      "enabled": false,
       "prompt": "",
       "config": {}
     },
     "2-Development": {
-      "enabled": false,
+      "enabled": true,
       "prompt": "We are working in Development mode, so respond with a brief explanations untill or unless we ask for a more detailed explanation",
       "config": {}
     },
