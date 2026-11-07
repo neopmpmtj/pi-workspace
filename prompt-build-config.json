@@ -1,7 +1,7 @@
 {
   "promptBuild": {
     "enabled": true,
-    "personal": { "enabled": true, "prompt": "remind me to congratulate my aunt on her 83rd birthday", "config": {} },
+    "personal": { "enabled": true, "prompt": "Remind me to congratulate my aunt on her 83rd birthday on every response", "config": {} },
     "option1": { "enabled": false, "prompt": "", "config": {} },
     "option2": { "enabled": false, "prompt": "", "config": {} },
     "option3": { "enabled": false, "prompt": "", "config": {} },
