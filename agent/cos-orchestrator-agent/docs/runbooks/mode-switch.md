@@ -1,21 +1,39 @@
 # Runbook — mode switch (the hook above JEV)
 
-Built 2026-11-07. Turns "what mode are you on" and "change your mode to normal" into one or
-two control-plane CLI calls, with no classifier and no decision node in the path.
+Built 2026-11-07. Turns "what mode are you on" and "change your mode to work" into one to
+three control-plane CLI calls, with no classifier and no decision node in the path.
 
 ## What a mode is here
 
-The agent's mode is the enabled option of `inputPhrase` in `~/.pi/agent-modes-config.json`
-(`normal`, `advanced` today). That is the same state `pi-config` and the dashboard edit, so
-there is exactly one source of truth:
+A mode is the enabled option of **`promptBuild`** in `~/.pi/prompt-build-config.json`, the
+session-level layer: the selected option contributes one section to the system prompt
+(`before_agent_start` → `sections.prompt_build`). Four modes, named 2026-11-07:
 
-```text
-normal    -> phrase: "respond in a single sentence"
-advanced  -> phrase: ""            (append1 still applies)
+| Mode | Meaning |
+| --- | --- |
+| `1-Personal` | the option that was called `personal`; carries the user's own standing prompt |
+| `2-Development` | development work |
+| `3-Work` | work |
+| `4-Automatic` | left blank for the agent to drive |
+
+```json
+"promptBuild": { "enabled": true,
+  "1-Personal":    { "enabled": true, "prompt": "…", "config": {} },
+  "2-Development": { "enabled": false, "prompt": "", "config": {} },
+  "3-Work":        { "enabled": false, "prompt": "", "config": {} },
+  "4-Automatic":   { "enabled": false, "prompt": "", "config": {} } }
 ```
 
-`inputPhrase.enabled: false` means the section is off; the option flags still record which
-mode is selected, and the answer says so.
+Exactly one option is on while the section is on. `promptBuild.enabled: false` means the
+section is off; the option flags still record which mode is selected, and the answer says so.
+
+**`normal` and `advanced` are not modes.** They belong to `inputPhrase` in
+`~/.pi/input-phrase-config.json`, a per-turn feature that appends a phrase to each typed
+message. The mode switch does not touch it, and the phrase appenders skip the machine-generated
+acknowledgement.
+
+`option1..option4` and the old `personal` key are gone from the config; `personal`'s prompt
+moved to `1-Personal`, so the active mode and what it injects did not change.
 
 ## Where it sits
 
@@ -75,8 +93,13 @@ pi-config set modeSwitch.answer hook
 
 | Request | CLI calls |
 | --- | --- |
-| status | `pi-config get inputPhrase --json` |
-| change | `pi-config use inputPhrase.<mode>`, then `pi-config get inputPhrase --json` as a read-back |
+| status | `pi-config get promptBuild --json` |
+| change | the same read to resolve the name, `pi-config use promptBuild.<mode>`, then the read again as a read-back |
+
+Name resolution (`resolveModeOption`): exact case-insensitive name, then the name without its
+number, then the number alone, then a unique prefix — so "development", "2-development", "2" and
+"dev" all reach `2-Development`, while "turbo" fails without ever calling `use` and the failure
+quotes the four modes that exist. An ambiguous match fails rather than guessing.
 
 The CLI is spawned as `node --experimental-strip-types ~/.pi/control/cli.ts …` with the node
 that runs pi. No shell, no PATH, no credentials. 15 s timeout, killed with `SIGKILL`.
@@ -87,8 +110,8 @@ With `answer: model`, the user's text is replaced by one of these. Nothing else 
 turn changes; the reply is one line because the result is already in the prompt.
 
 ```text
-Already executed by the pi-config CLI, which succeeded: the agent's mode is now "advanced" (inputPhrase on).
-Reply in one short line, for example: Done — mode is now advanced.
+Already executed by the pi-config CLI, which succeeded: the agent's mode is now "3-Work" (promptBuild on).
+Reply in one short line, for example: Done — mode is now 3-Work.
 Do not run a tool, do not verify, do not explain.
 ```
 
@@ -101,13 +124,13 @@ the mode did **not** change:
 
 ```text
 Already executed by the pi-config CLI, which FAILED: the change to "turbo" did not happen.
-What the CLI said: [FAIL] inputPhrase has no option turbo. Options: normal, advanced.
+What the CLI said: no mode "turbo" · promptBuild has 1-Personal, 2-Development, 3-Work, 4-Automatic
 Reply in one short line saying it did not change, quoting that reason. Do not claim success, do not retry, do not run a tool.
 ```
 
 Covered failures: non-zero exit, timeout, unparseable JSON, no mode state in the JSON, and a
 read-back that disagrees with the change (`the CLI reported success but the mode reads back as
-normal`).
+3-Work`), and a name that resolves to no mode at all.
 
 ## Detection
 
@@ -117,7 +140,7 @@ characters, must not be a slash command or a code block.
 
 - **change** — a verb (`change`, `switch`, `set`, `switch to`, `use`, `activate`, `muda`,
   `passa`, `troca`, `ativa`, …) with a `mode`/`modo` word and a target: "change your mode to
-  normal", "switch to advanced mode", "set mode advanced", "muda o teu modo para normal".
+  work", "switch to development mode", "set mode automatic", "muda o teu modo para personal".
 - **status** — a question about the mode with a state word: "what mode are you on", "what mode
   are we running on", "what is the current mode", "which mode is active", "mode status",
   "qual é o modo atual", "em que modo estás".
@@ -132,12 +155,12 @@ refusal is the honest answer and it lists the modes that exist.
 
 | Request | Calls | Wall clock | Model turn |
 | --- | --- | --- | --- |
-| "what mode are you on" | 1 | ~98 ms | yes, one short line |
-| "change your mode to advanced" | 2 | ~178 ms | yes, one short line |
-| "change your mode to turbo" (failure) | 1 | ~88 ms | yes, one short line quoting `[FAIL]` |
-| same status, `answer: hook` | 1 | ~101 ms | **none** |
-| a whole `pi -p` turn, status | 1 | ~1.6 s total (node + flash turn) | "Mode: normal." |
-| a whole `pi -p` turn, change | 2 | ~1.9 s total | "Done — mode is now normal." |
+| "what mode are you on" | 1 | ~90 ms | yes, one short line |
+| "change your mode to development" | 3 | ~275 ms | yes, one short line |
+| "change your mode to turbo" (no such mode) | 1 | ~100 ms | yes, one short line quoting the modes |
+| same status, `answer: hook` | 1 | ~100 ms | **none** |
+| a whole `pi -p` turn, status | 1 | ~1.7 s total (node + flash turn) | "Mode: 1-Personal." |
+| a whole `pi -p` turn, change | 3 | ~2 s total | "Done — mode is now 3-Work." |
 
 The last two rows are a real `pi -p` run in a copy of the home: JEV printed `skipped (mode
 request)` and `skipped (mode switch)`, the model answered one line, and the file really changed.
@@ -161,15 +184,16 @@ Two checks were run on 2026-11-07 against the live code:
    that returned `continue` in 0 ms.
 2. **A real turn** — a copy of the home under `/tmp` (its own `config.json`, its own
    `control/cli.ts`, no packages, four extensions) run as
-   `pi -p --no-session "change your mode to normal"`. Output:
+   `pi -p --no-session "change your mode to work"`. Output:
 
    ```text
    [jev]   skipped (mode request)
-   [mode]  change to "normal" → ok normal · 2 cli · 180 ms
+   [mode]  change to "work" → ok 3-Work · 3 cli · 259 ms
    [jev]   skipped (mode switch)
-   Done — mode is now normal.
+   Done — mode is now 3-Work.
    ```
 
-   and the copied `agent-modes-config.json` really had `normal` on and `advanced` off. The same
-   setup with a broken CLI (no agent homes) answered "It did not change: `[FAIL] Cannot read
-   settings.json.`" — the anti-false-positive path, end to end.
+   and the copied `prompt-build-config.json` really had `3-Work` on. A Portuguese request
+   ("muda o teu modo para personal") switched it back. The same setup with a broken CLI (a
+   config file missing) answered "It did not change — the CLI reported: `[FAIL] Cannot read
+   input-phrase-config.json.`" — the anti-false-positive path, end to end.

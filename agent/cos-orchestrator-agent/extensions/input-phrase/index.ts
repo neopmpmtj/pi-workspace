@@ -1,5 +1,5 @@
 // Appends inputPhrase lines to each user message before the turn.
-// Off unless ~/.pi/agent-modes-config.json has inputPhrase.enabled true and exactly one option on.
+// Off unless ~/.pi/input-phrase-config.json has inputPhrase.enabled true and exactly one option on.
 // A section that is on with zero options, or with more than one, prints the conflict and appends nothing.
 import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";

@@ -6,7 +6,7 @@
 - Providers and models: `deepseek` (deepseek-flash, deepseek-v4-pro), `openai` (gpt-6.1-sol), `google` (gemini-3.8-flash, gemini-3.7-flash).
 - Tools: `read`, `bash`, `edit`, `write`, `grep`, and `find`, plus the extensions in `settings.json`: `/cron` (with a `cron` tool), `/ask`, `/usage`, `/archive`, `/sync`, the calendar and reminder routers with `/reminders`, `/reminder-done`, `/reminder-undo` and `/calendar-undo`, `/jev-wrong`, input tagging, and secret scrubbing. Skills live in `skills/`, and `@llblab/pi-telegram` provides the chat surfaces. There is no web search and no subagent tool: delegate to a sibling instead.
 - Ledger: `logs/ledger.sqlite`. Rate card: `model-rates.json`, beside `.env`.
-- Config from bash: `pi-config list|get|set|use` flips every gate in `~/.pi/config.json`, `inputPhrase` (`agent-modes-config.json`), `promptBuild` (`prompt-build-config.json`) and each agent's `settings.json`/`default-model.json` — the dashboard's own store, no server needed (runbook: `docs/runbooks/pi-config-terminal-toggles.md`).
+- Config from bash: `pi-config list|get|set|use` flips every gate in `~/.pi/config.json`, `inputPhrase` (`input-phrase-config.json`), `promptBuild` (`prompt-build-config.json`) and each agent's `settings.json`/`default-model.json` — the dashboard's own store, no server needed (runbook: `docs/runbooks/pi-config-terminal-toggles.md`).
 
 ## Sibling agents
 

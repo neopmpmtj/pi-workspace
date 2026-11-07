@@ -11,18 +11,17 @@ import {
   detectModeRequest,
   isModeQuestion,
   parseModeState,
+  resolveModeOption,
   runModeRequest,
   type CliResult,
   type CliRunner,
 } from "../src/mode-switch.ts";
 
+const MODES = ["1-Personal", "2-Development", "3-Work", "4-Automatic"];
+
 const STATE = (mode: string, enabled = true): string => JSON.stringify({
   enabled,
-  append1: "",
-  options: [
-    { name: "normal", enabled: mode === "normal", allowBlank: false, phrase: "one sentence" },
-    { name: "advanced", enabled: mode === "advanced", allowBlank: true, phrase: "" },
-  ],
+  options: MODES.map((name) => ({ name, enabled: name === mode, prompt: "", config: "{}" })),
 });
 
 /** A fake CLI: each call pops the next answer, and every argv tuple is recorded. */
@@ -127,15 +126,15 @@ describe("detectModeRequest - leaves ordinary text alone", () => {
 
 describe("parseModeState", () => {
   it("reads the option that is on", () => {
-    assert.deepEqual(parseModeState(STATE("advanced")), { enabled: true, mode: "advanced", options: ["normal", "advanced"] });
-    assert.deepEqual(parseModeState(STATE("advanced", false)), { enabled: false, mode: "advanced", options: ["normal", "advanced"] });
+    assert.deepEqual(parseModeState(STATE("2-Development")), { enabled: true, mode: "2-Development", options: [...MODES] });
+    assert.deepEqual(parseModeState(STATE("2-Development", false)), { enabled: false, mode: "2-Development", options: [...MODES] });
   });
 
-  it("reports no mode when neither option is on", () => {
+  it("reports no mode when no option is on", () => {
     assert.deepEqual(parseModeState(JSON.stringify({
       enabled: false,
-      options: [{ name: "normal", enabled: false }, { name: "advanced", enabled: false }],
-    })), { enabled: false, mode: null, options: ["normal", "advanced"] });
+      options: MODES.map((name) => ({ name, enabled: false })),
+    })), { enabled: false, mode: null, options: [...MODES] });
   });
 
   it("rejects output that is not a mode state", () => {
@@ -147,57 +146,102 @@ describe("parseModeState", () => {
   });
 });
 
+describe("resolveModeOption", () => {
+  const modes = ["1-Personal", "2-Development", "3-Work", "4-Automatic"];
+
+  it("matches the full name, the bare name, the number, or a unique prefix", () => {
+    assert.equal(resolveModeOption("2-Development", modes), "2-Development");
+    assert.equal(resolveModeOption("2-development", modes), "2-Development");
+    assert.equal(resolveModeOption("development", modes), "2-Development");
+    assert.equal(resolveModeOption("Personal", modes), "1-Personal");
+    assert.equal(resolveModeOption("2", modes), "2-Development");
+    assert.equal(resolveModeOption("3-work", modes), "3-Work");
+    assert.equal(resolveModeOption("auto", modes), "4-Automatic");
+    assert.equal(resolveModeOption("dev", modes), "2-Development");
+  });
+
+  it("rejects an unknown name, an empty one, and an ambiguous prefix", () => {
+    assert.equal(resolveModeOption("turbo", modes), null);
+    assert.equal(resolveModeOption("", modes), null);
+    assert.equal(resolveModeOption("a", modes), null);
+    assert.equal(resolveModeOption("1", ["1-Personal", "1-Pro"]), null);
+  });
+});
+
 describe("runModeRequest", () => {
   it("answers a status question from the CLI and stops", async () => {
-    const cli = fakeCli([OK(STATE("advanced"))]);
+    const cli = fakeCli([OK(STATE("2-Development"))]);
     const outcome = await runModeRequest("what mode are you on", { run: cli.run });
     assert.ok(outcome);
     assert.equal(outcome.ok, true);
-    assert.deepEqual(cli.calls, [["get", "inputPhrase", "--json"]]);
-    assert.match(outcome.answer, /mode: advanced · inputPhrase on/);
-    assert.match(outcome.ack, /mode is "advanced"/);
+    assert.deepEqual(cli.calls, [["get", "promptBuild", "--json"]]);
+    assert.match(outcome.answer, /mode: 2-Development · promptBuild on/);
+    assert.match(outcome.ack, /mode is "2-Development"/);
     assert.match(outcome.ack, /Reply in one short line/);
     assert.match(outcome.ack, /Do not run a tool/);
-    assert.match(outcome.trace, /\[mode\]  status → ok advanced · 1 cli/);
+    assert.match(outcome.trace, /\[mode\]  status → ok 2-Development · 1 cli/);
   });
 
   it("changes the mode with `use` and confirms it by reading back", async () => {
-    const cli = fakeCli([OK("inputPhrase.advanced is the one option on\n"), OK(STATE("advanced"))]);
-    const outcome = await runModeRequest("change your mode to advanced", { run: cli.run });
+    // The speaker says "development"; the option is "2-Development".
+    const cli = fakeCli([OK(STATE("1-Personal")), OK("promptBuild.2-Development is the one option on\n"), OK(STATE("2-Development"))]);
+    const outcome = await runModeRequest("change your mode to development", { run: cli.run });
     assert.ok(outcome);
     assert.equal(outcome.ok, true);
     assert.deepEqual(cli.calls, [
-      ["use", "inputPhrase.advanced"],
-      ["get", "inputPhrase", "--json"],
+      ["get", "promptBuild", "--json"],
+      ["use", "promptBuild.2-Development"],
+      ["get", "promptBuild", "--json"],
     ]);
-    assert.match(outcome.answer, /mode is now advanced/);
+    assert.match(outcome.answer, /mode is now 2-Development/);
     assert.match(outcome.ack, /Already executed by the pi-config CLI, which succeeded/);
-    assert.match(outcome.ack, /mode is now "advanced"/);
-    assert.match(outcome.ack, /Done — mode is now advanced/);
+    assert.match(outcome.ack, /mode is now "2-Development"/);
+    assert.match(outcome.ack, /Done — mode is now 2-Development/);
   });
 
-  it("never reports success when the change fails, and keeps the CLI's words", async () => {
-    const said = "[FAIL] inputPhrase has no option turbo. Options: normal, advanced.";
-    const cli = fakeCli([FAIL(said)]);
+  it("takes the number, the bare name, or the full name", async () => {
+    for (const [said, resolved] of [["3", "3-Work"], ["work", "3-Work"], ["3-work", "3-Work"]] as const) {
+      const cli = fakeCli([OK(STATE("1-Personal")), OK("ok\n"), OK(STATE(resolved))]);
+      const outcome = await runModeRequest(`change your mode to ${said}`, { run: cli.run });
+      assert.ok(outcome);
+      assert.equal(outcome.ok, true, said);
+      assert.deepEqual(cli.calls[1], ["use", `promptBuild.${resolved}`]);
+    }
+  });
+
+  it("never reports success for a mode that does not exist", async () => {
+    const cli = fakeCli([OK(STATE("1-Personal"))]);
     const outcome = await runModeRequest("change your mode to turbo", { run: cli.run });
     assert.ok(outcome);
     assert.equal(outcome.ok, false);
-    assert.equal(outcome.reason, said);
-    assert.equal(cli.calls.length, 1, "a failed change is not read back");
+    assert.equal(cli.calls.length, 1, "an unknown mode never reaches `use`");
+    assert.match(outcome.reason ?? "", /no mode "turbo"/);
+    assert.match(outcome.reason ?? "", /1-Personal, 2-Development, 3-Work, 4-Automatic/);
     assert.match(outcome.ack, /which FAILED/);
     assert.match(outcome.ack, /did not happen/);
-    assert.ok(outcome.ack.includes(said), "the CLI's own words survive into the acknowledgement");
     assert.match(outcome.ack, /Do not claim success/);
     assert.doesNotMatch(outcome.answer, /is now/);
     assert.match(outcome.answer, /change to turbo did not happen/);
   });
 
-  it("does not report success when the read-back disagrees with the change", async () => {
-    const cli = fakeCli([OK("ok\n"), OK(STATE("normal"))]);
-    const outcome = await runModeRequest("change your mode to advanced", { run: cli.run });
+  it("never reports success when the CLI refuses the write, and keeps its words", async () => {
+    const said = "[FAIL] promptBuild: 2-Development and 3-Work are both enabled.";
+    const cli = fakeCli([OK(STATE("1-Personal")), FAIL(said)]);
+    const outcome = await runModeRequest("change your mode to 2-Development", { run: cli.run });
     assert.ok(outcome);
     assert.equal(outcome.ok, false);
-    assert.match(outcome.reason ?? "", /reads back as normal/);
+    assert.equal(outcome.reason, said);
+    assert.equal(cli.calls.length, 2, "a failed change is not read back");
+    assert.ok(outcome.ack.includes(said), "the CLI's own words survive into the acknowledgement");
+    assert.match(outcome.ack, /Do not claim success/);
+  });
+
+  it("does not report success when the read-back disagrees with the change", async () => {
+    const cli = fakeCli([OK(STATE("1-Personal")), OK("ok\n"), OK(STATE("3-Work"))]);
+    const outcome = await runModeRequest("change your mode to 2-Development", { run: cli.run });
+    assert.ok(outcome);
+    assert.equal(outcome.ok, false);
+    assert.match(outcome.reason ?? "", /reads back as 3-Work/);
     assert.match(outcome.ack, /which FAILED/);
   });
 
@@ -219,11 +263,11 @@ describe("runModeRequest", () => {
   });
 
   it("keeps the status read honest when the section is off", async () => {
-    const cli = fakeCli([OK(STATE("advanced", false))]);
+    const cli = fakeCli([OK(STATE("2-Development", false))]);
     const outcome = await runModeRequest("what mode are you on", { run: cli.run });
     assert.ok(outcome);
-    assert.match(outcome.answer, /inputPhrase off/);
-    assert.match(outcome.ack, /inputPhrase off/);
+    assert.match(outcome.answer, /promptBuild off/);
+    assert.match(outcome.ack, /promptBuild off/);
   });
 
   it("runs nothing for a message that is not a mode request", async () => {
@@ -234,7 +278,7 @@ describe("runModeRequest", () => {
 
   it("exits non-zero from the real CLI runner when the CLI is missing", async () => {
     const run = cliRunner({ cli: path.join(tmpdir(), "no-such-pi-config-cli.ts"), timeoutMs: 10_000 });
-    const result = await run(["get", "inputPhrase", "--json"]);
+    const result = await run(["get", "promptBuild", "--json"]);
     assert.equal(result.ok, false);
     assert.notEqual(result.code, 0);
   });
@@ -255,7 +299,7 @@ describe("mode acknowledgement marker", () => {
   it("keeps the JEV classifier away from a mode acknowledgement", async () => {
     resetJevClassify();
     resetModeAck();
-    const ack = "Already executed by the pi-config CLI, which succeeded: the agent's mode is now \"advanced\".";
+    const ack = "Already executed by the pi-config CLI, which succeeded: the agent's mode is now \"2-Development\".";
     markModeAck(ack);
     // A script that does not exist: if the classifier were asked, this would be a failure
     // reason, not a skip.
@@ -296,9 +340,9 @@ describe("mode acknowledgement marker", () => {
   it("always skips the acknowledgement, which only exists when the gate was on", async () => {
     await withConfigRoot({ modeSwitch: { enabled: false } }, async (env) => {
       resetJevClassify();
-      markModeAck("Already executed by the pi-config CLI, which succeeded: the agent's mode is now \"normal\".");
+      markModeAck("Already executed by the pi-config CLI, which succeeded: the agent's mode is now \"1-Personal\".");
       const result = await classifyPrompt(
-        "Already executed by the pi-config CLI, which succeeded: the agent's mode is now \"normal\".",
+        "Already executed by the pi-config CLI, which succeeded: the agent's mode is now \"1-Personal\".",
         { env, script: path.join(tmpdir(), "no-such-classifier.py") },
       );
       assert.equal(result.skipped, "mode switch");

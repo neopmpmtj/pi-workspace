@@ -9,9 +9,9 @@ export function globalConfigPath(env: NodeJS.ProcessEnv = process.env): string {
   return path.resolve(repoRoot(env), "..", "config.json");
 }
 
-/** Agent mode phrases, beside config.json. */
-export function agentModesConfigPath(env: NodeJS.ProcessEnv = process.env): string {
-  return path.resolve(repoRoot(env), "..", "agent-modes-config.json");
+/** The per-turn input phrase, beside config.json. */
+export function inputPhraseConfigPath(env: NodeJS.ProcessEnv = process.env): string {
+  return path.resolve(repoRoot(env), "..", "input-phrase-config.json");
 }
 
 /** Selectable system-prompt section, beside config.json. */
@@ -118,12 +118,12 @@ export async function readModeSwitch(env: NodeJS.ProcessEnv = process.env): Prom
 }
 
 /**
- * The inputPhrase section in agent-modes-config.json, or null when the hook stays off.
+ * The inputPhrase section in input-phrase-config.json, or null when the hook stays off.
  * Null when that file, the section, or enabled: true is missing or unreadable.
  * An enabled section still returns a conflict when the number of on options is not exactly one.
  */
 export async function readInputPhrase(env: NodeJS.ProcessEnv = process.env): Promise<InputPhrase | null> {
-  const record = await readEnabledSection("inputPhrase", env, agentModesConfigPath(env));
+  const record = await readEnabledSection("inputPhrase", env, inputPhraseConfigPath(env));
   if (!record) return null;
   return inputPhraseFromSection(record);
 }

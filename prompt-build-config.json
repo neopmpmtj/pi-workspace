@@ -1,27 +1,22 @@
 {
   "promptBuild": {
     "enabled": true,
-    "personal": {
+    "1-Personal": {
       "enabled": true,
       "prompt": "Remind me to congratulate my aunt on her 83rd birthday on every response",
       "config": {}
     },
-    "option1": {
+    "2-Development": {
+      "enabled": false,
+      "prompt": "We are working in Development mode, so respond with a brief explanations untill or unless we ask for a more detailed explanation",
+      "config": {}
+    },
+    "3-Work": {
       "enabled": false,
       "prompt": "",
       "config": {}
     },
-    "option2": {
-      "enabled": false,
-      "prompt": "",
-      "config": {}
-    },
-    "option3": {
-      "enabled": false,
-      "prompt": "",
-      "config": {}
-    },
-    "option4": {
+    "4-Automatic": {
       "enabled": false,
       "prompt": "",
       "config": {}

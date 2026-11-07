@@ -75,7 +75,7 @@ config.json        gates (one set of screens per hook)
   reminderNode.{enabled,print,mode,writes} writes:false = route nothing, leave the turn to the model
   modeSwitch.{enabled,print,answer}        answer: model | hook (see docs/runbooks/mode-switch.md)
 
-agent-modes-config.json
+input-phrase-config.json
   inputPhrase.enabled
   inputPhrase.append1                      appended to every typed message while on
   inputPhrase.<normal|advanced>.enabled    exactly one of the two
@@ -84,9 +84,9 @@ agent-modes-config.json
 
 prompt-build-config.json
   promptBuild.enabled
-  promptBuild.<personal|option1..option4>.enabled   exactly one
-  promptBuild.<personal|option1..option4>.prompt
-  promptBuild.<personal|option1..option4>.config    a JSON object, stored as an object
+  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic>.enabled   exactly one
+  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic>.prompt
+  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic>.config    a JSON object, stored as an object
 
 agent.<id>.{provider,model,thinking,tools,enabledModels,extensions,packages}
   <id>: cos | image-describer | web-master | keep | google-workspace
@@ -102,7 +102,7 @@ the remaining words are joined — quoting is optional.
 
 `inputPhrase` and `promptBuild` must have **exactly one** option on while their section is on,
 so swapping the on option with two `set` writes fails in the middle (zero options on, or two).
-`pi-config use inputPhrase.normal` (or `promptBuild option3`) is one write that turns the chosen
+`pi-config use inputPhrase.normal` (or `promptBuild 3-Work`) is one write that turns the chosen
 option on and the rest off.
 
 ## Examples
@@ -111,8 +111,8 @@ option on and the rest off.
 pi-config set inputPhrase.enabled off                # stop appending to every message
 pi-config use inputPhrase.normal                     # switch phrase sets in one write
 pi-config set inputPhrase.normal.phrase "answer in one sentence"
-pi-config set promptBuild.option2.prompt "be brief"
-pi-config set promptBuild.option2.config '{"tone":"warm"}'
+pi-config set promptBuild.3-Work.prompt "be brief"
+pi-config set promptBuild.3-Work.config '{"tone":"warm"}'
 pi-config use promptBuild personal
 pi-config set calendarNode.mode dry                  # classify and trace, write nothing
 pi-config set reminderNode.writes off                # no reminders.jsonl row, no event

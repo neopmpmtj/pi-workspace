@@ -50,7 +50,8 @@ pi-config set modeSwitch.enabled off  # the hook above JEV: mode status and mode
 pi-config set modeSwitch.answer hook # answer a mode request with no model turn at all
 pi-config set inputPhrase.enabled on
 pi-config use inputPhrase.normal     # the exactly-one-option groups swap in one write
-pi-config set promptBuild.option2.config '{"tone":"warm"}'
+pi-config use promptBuild 3-Work          # the session-level mode (1-Personal · 2-Development · 3-Work · 4-Automatic)
+pi-config set promptBuild.3-Work.config '{"tone":"warm"}'
 pi-config set agent.cos.thinking high
 ```
 

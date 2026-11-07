@@ -35,13 +35,15 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 A hook above the JEV classifier, off unless `modeSwitch.enabled` is true in `~/.pi/config.json`.
 While it is on, the classifier itself refuses mode requests, so no extension load order matters.
 
-- "what mode are you on", "change your mode to normal": answered by the control plane's CLI,
-  not by JEV and not by a decision node — `pi-config get inputPhrase --json` for a status,
-  `pi-config use inputPhrase.<mode>` then the same read for a change. The message then arrives
+- A mode is the enabled `promptBuild` option: 1-Personal, 2-Development, 3-Work, 4-Automatic.
+  "what mode are you on", "change your mode to work": answered by the control plane's CLI, not
+  by JEV and not by a decision node — `pi-config get promptBuild --json` for a status,
+  `pi-config use promptBuild.<mode>` then the same read for a change. The message then arrives
   as an acknowledgement that already carries the result: reply in one short line, run nothing.
   With `answer: hook` the CLI's own line is printed and no model runs at all.
 - A failed CLI arrives as a failure carrying its `[FAIL]` text. Never say the mode changed
   unless the CLI exited 0 and the read-back agreed.
+- `normal`/`advanced` (`inputPhrase`) is a different feature, per turn; modes are not it.
 - `pi-config get modeSwitch` · `pi-config set modeSwitch.enabled off` · runbook
   `docs/runbooks/mode-switch.md`.
 

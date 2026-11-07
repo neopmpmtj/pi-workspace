@@ -20,7 +20,7 @@ const GATES = {
 async function fixture(): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), "pi-config-cli-"));
   await writeFile(path.join(root, "config.json"), `${JSON.stringify(GATES, null, 2)}\n`);
-  await writeFile(path.join(root, "agent-modes-config.json"), `${JSON.stringify({
+  await writeFile(path.join(root, "input-phrase-config.json"), `${JSON.stringify({
     inputPhrase: {
       enabled: true,
       append1: "hello",
@@ -31,11 +31,10 @@ async function fixture(): Promise<string> {
   await writeFile(path.join(root, "prompt-build-config.json"), `${JSON.stringify({
     promptBuild: {
       enabled: true,
-      personal: { enabled: true, prompt: "be kind", config: {} },
-      option1: { enabled: false, prompt: "", config: {} },
-      option2: { enabled: false, prompt: "", config: {} },
-      option3: { enabled: false, prompt: "", config: {} },
-      option4: { enabled: false, prompt: "", config: {} },
+      "1-Personal": { enabled: true, prompt: "be kind", config: { a: 1 } },
+      "2-Development": { enabled: false, prompt: "dev rules", config: { b: 2 } },
+      "3-Work": { enabled: false, prompt: "work rules", config: {} },
+      "4-Automatic": { enabled: false, prompt: "", config: {} },
     },
   }, null, 2)}\n`);
   const homes: Record<string, Record<string, unknown>> = {
@@ -108,7 +107,7 @@ describe("pi-config", () => {
       assert.equal((await run(root, ["use", "inputPhrase.normal"])).code, 0);
       const phrase = await run(root, ["set", "inputPhrase.normal.phrase", "answer", "in", "one", "sentence"]);
       assert.equal(phrase.code, 0);
-      const section = (await readJson(path.join(root, "agent-modes-config.json"))).inputPhrase;
+      const section = (await readJson(path.join(root, "input-phrase-config.json"))).inputPhrase;
       assert.deepEqual(section.normal, { enabled: true, allowBlank: false, phrase: "answer in one sentence" });
       assert.equal(section.advanced.enabled, false);
       assert.equal(section.append1, "hello");
@@ -120,14 +119,14 @@ describe("pi-config", () => {
   it("writes a prompt build prompt and a config object", async () => {
     const root = await fixture();
     try {
-      assert.equal((await run(root, ["set", "promptBuild.option2.prompt", "two words"])).code, 0);
-      assert.equal((await run(root, ["set", "promptBuild.option2.config", '{"tone":"warm","n":2}'])).code, 0);
-      assert.equal((await run(root, ["set", "promptBuild.option2.enabled", "on"])).code, 1);
+      assert.equal((await run(root, ["set", "promptBuild.3-Work.prompt", "two words"])).code, 0);
+      assert.equal((await run(root, ["set", "promptBuild.3-Work.config", '{"tone":"warm","n":2}'])).code, 0);
+      assert.equal((await run(root, ["set", "promptBuild.3-Work.enabled", "on"])).code, 1);
       const promptBuild = (await readJson(path.join(root, "prompt-build-config.json"))).promptBuild;
-      assert.equal(promptBuild.option2.prompt, "two words");
-      assert.deepEqual(promptBuild.option2.config, { tone: "warm", n: 2 });
-      assert.equal(promptBuild.option2.enabled, false);
-      assert.equal(promptBuild.personal.enabled, true);
+      assert.equal(promptBuild["3-Work"].prompt, "two words");
+      assert.deepEqual(promptBuild["3-Work"].config, { tone: "warm", n: 2 });
+      assert.equal(promptBuild["3-Work"].enabled, false);
+      assert.equal(promptBuild["1-Personal"].enabled, true);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -136,13 +135,30 @@ describe("pi-config", () => {
   it("switches a prompt build option in one write", async () => {
     const root = await fixture();
     try {
-      assert.equal((await run(root, ["use", "promptBuild", "option3"])).code, 0);
+      assert.equal((await run(root, ["use", "promptBuild", "4-Automatic"])).code, 0);
       const promptBuild = (await readJson(path.join(root, "prompt-build-config.json"))).promptBuild;
-      assert.equal(promptBuild.option3.enabled, true);
-      assert.equal(promptBuild.personal.enabled, false);
+      assert.equal(promptBuild["4-Automatic"].enabled, true);
+      assert.equal(promptBuild["1-Personal"].enabled, false);
       assert.equal(promptBuild.enabled, true);
       assert.equal((await run(root, ["use", "promptBuild.nope"])).code, 1);
       assert.equal((await run(root, ["use", "calendarNode"])).code, 1);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("switching a prompt build option keeps every other prompt and config", async () => {
+    const root = await fixture();
+    try {
+      assert.equal((await run(root, ["use", "promptBuild", "3-Work"])).code, 0);
+      const promptBuild = (await readJson(path.join(root, "prompt-build-config.json"))).promptBuild;
+      assert.equal(promptBuild["1-Personal"].prompt, "be kind");
+      assert.deepEqual(promptBuild["1-Personal"].config, { a: 1 });
+      assert.equal(promptBuild["2-Development"].prompt, "dev rules");
+      assert.deepEqual(promptBuild["2-Development"].config, { b: 2 });
+      assert.equal(promptBuild["3-Work"].enabled, true);
+      assert.equal(promptBuild["3-Work"].prompt, "work rules");
+      assert.equal(promptBuild["1-Personal"].enabled, false);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -180,15 +196,15 @@ describe("pi-config", () => {
       assert.equal(mode.code, 0);
       assert.equal(mode.out.join("\n"), '"route"');
 
-      const config = await run(root, ["get", "promptBuild.personal.config", "--json"]);
-      assert.equal(config.out.join("\n"), "{}");
+      const config = await run(root, ["get", "promptBuild.1-Personal.config", "--json"]);
+      assert.deepEqual(JSON.parse(config.out.join("\n")), { a: 1 });
 
       const all = await run(root, ["list", "--json"]);
       assert.equal(all.code, 0);
       const plane = JSON.parse(all.out.join("\n")) as Record<string, any>;
       assert.equal(plane.gates.length, 6);
       assert.equal(plane.inputPhrase.append1, "hello");
-      assert.equal(plane.promptBuild.options.length, 5);
+      assert.equal(plane.promptBuild.options.length, 4);
       assert.equal(plane.agents.length, 5);
 
       const text = await run(root, ["list"]);
@@ -204,11 +220,11 @@ describe("pi-config", () => {
   it("writes nothing with --dry-run", async () => {
     const root = await fixture();
     try {
-      const before = await readFile(path.join(root, "agent-modes-config.json"), "utf8");
+      const before = await readFile(path.join(root, "input-phrase-config.json"), "utf8");
       const dry = await run(root, ["set", "inputPhrase.append1", "later", "--dry-run"]);
       assert.equal(dry.code, 0);
       assert.match(dry.out.join("\n"), /\[dry-run\]/);
-      assert.equal(await readFile(path.join(root, "agent-modes-config.json"), "utf8"), before);
+      assert.equal(await readFile(path.join(root, "input-phrase-config.json"), "utf8"), before);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

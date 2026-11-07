@@ -1,10 +1,16 @@
 // The mode switch: the hook above the JEV classifier.
 //
-// A message that asks what the agent's mode is, or asks to change it, is answered by a
-// control-plane CLI call instead of by the classifier and a reasoning model:
+// A mode is the enabled promptBuild option in ~/.pi/prompt-build-config.json
+// (1-Personal, 2-Development, 3-Work, 4-Automatic). It is the session-level layer: the
+// selected option contributes one section to the system prompt. inputPhrase (normal and
+// advanced) is a different, per-turn feature and is untouched here.
 //
-//   status -> `pi-config get inputPhrase --json`   (~150 ms, no model decision)
-//   change -> `pi-config use inputPhrase.<mode>`   then the same read-back
+// A message that asks what the mode is, or asks to change it, is answered by control-plane
+// CLI calls instead of by the classifier and a reasoning model:
+//
+//   status -> `pi-config get promptBuild --json`            (~90 ms)
+//   change -> the same read to resolve the name,
+//             `pi-config use promptBuild.<mode>`, then the read again as a read-back
 //
 // The user's message is then replaced by an acknowledgement instruction that already
 // carries the result, so the model only reports what the CLI did (modeSwitch.answer
@@ -15,7 +21,7 @@
 // that says the mode did NOT change, quoting the CLI's own words.
 //
 // Detection is deterministic (no classifier, no model). Both surfaces of the mode live in
-// agent-modes-config.json, which the web page and `pi-config` edit with the same store.
+// input-phrase-config.json, which the web page and `pi-config` edit with the same store.
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { repoRoot } from "../ledger/env.ts";
@@ -26,7 +32,7 @@ import { detectModeRequest, isModeQuestion, type ModeRequest } from "./mode-dete
 export { detectModeRequest, isModeQuestion };
 export type { ModeRequest };
 
-/** The inputPhrase section, as the CLI's `get inputPhrase --json` reports it. */
+/** The promptBuild section, as the CLI's `get promptBuild --json` reports it. */
 export interface ModeState {
   enabled: boolean;
   /** The option that is on, or null when none is. */
@@ -113,7 +119,7 @@ export function cliRunner(options: ModeRunOptions = {}): CliRunner {
   });
 }
 
-/** The inputPhrase state in the CLI's JSON, or null when the output is not that shape. */
+/** The promptBuild state in the CLI's JSON, or null when the output is not that shape. */
 export function parseModeState(stdout: string): ModeState | null {
   let parsed: unknown;
   try {
@@ -156,23 +162,54 @@ export async function runModeRequest(text: string, options: ModeRunOptions = {})
     buildOutcome(request, ok, state, result, reason, calls, Date.now() - started);
 
   if (request.kind === "status") {
-    const result = await call(["get", "inputPhrase", "--json"]);
+    const result = await call(["get", "promptBuild", "--json"]);
     if (!result.ok) return finish(false, null, result, failureReason(result, "status"));
     const state = parseModeState(result.stdout);
     if (!state) return finish(false, null, result, "the CLI printed no mode state");
     return finish(true, state, result, null);
   }
 
-  const change = await call(["use", `inputPhrase.${request.mode}`]);
-  if (!change.ok) return finish(false, null, change, failureReason(change, `change to ${request.mode}`));
-  const read = await call(["get", "inputPhrase", "--json"]);
+  // Resolve what the speaker said against the names the CLI reports, so "development"
+  // finds "2-Development" and unknown words never reach `use`.
+  const before = await call(["get", "promptBuild", "--json"]);
+  if (!before.ok) return finish(false, null, before, failureReason(before, "status"));
+  const known = parseModeState(before.stdout);
+  if (!known) return finish(false, null, before, "the CLI printed no mode state");
+  const mode = resolveModeOption(request.mode, known.options);
+  if (!mode) {
+    return finish(false, known, before, `no mode "${request.mode}" · promptBuild has ${known.options.join(", ")}`);
+  }
+
+  const change = await call(["use", `promptBuild.${mode}`]);
+  if (!change.ok) return finish(false, known, change, failureReason(change, `change to ${mode}`));
+  const read = await call(["get", "promptBuild", "--json"]);
   if (!read.ok) return finish(false, null, read, failureReason(read, "read-back"));
   const state = parseModeState(read.stdout);
   if (!state) return finish(false, null, read, "the CLI printed no mode state");
-  if (state.mode !== request.mode) {
+  if (state.mode !== mode) {
     return finish(false, state, read, `the CLI reported success but the mode reads back as ${state.mode ?? "none"}`);
   }
   return finish(true, state, read, null);
+}
+
+/**
+ * The option name the speaker meant, or null.
+ * Exact case-insensitive name first, then the name without its leading number, then the
+ * number alone, then a unique prefix of the name without its number.
+ */
+export function resolveModeOption(token: string, options: readonly string[]): string | null {
+  const want = token.trim().toLowerCase();
+  if (!want) return null;
+  const exact = options.find((name) => name.toLowerCase() === want);
+  if (exact) return exact;
+  const bare = (name: string): string => name.replace(/^\d+[-_.]?\s*/, "").toLowerCase();
+  const byBare = options.filter((name) => bare(name) === want);
+  if (byBare.length === 1) return byBare[0];
+  const byNumber = options.filter((name) => (name.match(/^\d+/) ?? [""])[0] === want);
+  if (byNumber.length === 1) return byNumber[0];
+  if (want.length < 3) return null;
+  const prefixes = options.filter((name) => bare(name).startsWith(want));
+  return prefixes.length === 1 ? prefixes[0] : null;
 }
 
 function failureReason(result: CliResult, what: string): string {
@@ -192,7 +229,7 @@ function buildOutcome(
   ms: number,
 ): ModeOutcome {
   const mode = state?.mode ?? (request.kind === "change" ? request.mode : null);
-  const section = state ? (state.enabled ? "inputPhrase on" : "inputPhrase off") : "";
+  const section = state ? (state.enabled ? "promptBuild on" : "promptBuild off") : "";
   const subject = request.kind === "change" ? `change to "${request.mode}"` : "status";
   const trace = `[mode]  ${subject} → ${ok ? "ok" : "FAILED"}${mode && ok ? ` ${mode}` : ""} · ${calls} cli · ${ms} ms`;
   return {

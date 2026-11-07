@@ -2,7 +2,7 @@
 // The option names live here so a later alternative is added in one place.
 
 /** Option entries in promptBuild. Exactly one may be enabled while the section is on. */
-export const promptBuildOptions = ["personal", "option1", "option2", "option3", "option4"] as const;
+export const promptBuildOptions = ["1-Personal", "2-Development", "3-Work", "4-Automatic"] as const;
 
 export type PromptBuildOption = (typeof promptBuildOptions)[number];
 

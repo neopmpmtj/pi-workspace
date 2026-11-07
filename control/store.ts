@@ -75,11 +75,11 @@ export interface ControlPlane {
 }
 
 const OPTION_NAMES = ["normal", "advanced"] as const;
-const PROMPT_BUILD_OPTIONS = ["personal", "option1", "option2", "option3", "option4"] as const;
+const PROMPT_BUILD_OPTIONS = ["1-Personal", "2-Development", "3-Work", "4-Automatic"] as const;
 
 export async function readControlPlane(root = PI_ROOT): Promise<ControlPlane> {
   const config = await readObject(path.join(root, "config.json"));
-  const modes = await readObject(path.join(root, "agent-modes-config.json"));
+  const modes = await readObject(path.join(root, "input-phrase-config.json"));
   const promptBuild = await readObject(path.join(root, "prompt-build-config.json"));
   const gates = Object.keys(config).map((name) => gateView(name, config[name]));
   return {
@@ -110,7 +110,7 @@ export async function writeGate(name: string, incoming: unknown, root = PI_ROOT)
 }
 
 export async function writeInputPhrase(incoming: unknown, root = PI_ROOT): Promise<InputPhraseView> {
-  const file = path.join(root, "agent-modes-config.json");
+  const file = path.join(root, "input-phrase-config.json");
   const modes = await readObject(file);
   const current = modes.inputPhrase;
   if (!current || typeof current !== "object" || Array.isArray(current)) {
@@ -282,7 +282,9 @@ function promptBuildOptionsOf(value: unknown): PromptBuildOptionView[] {
       config: textOf(body.config, `${name}.config`),
     });
   }
-  if (byName.size !== PROMPT_BUILD_OPTIONS.length) throw new SettingsError("personal and option1 through option4 are all required.");
+  if (byName.size !== PROMPT_BUILD_OPTIONS.length) {
+    throw new SettingsError(`all of ${PROMPT_BUILD_OPTIONS.join(", ")} are required.`);
+  }
   return PROMPT_BUILD_OPTIONS.map((name) => byName.get(name)!);
 }
 

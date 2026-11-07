@@ -5,9 +5,12 @@
 // hook after this one ignores the replacement text (src/mode-ack.ts). No order is assumed.
 //
 // A message that asks what the agent's mode is, or asks to change it, is answered by one or
-// two control-plane CLI calls (`pi-config get inputPhrase --json`, `pi-config use
-// inputPhrase.<mode>`). No JEV classification, no decision node, and no model decision about
-// what to do: the replacement text already carries the result.
+// two or three control-plane CLI calls (`pi-config get promptBuild --json`, `pi-config use
+// promptBuild.<mode>`, then the read again as a read-back). No JEV classification, no decision
+// node, and no model decision about what to do: the replacement text already carries the result.
+//
+// A mode is the enabled promptBuild option: 1-Personal, 2-Development, 3-Work, 4-Automatic.
+// "development" resolves to 2-Development; inputPhrase (normal/advanced) is untouched.
 //
 // Off unless ~/.pi/config.json has modeSwitch.enabled true.
 // answer "model" (the default) replaces the message with an acknowledgement and lets one

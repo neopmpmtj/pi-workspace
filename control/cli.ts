@@ -44,17 +44,18 @@ Paths
                                  inputContainsPath/Url/Email{enabled,print},
                                  calendarNode{enabled,print,mode} (mode: route|dry),
                                  reminderNode{enabled,print,mode,writes}
-  inputPhrase.enabled            agent-modes-config.json
+  inputPhrase.enabled            input-phrase-config.json
   inputPhrase.append1
   inputPhrase.<normal|advanced>.{enabled,allowBlank,phrase}
   promptBuild.enabled            prompt-build-config.json
-  promptBuild.<personal|option1..option4>.{enabled,prompt,config}   config takes a JSON object
+  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic>.{enabled,prompt,config}
+                                 config takes a JSON object
   agent.<id>.{provider,model,thinking,tools,enabledModels,extensions,packages}
                                  <id>: cos · image-describer · web-master · keep · google-workspace
                                  tools/enabledModels take a comma list, extensions/packages a JSON array
 
 Booleans accept true/false, on/off, yes/no, 1/0. A value with spaces is joined from the
-remaining words, so quoting is optional: pi-config set promptBuild.personal.prompt be kind
+remaining words, so quoting is optional: pi-config set promptBuild.2-Development.prompt be kind
 
 inputPhrase and promptBuild need exactly one option on while they are enabled, so switching
 between options is one 'use' write, not two 'set' writes that each fail in between.
@@ -62,7 +63,7 @@ between options is one 'use' write, not two 'set' writes that each fail in betwe
 Examples
   pi-config set inputPhrase.enabled off
   pi-config use inputPhrase.normal
-  pi-config use promptBuild option3
+  pi-config use promptBuild 3-Work
   pi-config set inputPhrase.normal.phrase "answer in one sentence"
   pi-config set promptBuild.option2.enabled on
   pi-config set calendarNode.mode dry
@@ -120,7 +121,7 @@ export async function main(argv: readonly string[], io: Io = stdio): Promise<num
       const option = rest.length === 2 ? rest[1] : rest.length === 1 ? rest[0].split(".")[1] ?? "" : "";
       const name = rest.length === 2 ? section : section.split(".")[0] ?? "";
       if (!name || !option || rest.length > 2) {
-        throw new SettingsError("use needs <section>.<option>, for example inputPhrase.normal or promptBuild option3.");
+        throw new SettingsError("use needs <section>.<option>, for example inputPhrase.normal or promptBuild 3-Work.");
       }
       await useOption(root, name, option, dryRun);
       io.out(`${dryRun ? "[dry-run] " : ""}${name}.${option} is the one option on`);
@@ -417,7 +418,7 @@ export function formatPlane(plane: ControlPlaneOf): string {
     const fields = gate.fields.map((field) => `${field.key}=${display(field.value)}`).join(" ");
     lines.push(`  ${gate.name.padEnd(20)} ${fields}`);
   }
-  lines.push("", "inputPhrase (agent-modes-config.json)");
+  lines.push("", "inputPhrase (input-phrase-config.json)");
   lines.push(`  enabled=${plane.inputPhrase.enabled} append1=${display(plane.inputPhrase.append1)}`);
   for (const option of plane.inputPhrase.options) {
     lines.push(`  ${option.name.padEnd(20)} enabled=${option.enabled} allowBlank=${option.allowBlank} phrase=${display(option.phrase)}`);

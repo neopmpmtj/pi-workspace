@@ -12,7 +12,7 @@ async function withGroupedRoot<T>(run: (env: NodeJS.ProcessEnv, configFile: stri
   const agent = path.join(grouped, "cos-orchestrator-agent", "cos-orchestrator-agent");
   try {
     await mkdir(agent, { recursive: true });
-    return await run({ PI_CODING_AGENT_DIR: agent }, path.join(grouped, "agent-modes-config.json"));
+    return await run({ PI_CODING_AGENT_DIR: agent }, path.join(grouped, "input-phrase-config.json"));
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -97,7 +97,7 @@ describe("inputPhrase config", () => {
     });
   });
 
-  it("reads that same pair from agent-modes-config.json", async () => {
+  it("reads that same pair from input-phrase-config.json", async () => {
     await withGroupedRoot(async (env, modesFile) => {
       const configFile = path.join(path.dirname(modesFile), "config.json");
       await writeFile(configFile, JSON.stringify(section({ normal: true })), "utf8");

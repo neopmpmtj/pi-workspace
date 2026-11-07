@@ -11,7 +11,7 @@ async function fixture(): Promise<string> {
     lessThanInputWords: { enabled: true, words: 6, print: true },
     calendarNode: { enabled: true, print: true, mode: "route" },
   }, null, 2)}\n`);
-  await writeFile(path.join(root, "agent-modes-config.json"), `${JSON.stringify({
+  await writeFile(path.join(root, "input-phrase-config.json"), `${JSON.stringify({
     inputPhrase: {
       enabled: true,
       append1: "hello",
@@ -22,11 +22,10 @@ async function fixture(): Promise<string> {
   await writeFile(path.join(root, "prompt-build-config.json"), `${JSON.stringify({
     promptBuild: {
       enabled: true,
-      personal: { enabled: false, prompt: "", config: {} },
-      option1: { enabled: true, prompt: "", config: {} },
-      option2: { enabled: false, prompt: "", config: {} },
-      option3: { enabled: false, prompt: "", config: {} },
-      option4: { enabled: false, prompt: "", config: {} },
+      "1-Personal": { enabled: false, prompt: "", config: {} },
+      "2-Development": { enabled: true, prompt: "", config: {} },
+      "3-Work": { enabled: false, prompt: "", config: {} },
+      "4-Automatic": { enabled: false, prompt: "", config: {} },
     },
   }, null, 2)}\n`);
   const home = path.join(root, "agent/cos-orchestrator-agent");
@@ -95,9 +94,9 @@ describe("project dashboard store", () => {
     const root = await fixture();
     try {
       const before = await readFile(path.join(root, "prompt-build-config.json"), "utf8");
-      const options = ["personal", "option1", "option2", "option3", "option4"].map((name) => ({
+      const options = ["1-Personal", "2-Development", "3-Work", "4-Automatic"].map((name) => ({
         name,
-        enabled: name === "personal" || name === "option1",
+        enabled: name === "1-Personal" || name === "2-Development",
         prompt: "",
         config: "{}",
       }));
