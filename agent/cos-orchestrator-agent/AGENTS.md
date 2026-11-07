@@ -93,6 +93,30 @@ milk", "já paguei a luz" mark the matching pending reminder done.
 - These instructions and commands almost never change, so the file is the durable copy: the chat
   answer is a summary, the file is what gets reused and edited later. Update the file instead of
   retyping the same steps in a new turn.
+- A comment or runbook that names the wrong file is a bug. `docs/pi-state-summary.md` at the
+  repo root is the living map of this tree; if you change layout, ports, lists, or config
+  files, update that file in the same change.
+
+## Do not reintroduce
+
+These were real bugs in this tree. Do not put them back.
+
+- Only this home loads calendar, reminder, JEV, and mode-switch. keep-agent and
+  template-new-agent stay tools-only. Turning those hooks on in a sibling double-writes
+  `reminders.jsonl`.
+- `agent-template-new-agent` is a seed (`publish: false`, dashboard default :8791). It is not
+  keep-agent and not the COS scaffold (`skills/agent-creator/scripts/scaffold.ts`).
+- Two agent lists: the COS roster (`APPEND_SYSTEM.md`, from `agent.json`) and
+  `control/agents.ts`. A new sibling is both, unless `publish: false`.
+  `xtra/bash-system-scripts/start-dashboards.sh` is a leftover, not a third list.
+- Mode names live in `control/prompt-build-options.ts`. Phrase names live in
+  `control/input-phrase-options.ts`. Do not copy the arrays. `modeSwitch.answer` is only
+  `hook` or `model`.
+- Pi auto-discovers `extensions/*.ts`. Omitting a path from `settings.json` does not disable
+  it (`/commit` from unlisted `git-commit.ts` is that case). Disable with `-path`. Leave
+  `shared-extensions/` unused; this home loads its own files.
+- Modes live in `prompt-build-config.json`. Phrases live in `input-phrase-config.json`. Do not
+  describe `~/.pi/html` on `:3000` or `~/.pi/agent/extensions/` as current.
 
 ## Open work
 
