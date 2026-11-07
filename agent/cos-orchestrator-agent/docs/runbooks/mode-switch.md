@@ -81,7 +81,7 @@ the request. Nothing it does is expensive or wrong.
 | --- | --- |
 | `enabled` | the whole hook. Off → the message reaches JEV and the model as usual |
 | `print` | the `[mode] …` trace line on screen (`ui.notify` in the TUI, stdout in `-p`) |
-| `answer` | `model` (default): replace the message with an acknowledgement and let one short turn report it. `hook`: print the CLI's own line and finish the turn with **no model call**. Any other value means `model` |
+| `answer` | `model` (default): replace the message with an acknowledgement and let one short turn report it. `hook`: print the CLI's own line and finish the turn with **no model call**. `pi-config` and `:8786` reject any other string. A hand-edited unknown value still means `model`. |
 
 ```bash
 pi-config get modeSwitch

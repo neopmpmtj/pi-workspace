@@ -14,6 +14,7 @@ const GATES = {
   inputContainsPath: { enabled: true, print: true },
   inputContainsUrl: { enabled: true, print: true },
   inputContainsEmail: { enabled: true, print: true },
+  modeSwitch: { enabled: true, print: true, answer: "model" },
   calendarNode: { enabled: true, print: true, mode: "route" },
   reminderNode: { enabled: true, print: true, mode: "route", writes: true },
 };
@@ -85,11 +86,18 @@ describe("pi-config", () => {
       assert.equal((await readJson(path.join(root, "config.json"))).lessThanInputWords.words, 12);
       assert.equal((await run(root, ["set", "calendarNode.mode", "dry"])).code, 0);
       assert.equal((await readJson(path.join(root, "config.json"))).calendarNode.mode, "dry");
+      assert.equal((await run(root, ["set", "modeSwitch.answer", "hook"])).code, 0);
+      assert.equal((await readJson(path.join(root, "config.json"))).modeSwitch.answer, "hook");
 
       const before = await readFile(path.join(root, "config.json"), "utf8");
       const bad = await run(root, ["set", "lessThanInputWords.words", "0"]);
       assert.equal(bad.code, 1);
       assert.match(bad.err.join("\n"), /integer of 1 or more/);
+      assert.equal(await readFile(path.join(root, "config.json"), "utf8"), before);
+
+      const shout = await run(root, ["set", "modeSwitch.answer", "shout"]);
+      assert.equal(shout.code, 1);
+      assert.match(shout.err.join("\n"), /answer must be hook or model/);
       assert.equal(await readFile(path.join(root, "config.json"), "utf8"), before);
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -203,7 +211,7 @@ describe("pi-config", () => {
       const all = await run(root, ["list", "--json"]);
       assert.equal(all.code, 0);
       const plane = JSON.parse(all.out.join("\n")) as Record<string, any>;
-      assert.equal(plane.gates.length, 6);
+      assert.equal(plane.gates.length, 7);
       assert.equal(plane.inputPhrase.append1, "hello");
       assert.equal(plane.promptBuild.options.length, 4);
       assert.equal(plane.agents.length, 5);
@@ -212,7 +220,7 @@ describe("pi-config", () => {
       assert.match(text.out.join("\n"), /reminderNode\s+enabled=true/);
       assert.equal((await run(root, ["get", "nope.enabled"])).code, 1);
       const gates = await run(root, ["get", "gates", "--json"]);
-      assert.equal((JSON.parse(gates.out.join("\n")) as unknown[]).length, 6);
+      assert.equal((JSON.parse(gates.out.join("\n")) as unknown[]).length, 7);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

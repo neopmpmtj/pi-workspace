@@ -47,6 +47,7 @@ PI_CONFIG_WATCHDOG_MS (a whole command, default 15000).
 Paths
   <gate>.<field>                 config.json gates: lessThanInputWords{enabled,words,print},
                                  inputContainsPath/Url/Email{enabled,print},
+                                 modeSwitch{enabled,print,answer} (answer: model|hook),
                                  calendarNode{enabled,print,mode} (mode: route|dry),
                                  reminderNode{enabled,print,mode,writes}
   inputPhrase.enabled            input-phrase-config.json
@@ -71,6 +72,7 @@ Examples
   pi-config use promptBuild 3-Work
   pi-config set inputPhrase.normal.phrase "answer in one sentence"
   pi-config set promptBuild.2-Development.enabled on
+  pi-config set modeSwitch.answer hook
   pi-config set calendarNode.mode dry
   pi-config set reminderNode.writes off
   pi-config set lessThanInputWords.words 12
@@ -512,7 +514,7 @@ function promptBuildOf(plane: ControlPlaneOf): PromptBuildViewOf {
 function parseForField(field: FieldView, raw: string, label: string): unknown {
   if (field.type === "boolean") return parseBool(raw, label);
   if (field.type === "number") return parseNumber(raw, label);
-  if (field.type === "mode") return raw.trim();
+  if (field.type === "mode" || field.type === "answer") return raw.trim();
   return raw;
 }
 

@@ -132,6 +132,15 @@ function gateCard(gate) {
   return form;
 }
 
+function enumSelect(field, options) {
+  const select = el("select", { "data-key": field.key, "data-type": field.type }, options.map((value) => {
+    const option = el("option", { value }, [value]);
+    if (value === field.value) option.selected = true;
+    return option;
+  }));
+  return el("label", {}, [field.key, select]);
+}
+
 function fieldControl(field) {
   if (field.type === "boolean") {
     return el("label", { class: "inline" }, [
@@ -139,14 +148,8 @@ function fieldControl(field) {
       field.key,
     ]);
   }
-  if (field.type === "mode") {
-    const select = el("select", { "data-key": field.key, "data-type": "mode" }, ["route", "dry"].map((mode) => {
-      const option = el("option", { value: mode }, [mode]);
-      if (mode === field.value) option.selected = true;
-      return option;
-    }));
-    return el("label", {}, [field.key, select]);
-  }
+  if (field.type === "mode") return enumSelect(field, ["route", "dry"]);
+  if (field.type === "answer") return enumSelect(field, ["model", "hook"]);
   const input = el("input", {
     "data-key": field.key,
     "data-type": field.type,

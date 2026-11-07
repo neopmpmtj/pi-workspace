@@ -8,7 +8,7 @@ export class SettingsError extends Error {}
 
 export interface FieldView {
   key: string;
-  type: "boolean" | "number" | "string" | "mode";
+  type: "boolean" | "number" | "string" | "mode" | "answer";
   value: boolean | number | string;
 }
 
@@ -338,6 +338,7 @@ function gateView(name: string, section: unknown): GateView {
 
 function fieldView(key: string, value: unknown): FieldView {
   if (key === "mode") return { key, type: "mode", value: typeof value === "string" ? value : "" };
+  if (key === "answer") return { key, type: "answer", value: typeof value === "string" ? value : "" };
   if (typeof value === "boolean") return { key, type: "boolean", value };
   if (typeof value === "number") return { key, type: "number", value };
   return { key, type: "string", value: typeof value === "string" ? value : "" };
@@ -427,6 +428,7 @@ function coerceLike(key: string, current: unknown, value: unknown, gate: string)
     return value;
   }
   if (key === "mode") return modeOf(value);
+  if (key === "answer") return answerOf(value);
   if (typeof current === "string") return stringOf(value, `${gate}.${key}`, true);
   throw new SettingsError(`${gate}.${key} cannot be edited here.`);
 }
@@ -440,6 +442,11 @@ function wordsOf(value: unknown): number {
 
 function modeOf(value: unknown): string {
   if (value !== "route" && value !== "dry") throw new SettingsError("mode must be route or dry.");
+  return value;
+}
+
+function answerOf(value: unknown): string {
+  if (value !== "hook" && value !== "model") throw new SettingsError("answer must be hook or model.");
   return value;
 }
 
