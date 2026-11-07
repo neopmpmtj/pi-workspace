@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { repoRoot } from "../ledger/env.ts";
 import { inputPhraseFromSection, type InputPhrase } from "./input-phrase.ts";
+import { promptBuildFromSection, type PromptBuild } from "./prompt-build.ts";
 
 /** Grouped-repo config, one level above the orchestrator submodule. */
 export function globalConfigPath(env: NodeJS.ProcessEnv = process.env): string {
@@ -11,6 +12,11 @@ export function globalConfigPath(env: NodeJS.ProcessEnv = process.env): string {
 /** Agent mode phrases, beside config.json. */
 export function agentModesConfigPath(env: NodeJS.ProcessEnv = process.env): string {
   return path.resolve(repoRoot(env), "..", "agent-modes-config.json");
+}
+
+/** Selectable system-prompt section, beside config.json. */
+export function promptBuildConfigPath(env: NodeJS.ProcessEnv = process.env): string {
+  return path.resolve(repoRoot(env), "..", "prompt-build-config.json");
 }
 
 /** A configured word limit. Present only when the section is allowed to run. */
@@ -102,6 +108,17 @@ export async function readInputPhrase(env: NodeJS.ProcessEnv = process.env): Pro
   const record = await readEnabledSection("inputPhrase", env, agentModesConfigPath(env));
   if (!record) return null;
   return inputPhraseFromSection(record);
+}
+
+/**
+ * The promptBuild section in prompt-build-config.json, or null when the hook stays off.
+ * Null when that file, the section, or enabled: true is missing or unreadable.
+ * An enabled section still returns a conflict when the number of on options is not exactly one.
+ */
+export async function readPromptBuild(env: NodeJS.ProcessEnv = process.env): Promise<PromptBuild | null> {
+  const record = await readEnabledSection("promptBuild", env, promptBuildConfigPath(env));
+  if (!record) return null;
+  return promptBuildFromSection(record);
 }
 
 async function readGate(name: string, env: NodeJS.ProcessEnv): Promise<InputGate | null> {

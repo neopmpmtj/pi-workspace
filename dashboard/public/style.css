@@ -1,0 +1,87 @@
+:root {
+  color-scheme: dark;
+  --bg: #14161a;
+  --card: #1d2128;
+  --line: #313844;
+  --text: #e7ebf0;
+  --muted: #9aa3b2;
+  --accent: #8eb6ff;
+  --danger: #ffb4b4;
+  --ok: #b6e3c0;
+  font-family: "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header, main {
+  width: min(960px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  padding: 28px 0 8px;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 600; }
+h2 { font-size: 1.15rem; margin-bottom: 8px; }
+h3 { font-size: 1rem; }
+
+.eyebrow, .note, .meta { color: var(--muted); }
+.eyebrow { margin: 0 0 4px; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.75rem; }
+.note { margin: 8px 0 16px; }
+
+nav { display: flex; gap: 8px; align-items: center; }
+a { color: var(--accent); }
+
+button, input, select, textarea {
+  font: inherit;
+  color: var(--text);
+  background: #12141a;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+button, a.button {
+  padding: 6px 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:disabled { opacity: 0.5; cursor: default; }
+
+input, select, textarea { padding: 6px 8px; width: 100%; }
+textarea { min-height: 72px; resize: vertical; }
+
+main { padding-bottom: 48px; }
+.stack { display: grid; gap: 12px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.row { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.fields { display: grid; gap: 10px; }
+label { display: grid; gap: 4px; font-size: 0.92rem; }
+label.inline { display: flex; align-items: center; gap: 8px; }
+label.inline input { width: auto; }
+.sub { display: grid; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
+.status { min-height: 1.2em; margin: 0; }
+.status.error { color: var(--danger); }
+.status.ok { color: var(--ok); }
+.extension { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
+.listening { color: var(--ok); }
+.stopped { color: var(--muted); }

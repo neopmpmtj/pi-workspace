@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Project</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body data-page="landing">
+    <header>
+      <div>
+        <p class="eyebrow">~/.pi</p>
+        <h1>Project</h1>
+      </div>
+      <nav>
+        <a href="/settings">Settings</a>
+        <button type="button" id="start-all">Start all</button>
+        <button type="button" id="stop-all">Stop all</button>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Agent dashboards</h2>
+        <p class="note">Start opens that dashboard in a new browser tab. Stop only stops a dashboard this page started.</p>
+        <div id="rows" class="stack"></div>
+        <p id="landing-status" class="status" role="status"></p>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

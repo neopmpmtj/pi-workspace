@@ -43,6 +43,7 @@
     "+extensions/input-contains-url/index.ts",
     "+extensions/less-than-input-words/index.ts",
     "+extensions/input-phrase/index.ts",
+    "+extensions/prompt-build/index.ts",
     "+extensions/secret-scrubber.ts"
   ],
   "enabledModels": [
