@@ -2,6 +2,9 @@
 // rebuilds the Sibling agents table in APPEND_SYSTEM.md. Reads JSON only: no sibling code
 // is imported and no sibling script is run. A stale publication is the sibling's to fix.
 //
+// A manifest with `"publish": false` is not a sibling and is left out of the table: that is
+// how scaffolds and copies under the grouped root stay out of the roster.
+//
 //   npm run fetch:publications            write when the table changed
 //   npm run fetch:publications -- --check write nothing, exit 1 when the table is out of date
 import { existsSync, readdirSync } from "node:fs";
@@ -59,6 +62,7 @@ export async function readPublications(root: string, self: string): Promise<Sibl
       problems.push(`${manifestPath}: ${error instanceof Error ? error.message : String(error)}`);
       continue;
     }
+    if (manifest.publish === false) continue;
     const missing = ["name", "launcher", "defaultPrompt"].filter((key) => typeof manifest[key] !== "string" || !(manifest[key] as string).trim());
     if (!Array.isArray(manifest.commands)) missing.push("commands");
     if (missing.length > 0) {

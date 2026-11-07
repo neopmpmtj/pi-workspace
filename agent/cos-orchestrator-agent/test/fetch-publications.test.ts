@@ -88,6 +88,23 @@ describe("fetchPublications", () => {
     });
   });
 
+  it("leaves out a manifest that says publish: false, like a scaffold or a copy", async () => {
+    await withRoot(async (root, cos) => {
+      await writeJson(path.join(root, "template", "template", "agent.json"), {
+        name: "scaffold",
+        launcher: "pi-scaffold",
+        defaultPrompt: "/scaffold",
+        publish: false,
+        commands: [{ name: "/scaffold" }],
+      });
+      const result = await fetchPublications(cos, { root });
+      assert.deepEqual(result.siblings, ["alpha", "zebra"]);
+      const text = await readFile(path.join(cos, "APPEND_SYSTEM.md"), "utf8");
+      assert.doesNotMatch(text, /\| scaffold \|/);
+      assert.doesNotMatch(text, /pi-scaffold/);
+    });
+  });
+
   it("finds an agent whose repo root holds the home one level down", async () => {
     await withRoot(async (root, cos) => {
       const nested = path.join(root, "group-name", "sm-nested", "sm-nested");

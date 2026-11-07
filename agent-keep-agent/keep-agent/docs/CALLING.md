@@ -6,11 +6,11 @@ baked-in instructions: the user's message is the task.
 | Item | Value |
 | --- | --- |
 | Home | `~/.pi/agent-keep-agent/keep-agent` (`PI_CODING_AGENT_DIR`) |
-| Env | `~/.pi/agent-keep-agent/.env` — provider keys, `DASHBOARD_PORT=8788`, `DASHBOARD_ORIGIN` |
+| Env | `~/.pi/agent-keep-agent/.env` — provider keys, `DASHBOARD_PORT=8790`, `DASHBOARD_ORIGIN` |
 | Launcher | `~/.local/bin/pi-keep-agent` |
 | Model | `deepseek` / `deepseek-flash` / thinking `high` (all from `settings.json`) |
 | Instructions | `AGENTS.md` — "instructions come from the user" plus generic hygiene. `APPEND_SYSTEM.md` — **zero bytes, frozen** |
-| Usage | `logs/ledger.sqlite`, filled from `sessions/` by a user timer; viewed at `http://127.0.0.1:8788` |
+| Usage | `logs/ledger.sqlite`, filled from `sessions/` by a user timer; viewed at `http://127.0.0.1:8790` |
 
 ## Call
 
@@ -66,8 +66,9 @@ Every turn is recorded, including the ones that happened before the tracker was 
 - **Who runs it:** `pi-keep-agent-ledger.timer` (user timer, every 2 min, plus 2 min after boot),
   which starts `pi-keep-agent-ledger.service`. Output is appended to `logs/ingest.log`.
 - **How to look:** `pi-keep-agent-dashboard.service` serves the dashboard on
-  `http://127.0.0.1:8788` and ingests on every `/api/data` request. Port 8787 stays the
-  orchestrator's, and `DASHBOARD_ORIGIN` in the `.env` allows the 8788 origin.
+  `http://127.0.0.1:8790` and ingests on every `/api/data` request. Port 8787 stays the
+  orchestrator's, 8788 the image describer's, and `DASHBOARD_ORIGIN` in the `.env` allows the
+  8790 origin.
 
 ```bash
 systemctl --user status pi-keep-agent-ledger.timer pi-keep-agent-dashboard.service --no-pager

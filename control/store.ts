@@ -124,7 +124,7 @@ export async function writeInputPhrase(incoming: unknown, root = PI_ROOT): Promi
   if (enabled && on.length !== 1) {
     throw new SettingsError("inputPhrase is on, so exactly one option must be on.");
   }
-  const record = { ...(current as Record<string, unknown>), enabled, append1 };
+  const record: Record<string, unknown> = { ...(current as Record<string, unknown>), enabled, append1 };
   for (const option of options) {
     const previous = record[option.name];
     const base = previous && typeof previous === "object" && !Array.isArray(previous)
@@ -151,7 +151,7 @@ export async function writePromptBuild(incoming: unknown, root = PI_ROOT): Promi
   if (enabled && on.length !== 1) {
     throw new SettingsError("promptBuild is on, so exactly one option must be on.");
   }
-  const record = { ...(current as Record<string, unknown>), enabled };
+  const record: Record<string, unknown> = { ...(current as Record<string, unknown>), enabled };
   for (const option of options) {
     const previous = record[option.name];
     const base = previous && typeof previous === "object" && !Array.isArray(previous)

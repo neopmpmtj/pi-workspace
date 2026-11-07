@@ -7,7 +7,8 @@
   },
   "scripts": {
     "test": "node --experimental-strip-types --test --test-timeout=20000 test/*.test.ts",
-    "typecheck": "tsc --noEmit",
+    "test:dashboard": "node --experimental-strip-types --test ../../control/*.test.ts",
+    "typecheck": "tsc --noEmit && tsc -p ../../control/tsconfig.json",
     "dashboard": "node --experimental-strip-types dashboard/server.ts",
     "fetch:publications": "node --experimental-strip-types scripts/fetch-publications.ts"
   },
