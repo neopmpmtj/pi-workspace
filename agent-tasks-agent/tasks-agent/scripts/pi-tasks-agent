@@ -1,0 +1,46 @@
+#!/bin/bash
+# pi-tasks-agent — isolated launcher for the tasks-agent home.
+# Sources ONLY this agent's .env. It deliberately does NOT use ~/.local/bin/pi.
+
+set -a
+ENV_FILE="$HOME/.pi/agent-tasks-agent/.env"
+[ -f "$ENV_FILE" ] && source "$ENV_FILE"
+set +a
+
+export PI_CODING_AGENT_DIR="$HOME/.pi/agent-tasks-agent/tasks-agent"
+
+# Pin node to the version pi is installed under.
+NODE_BIN="${PI_NODE_BIN:-$HOME/.nvm/versions/node/v24.21.0/bin}"
+export PATH="$NODE_BIN:$PATH"
+
+MODEL_FILE="$PI_CODING_AGENT_DIR/default-model.json"
+ARGS=()
+
+if [ -f "$MODEL_FILE" ]; then
+  MODEL=""
+  PROVIDER=""
+  THINKING=""
+  while IFS=$'\t' read -r key value; do
+    case "$key" in
+      provider) PROVIDER="$value" ;;
+      model)    MODEL="$value" ;;
+      thinking) THINKING="$value" ;;
+    esac
+  done < <(node -e '
+    const fs = require("node:fs");
+    let data = {};
+    try { data = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); } catch { process.exit(0); }
+    for (const key of ["provider", "model", "thinking"]) {
+      const value = data[key];
+      if (typeof value === "string" && value.trim() !== "") console.log(`${key}\t${value.trim()}`);
+    }
+  ' "$MODEL_FILE")
+
+  if [ -n "$MODEL" ]; then
+    [ -n "$PROVIDER" ] && ARGS+=(--provider "$PROVIDER")
+    ARGS+=(--model "$MODEL")
+  fi
+  [ -n "$THINKING" ] && ARGS+=(--thinking "$THINKING")
+fi
+
+exec "$NODE_BIN/pi" "${ARGS[@]}" "$@"

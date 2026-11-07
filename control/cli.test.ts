@@ -55,6 +55,7 @@ async function fixture(): Promise<string> {
     "agent-image-describer/image-describer",
     "agent-web-master/web-master",
     "agent-keep-agent/keep-agent",
+    "agent-tasks-agent/tasks-agent",
     "agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace",
   ]) {
     homes[home] = { defaultProvider: "deepseek", defaultModel: "deepseek-flash", defaultThinkingLevel: "low", defaultTools: [] };
@@ -220,7 +221,7 @@ describe("pi-config", () => {
       assert.equal(plane.gates.length, 7);
       assert.equal(plane.inputPhrase.append1, "hello");
       assert.equal(plane.promptBuild.options.length, promptBuildOptions.length);
-      assert.equal(plane.agents.length, 5);
+      assert.equal(plane.agents.length, 6);
 
       const text = await run(root, ["list"]);
       assert.match(text.out.join("\n"), /reminderNode\s+enabled=true/);

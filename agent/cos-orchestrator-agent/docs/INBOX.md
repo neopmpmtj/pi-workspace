@@ -231,6 +231,13 @@ by default; refuses the current Cursor files by name).
       hazard that actually bit during verification. Its dashboard defaults to `8788`.
       Contract: `~/.pi/agent-keep-agent/keep-agent/docs/CALLING.md`.
 
+## tasks-agent (2026-11-07)
+- [x] Lean sibling at `~/.pi/agent-tasks-agent/tasks-agent`, launcher `pi-tasks-agent`,
+      dashboard `:8791`, frozen empty `APPEND_SYSTEM.md`. Google Tasks via `gog tasks` (auth
+      from this home's `.env`: `GOG_ACCOUNT`, `GOG_KEYRING_PASSWORD`). Reminder node is not
+      wired; jsonl + calendar stay on COS. Contract:
+      `~/.pi/agent-tasks-agent/tasks-agent/docs/CALLING.md`.
+
 ## Google Keep via `keep-cli` (2026-11-06)
 - [x] ~~`keep-cli --read-all-items` — read every Keep entry.~~ Shipped 2026-11-06 as
       `keep-agent`'s own tool (`~/.pi/agent-keep-agent/keep-agent/scripts/keep_cli.py`, command
