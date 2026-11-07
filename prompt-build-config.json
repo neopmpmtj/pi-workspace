@@ -3,7 +3,7 @@
     "enabled": true,
     "1-Personal": {
       "enabled": true,
-      "prompt": "Remind me to congratulate my aunt on her 83rd birthday on every response",
+      "prompt": "",
       "config": {}
     },
     "2-Development": {

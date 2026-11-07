@@ -65,7 +65,7 @@ Examples
   pi-config use inputPhrase.normal
   pi-config use promptBuild 3-Work
   pi-config set inputPhrase.normal.phrase "answer in one sentence"
-  pi-config set promptBuild.option2.enabled on
+  pi-config set promptBuild.2-Development.enabled on
   pi-config set calendarNode.mode dry
   pi-config set reminderNode.writes off
   pi-config set lessThanInputWords.words 12

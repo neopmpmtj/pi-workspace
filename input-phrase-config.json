@@ -1,6 +1,6 @@
 {
   "inputPhrase": {
-    "enabled": true,
+    "enabled": false,
     "append1": "Congratulate me for my 31st birthday",
     "normal": {
       "enabled": false,
