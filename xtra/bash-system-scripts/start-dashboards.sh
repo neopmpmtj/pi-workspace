@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Start the local dashboards.
+# Manual leftover. Nothing schedules this. Not an agent registry — do not add
+# new siblings here. Roster: APPEND_SYSTEM.md. Settings: control/agents.ts.
 #   orchestrator page and API   http://127.0.0.1:8787
 #   image describer API         http://127.0.0.1:8788
 #   web-master page and API     http://127.0.0.1:8789
