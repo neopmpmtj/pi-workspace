@@ -67,23 +67,25 @@ on the next tick.
 | Removed | Why |
 | --- | --- |
 | Every extension (`extensions/`) | Question 3: the calendar and reminder nodes share `~/.pi/config.json`, `~/.pi/decision-nodes/` and `reminders.jsonl` with the orchestrator and could double-write. The rest went with them: cron, archive, chat, `/commit`, the input gates, `secret-scrubber`, `auto-sync`. Recoverable from the `~/.pi` git history or the orchestrator's home |
+| Routing source (`src/calendar-node.ts`, `reminder-node.ts`, `jev-classify.ts`, `jev-feedback.ts`, `telegram-delivery.ts`, `input-contains-*.ts`, `less-than-input-words.ts`, `global-config.ts`) | The extensions were already gone; these files still imported the shared classifier and `reminders.jsonl`. Leaving them in a home with no `extensions/` made the tree look like this copy still routed, and a later copy of COS's `extensions/` onto this `src/` would double-write. Restore from COS, not from this home |
 | `skills/` | Every `SKILL.md` was re-sent each turn — the largest per-turn cost. Instructions come from the user; the agent needs no skills |
 | `npm/`, `telegram.json`, `@llblab/pi-telegram` | No bot token, so the bridge could never connect, and it injected six skills into every turn. Revert: `pi install npm:@llblab/pi-telegram` |
 | Git automation | The workspace pull is gone from the launcher and `auto-sync` went with the extensions. This home never commits or pushes `~/.pi` |
 | `prompts/`, `bin/`, `docs/` (except this file) | Inherited from the orchestrator: prompt templates and vendored `fd`/`rg` binaries nothing referenced, and a 400 KB runbook archive describing *other* agents. Zero prompt cost, but misleading for a specialist |
 | Ledger history | Started empty. Conversation 1 of this home (2026-11-06 10:08) is in the ledger |
 
-`APPEND_SYSTEM.md` being empty is the freeze: `npm run fetch:publications` needs the
-`<!-- BEGIN GENERATED: siblings -->` / `<!-- END GENERATED: siblings -->` pair and will fail
-here. Expected — this home neither publishes nor consumes a roster.
+`APPEND_SYSTEM.md` being empty is the freeze. This home has no `fetch:publications` script
+and neither publishes nor consumes a sibling roster.
 
 ## What still works
 
-- `src/`, `ledger/`, `dashboard/`, `scripts/ingest.ts` — the usage stack, unchanged apart from
-  this home's paths.
-- Tests: `npm test` (102 tests) — the ledger, token, dashboard and model code the timer and dashboard
-  run. 79 tests for removed features (extensions, input gates, `fetch:publications`) were dropped
-  with them; the orchestrator still runs the full 181.
+- `ledger/`, `dashboard/`, `scripts/ingest.ts`, `src/default-model.ts` — the usage stack the
+  timer and dashboard run, copied in this home so it stays portable.
+- `src/args.ts`, `ask.ts`, `usage.ts`, `effective.ts`, `prompt.ts`, `report.ts`,
+  `session-command.ts`, `archive-command.ts` — slash-command parsers with no `extensions/` to
+  register them. Kept so a chat extension can be added here without copying those files from COS.
+- Tests: `npm test` (76 tests) — ledger, token, dashboard, `/ask` parsers, and model code. No
+  calendar, reminder, JEV, or input-gate tests; those modules are not in this home.
 - `node_modules` (177 MB) exists only for those three folders; nothing in the prompt path needs it.
 
 ## Verify it is still lean
@@ -92,6 +94,8 @@ here. Expected — this home neither publishes nor consumes a roster.
 cd ~/.pi/agent-keep-agent/keep-agent
 PI_CODING_AGENT_DIR="$PWD" pi list          # expect: no user packages
 ls extensions skills prompts bin 2>&1       # expect: four "No such file or directory"
+ls src/calendar-node.ts src/jev-classify.ts src/global-config.ts 2>&1
+                                            # expect: three "No such file or directory"
 wc -c APPEND_SYSTEM.md                      # expect: 0
 pi-keep-agent -p "say ok"                   # expect: no [jev] line, no gate booleans
 ```
