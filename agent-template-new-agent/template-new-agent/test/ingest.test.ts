@@ -39,7 +39,7 @@ function sessionFile(): string {
       id: "c1",
       parentId: "u1",
       timestamp: "2026-10-27T08:00:02.000Z",
-      customType: "keep-agent",
+      customType: "template-new-agent",
       content: "A vector database…",
       display: true,
       details: { runId: "cmd-run-1", status: "ok" },
@@ -76,7 +76,7 @@ const COMMAND_CALL: CallRecord = {
 async function withFixture<T>(
   run: (ctx: { ledger: ReturnType<typeof openLedger>; root: string }) => Promise<T>,
 ): Promise<T> {
-  const root = await mkdtemp(path.join(tmpdir(), "keep-agent-ingest-"));
+  const root = await mkdtemp(path.join(tmpdir(), "template-new-agent-ingest-"));
   const sessions = path.join(root, "sessions", "--tmp--");
   await mkdir(sessions, { recursive: true });
   const ledger = openLedger(path.join(root, "logs", "ledger.sqlite"));

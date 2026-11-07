@@ -47,7 +47,7 @@ function call(overrides: Partial<CallRecord>): CallRecord {
 }
 
 async function withLedger<T>(run: (ledger: Ledger) => Promise<T>): Promise<T> {
-  const root = await mkdtemp(path.join(tmpdir(), "keep-agent-usage-"));
+  const root = await mkdtemp(path.join(tmpdir(), "template-new-agent-usage-"));
   const ledger = openLedger(path.join(root, "ledger.sqlite"));
   try {
     return await run(ledger);

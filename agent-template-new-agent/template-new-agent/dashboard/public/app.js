@@ -1,4 +1,4 @@
-/* keep-agent dashboard. No framework and no build step: the server serves this
+/* template-new-agent dashboard. No framework and no build step: the server serves this
    file, and everything below renders from /api/data. */
 
 const PALETTE = ["#6ea8fe", "#4ade80", "#fbbf24", "#f472b6", "#a78bfa", "#22d3ee", "#fb923c", "#94a3b8"];

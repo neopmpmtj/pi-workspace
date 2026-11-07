@@ -79,10 +79,10 @@ const rates = {
 };
 
 async function withLedger<T>(run: (ledger: ReturnType<typeof openLedger>, env: NodeJS.ProcessEnv) => Promise<T>): Promise<T> {
-  const root = await mkdtemp(path.join(tmpdir(), "keep-agent-"));
+  const root = await mkdtemp(path.join(tmpdir(), "template-new-agent-"));
   const ledger = openLedger(path.join(root, "logs", "ledger.sqlite"));
   try {
-    return await run(ledger, { PI_CODING_AGENT_DIR: path.join(root, "keep-agent") });
+    return await run(ledger, { PI_CODING_AGENT_DIR: path.join(root, "template-new-agent") });
   } finally {
     ledger.close();
     await rm(root, { recursive: true, force: true });

@@ -191,10 +191,13 @@ cd ~/.pi/control && node --experimental-strip-types --test '*.test.ts'   # the s
    `store.ts`, and `npm run typecheck` in the agent home now runs both projects. Dashboard
    tests have their own script: `npm run test:dashboard`.
 4. **A scaffold under the grouped root was published as a sibling** —
-   `agent-template-new-agent/template-new-agent` carries a copy of keep-agent's `agent.json`,
-   so the roster grew a second keep-agent row pointing at `pi-keep-agent`. Fixed: a manifest
-   with `"publish": false` is skipped by `scripts/fetch-publications.ts` (tested), and the
-   scaffold sets it. A future scaffold should carry the same line.
+   `agent-template-new-agent/template-new-agent` used to carry a copy of keep-agent's
+   `agent.json`, so the roster grew a second keep-agent row pointing at `pi-keep-agent`.
+   Fixed: the seed now names itself `template-new-agent`, and a manifest with
+   `"publish": false` is skipped by `scripts/fetch-publications.ts` (tested). COS still
+   creates live siblings from `skills/agent-creator/scripts/scaffold.ts`, not from this
+   folder. A future scaffold should carry `"publish": false` until it is meant to be on
+   the roster.
 5. **Formatting of written files** — a write re-serializes the whole file with two-space
    indentation (the web page's own serializer). `prompt-build-config.json` was committed with
    one line per option, so the first write produced a wide diff; it has been rewritten

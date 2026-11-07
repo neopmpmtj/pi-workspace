@@ -6,8 +6,8 @@ import { describe, it } from "node:test";
 import { readDefaultModel, readStandingModel, writeDefaultModel } from "../src/default-model.ts";
 
 async function withEnv<T>(run: (env: NodeJS.ProcessEnv, agent: string) => Promise<T>): Promise<T> {
-  const root = await mkdtemp(path.join(tmpdir(), "keep-agent-"));
-  const agent = path.join(root, "keep-agent");
+  const root = await mkdtemp(path.join(tmpdir(), "template-new-agent-"));
+  const agent = path.join(root, "template-new-agent");
   try {
     return await run({ PI_CODING_AGENT_DIR: agent }, agent);
   } finally {
