@@ -28,5 +28,5 @@ sequenceDiagram
   Route-->>You: outcome printed
 ```
 
-- The check is `enabled !== true` in `readEnabledSection`. Boolean `false`, no `enabled` field, the string `"false"`, a missing section, and unreadable JSON all return `null`. The extension returns `continue` before classification and before `route.py`. `print`, `mode`, and `writes` are unread on that path.
-- `./route.py --text` never opens `config.json`. It starts at `clean` and follows the write path from there. `--dry-run` stops after routing. `--no-writes` (or `REMINDER_WRITES=0`) routes nothing. `--list`, `--done`, and `--undo` are explicit commands and run either way.
+- The check is `enabled !== true` in `readEnabledSection`. Boolean `false`, no `enabled` field, the string `"false"`, a missing section, and unreadable JSON all return `null`. The extension returns `continue` before classification and before `route.py`. `print`, `mode`, and `writer` are unread on that path.
+- `./route.py --text` never opens `config.json`. It starts at `clean` and follows the write path from there. `--dry-run` stops after routing. `--writer store|tasks|off` selects the destination (`--no-writes` / `REMINDER_WRITER=off` is off). `--list`, `--done`, and `--undo` are explicit store-table commands and run either way.

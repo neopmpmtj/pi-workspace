@@ -22,7 +22,9 @@ isProject: false
 
 # Exclusive reminder writers
 
-> Cancelled 2026-11-07. keep-agent and keep-cli were removed and must not be restored. Do not execute this plan.
+> Cancelled 2026-11-07 as a Keep handoff. Recast the same day: exclusive writer is
+> `store` | `tasks` | `off`. `tasks` calls `gog tasks` from the reminder node (no
+> `pi-keep-agent`, no `pi-tasks-agent` turn). keep-agent must not be restored.
 
 `reminderNode.writes` becomes a single choice. A reminder runs one writer. The other is not called.
 

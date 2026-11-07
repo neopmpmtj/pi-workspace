@@ -30,6 +30,6 @@
     "enabled": true,
     "print": true,
     "mode": "route",
-    "writes": true
+    "writer": "tasks"
   }
 }

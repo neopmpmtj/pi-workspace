@@ -1,8 +1,8 @@
 # Reminder routing: run it, check it, move it to the VPS
 
-> Written 2026-11-05. Reminders ("remind me to...", "lembra-me de...") are logged in
-> `~/.pi/decision-nodes/reminder/reminders.jsonl` and get a 15-minute calendar event.
-> They are separate from `docs/INBOX.md`.
+> Written 2026-11-05. Reminders ("remind me to...", "lembra-me de...") go to one exclusive
+> writer: `store` (`reminders.jsonl` + a 15-minute calendar event) or `tasks` (`gog tasks`
+> on the Google Tasks list named Reminders). They are separate from `docs/INBOX.md`.
 
 ## How one message flows
 
@@ -17,10 +17,16 @@
    does not classify again. The node's extractor is a second opinion: if it reads the message
    as another kind, the write becomes a hint.
 
+`reminderNode.writer` chooses the destination: `store` (jsonl + calendar), `tasks`
+(`gog tasks add` / `done` on the Reminders list), or `off` (classify only). Sample default
+is `tasks`. `/reminders`, `/reminder-done`, and `/reminder-undo` still operate the jsonl
+table.
+
 Defaults: no time means 06:00 (or the next full hour when 06:00 today has passed); no date
 means the next occurrence of a stated time — today while it is still ahead, tomorrow once
-it has passed — and tomorrow 06:00 when no time was stated either. Events last 15 minutes,
-no freebusy check. On done, a future event is deleted and a past one is kept.
+it has passed — and tomorrow 06:00 when no time was stated either. Store events last 15
+minutes, no freebusy check. On store done, a future event is deleted and a past one is kept.
+Tasks due is the date; the local time is stored in the task notes.
 
 ## Commands (CoS home)
 

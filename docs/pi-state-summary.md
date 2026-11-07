@@ -84,7 +84,7 @@ A user message can be answered without a model turn:
 
 1. **mode-switch** — `pi-config get/use promptBuild` (off unless `modeSwitch.enabled`).
 2. **JEV** — `jev-classifier/` (submodule; `classify.py`). Key: `jev-classifier/.env` (`TYPESAFE_API_KEY`).
-3. **calendar / reminder nodes** — `decision-nodes/calendar/` and `decision-nodes/reminder/` (Python). Shared `reminders.jsonl`. Fail-open. Only COS loads these hooks. A sibling that loads them double-writes `reminders.jsonl`.
+3. **calendar / reminder nodes** — `decision-nodes/calendar/` and `decision-nodes/reminder/` (Python). Reminder writer is exclusive: `store` (`reminders.jsonl` + calendar) or `tasks` (`gog tasks` on the Reminders list). Fail-open. Only COS loads these hooks. A sibling that loads them double-writes `reminders.jsonl`.
 
 JEV details: `docs/pi-state-of-jev.md`.
 

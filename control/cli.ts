@@ -51,7 +51,7 @@ Paths
                                  inputContainsPath/Url/Email{enabled,print},
                                  modeSwitch{enabled,print,answer} (answer: model|hook),
                                  calendarNode{enabled,print,mode} (mode: route|dry),
-                                 reminderNode{enabled,print,mode,writes}
+                                 reminderNode{enabled,print,mode,writer} (writer: store|tasks|off)
   inputPhrase.enabled            input-phrase-config.json
   inputPhrase.append1
   inputPhrase.<${inputPhraseOptions.join("|")}>.{enabled,allowBlank,phrase}
@@ -76,7 +76,7 @@ Examples
   pi-config set promptBuild.2-Development.enabled on
   pi-config set modeSwitch.answer hook
   pi-config set calendarNode.mode dry
-  pi-config set reminderNode.writes off
+  pi-config set reminderNode.writer tasks
   pi-config set lessThanInputWords.words 12
   pi-config set agent.cos.thinking high
   pi-config set agent.cos.tools "read,bash,grep,find"
@@ -516,7 +516,7 @@ function promptBuildOf(plane: ControlPlaneOf): PromptBuildViewOf {
 function parseForField(field: FieldView, raw: string, label: string): unknown {
   if (field.type === "boolean") return parseBool(raw, label);
   if (field.type === "number") return parseNumber(raw, label);
-  if (field.type === "mode" || field.type === "answer") return raw.trim();
+  if (field.type === "mode" || field.type === "answer" || field.type === "writer") return raw.trim();
   return raw;
 }
 

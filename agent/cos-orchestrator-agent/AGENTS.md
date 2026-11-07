@@ -66,21 +66,23 @@ A hook in this home classifies every message before the turn and, on a match, ru
 ## Reminder routing
 
 The same classification also feeds the `reminder` node (`~/.pi/decision-nodes/reminder/`).
-"Remind me to...", "lembra-me de..." are logged in `reminders.jsonl` with a pending status and
-get a 15-minute calendar event (no time means 06:00; no date means the next occurrence of
-a stated time — today if still ahead, else tomorrow — or tomorrow 06:00 when no time was
-stated). "I bought the
-milk", "já paguei a luz" mark the matching pending reminder done.
+"Remind me to...", "lembra-me de..." become either a `reminders.jsonl` row plus a 15-minute
+calendar event (`writer: store`) or a Google Task on the Reminders list (`writer: tasks`).
+No time means 06:00; no date means the next occurrence of a stated time — today if still
+ahead, else tomorrow — or tomorrow 06:00 when no time was stated. "I bought the milk",
+"já paguei a luz" mark the matching pending reminder or task done.
 
 - It behaves like calendar routing: the hook answers the message itself and the turn is
   swallowed. On a failed Telegram delivery a hidden `reminder-node` block arrives: relay it,
-  do not log the reminder again or create its event by hand.
-- The writes are gated by `reminderNode.writes` in `~/.pi/config.json` (default `true`).
-  With it `false` the node routes nothing at all: no row in `reminders.jsonl`, no calendar
-  event, no done op. JEV still classifies, and the hook finishes no turn — the message
-  reaches the model as an ordinary turn, with no hidden block and nothing to relay.
+  do not log the reminder again, create its event, or add a Google Task by hand.
+- The writer is `reminderNode.writer` in `~/.pi/config.json`: `store` (jsonl + calendar),
+  `tasks` (`gog tasks add` / `done` on the Reminders list, no jsonl), or `off` (classify
+  only). `off` routes nothing at all: the hook finishes no turn — the message reaches the
+  model as an ordinary turn, with no hidden block and nothing to relay. JEV still classifies.
+  A leftover `writes: false` is `off`. Sample default is `tasks`.
 - A `reminder-node` hint (unsure, or a "done" with no clear match) means nothing was written.
-  Ask the user, then point to `/reminder-done <id>` or let them restate it.
+  Ask the user, then point to `/reminder-done <id>` (store table) or let them restate it /
+  ask tasks-agent (Google Tasks).
 - Reminders are not inbox items: never add them to `docs/INBOX.md`.
 - Commands: `/reminders [--all]`, `/reminder-done <id>`, `/reminder-undo`, `/calendar-undo`,
   `/jev-wrong <label>` (files the last message into the classifier's test set).
@@ -112,7 +114,7 @@ These were real bugs in this tree. Do not put them back.
   `xtra/bash-system-scripts/start-dashboards.sh` is a leftover, not a third list.
 - Mode names live in `control/prompt-build-options.ts`. Phrase names live in
   `control/input-phrase-options.ts`. Do not copy the arrays. `modeSwitch.answer` is only
-  `hook` or `model`.
+  `hook` or `model`. `reminderNode.writer` is only `store`, `tasks`, or `off` — never `keep`.
 - Pi auto-discovers `extensions/*.ts`. Omitting a path from `settings.json` does not disable
   it (`/commit` from unlisted `git-commit.ts` is that case). Disable with `-path`. Leave
   `shared-extensions/` unused; this home loads its own files.

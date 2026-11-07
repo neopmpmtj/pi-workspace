@@ -3,7 +3,7 @@
   "launcher": "pi-tasks-agent",
   "defaultPrompt": "<task in plain language>",
   "call": "<task in plain language>",
-  "purpose": "Lean specialist copy of the orchestrator: zero extensions, zero skills, no Telegram bridge, no git automation, instructions from the user only. Token usage of every turn is recorded in its own ledger by a user timer and served on :8791. Google Tasks via `gog tasks` (lists, add, done, undo, update, delete).",
+  "purpose": "Google Tasks specialist via `gog tasks`. Default list Reminders. Standing environment in APPEND_SYSTEM.md. Token usage of every turn is recorded in its own ledger and served on :8791. Do not write reminders.jsonl or COS calendar reminder events.",
   "contract": "~/.pi/agent-tasks-agent/tasks-agent/docs/CALLING.md",
 
   "tools": [

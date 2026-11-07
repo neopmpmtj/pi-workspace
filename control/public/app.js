@@ -150,6 +150,7 @@ function fieldControl(field) {
   }
   if (field.type === "mode") return enumSelect(field, ["route", "dry"]);
   if (field.type === "answer") return enumSelect(field, ["model", "hook"]);
+  if (field.type === "writer") return enumSelect(field, ["store", "tasks", "off"]);
   const input = el("input", {
     "data-key": field.key,
     "data-type": field.type,

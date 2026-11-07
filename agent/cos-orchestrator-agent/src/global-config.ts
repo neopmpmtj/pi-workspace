@@ -78,25 +78,37 @@ export async function readCalendarNode(env: NodeJS.ProcessEnv = process.env): Pr
   return { print: record.print !== false, route: record.mode !== "dry" };
 }
 
-/** The reminder-node hook. Same fields and defaults as calendarNode, plus the write switch. */
+/** Exclusive reminder writer. off = classify only; the turn reaches the model. */
+export type ReminderWriter = "store" | "tasks" | "off";
+
+/** The reminder-node hook. Same fields and defaults as calendarNode, plus the writer. */
 export interface ReminderNode extends CalendarNode {
   /**
-   * The deterministic writes: the row in reminders.jsonl, its calendar event, and the done
-   * op. False only when the section sets writes: false; then the node routes nothing at all
-   * - nothing is logged, nothing is written - and the hook leaves the turn to the model.
+   * store = reminders.jsonl + calendar event; tasks = gog tasks on the Reminders list;
+   * off = the node routes nothing and the hook leaves the turn to the model.
+   * A missing writer with writes: false is off; any other missing writer is store.
    */
-  writes: boolean;
+  writer: ReminderWriter;
 }
 
 /**
  * The reminderNode section, or null when the hook stays off.
  * mode defaults to routing; "dry" prints the same trace and executes nothing.
- * writes defaults to true; it is false only when that field is boolean false.
+ * writer is store, tasks, or off. A leftover writes: false is off; otherwise store.
  */
 export async function readReminderNode(env: NodeJS.ProcessEnv = process.env): Promise<ReminderNode | null> {
   const record = await readEnabledSection("reminderNode", env);
   if (!record) return null;
-  return { print: record.print !== false, route: record.mode !== "dry", writes: record.writes !== false };
+  return { print: record.print !== false, route: record.mode !== "dry", writer: reminderWriterOf(record) };
+}
+
+/** store | tasks | off. An unknown writer string is off. A leftover writes: false is off. */
+export function reminderWriterOf(record: Record<string, unknown>): ReminderWriter {
+  const named = record.writer;
+  if (named === "store" || named === "tasks" || named === "off") return named;
+  if (typeof named === "string" && named.trim() !== "") return "off";
+  if (record.writes === false) return "off";
+  return "store";
 }
 
 /** The mode-switch hook: the deterministic layer above the JEV classifier. */

@@ -1,8 +1,9 @@
 # Node: `reminder`
 
-> 2026-11-05. "Remind me to...", "lembra-me de..." become a row in `reminders.jsonl` and a
-> 15-minute calendar event. "I bought the milk", "já paguei a luz" close the matching row.
-> Separate from `docs/INBOX.md`: reminders are not plans or tasks.
+> 2026-11-05, writer split 2026-11-07. "Remind me to...", "lembra-me de..." become either a
+> row in `reminders.jsonl` plus a 15-minute calendar event (`writer: store`) or a Google Task
+> on the Reminders list (`writer: tasks`). "I bought the milk", "já paguei a luz" close the
+> matching row or task. Separate from `docs/INBOX.md`: reminders are not plans.
 
 ```
 your input
@@ -11,21 +12,20 @@ your input
    ├─[2] classify    ONE JEV request (or --classifier-json from the harness)
    │                 arbiter winner: reminder_done > reminder > calendar, band act/hint/none
    ├─[3] route       config.router(row)
-   ├─[4] execute     do:reminder:log      -> extractor (title, date, time, kind), validated,
-   │                                         appended to reminders.jsonl
-   │                 do:reminder:calendar -> `gog calendar create` via the calendar node
-   │                 do:reminder:done     -> match against pending rows, close the best one
+   ├─[4] execute     writer store:  do:reminder:log, do:reminder:calendar, do:reminder:done
+   │                 writer tasks:  do:reminder:tasks, do:reminder:tasks-done
+   │                 (`gog tasks add` / `done` on the Reminders list; no jsonl)
    └─[5] log         one JSON line in verdicts.jsonl: metadata, never the text
 ```
 
 ## Destinations
 
-| Winner, band | Destinations | Writes |
+| Winner, band | writer `store` | writer `tasks` |
 |---|---|---|
-| `reminder`, act | `do:reminder:log`, `do:reminder:calendar` | row + event |
-| `reminder_done`, act | `do:reminder:done` | `done` op, future event deleted |
-| either, hint | `hint:reminder` / `hint:reminder_done` | nothing; the agent asks |
-| anything else | none | ordinary turn |
+| `reminder`, act | `do:reminder:log`, `do:reminder:calendar` | `do:reminder:tasks` |
+| `reminder_done`, act | `do:reminder:done` | `do:reminder:tasks-done` |
+| either, hint | `hint:reminder` / `hint:reminder_done` | same; nothing written |
+| anything else, or writer `off` | none | ordinary turn |
 
 Defaults: no time is 06:00, or the next full hour when 06:00 today has passed; no date is
 **the next occurrence of a stated time** — today while that time is still ahead, tomorrow
@@ -35,7 +35,7 @@ The event lasts 15 minutes; no freebusy check. A "done" needs a match of at leas
 0.7, otherwise `no-match` with the pending list. The extractor's `kind` is a second opinion:
 `calendar_request` or `other` downgrades the write to a hint.
 
-## The two switches
+## The switches
 
 `~/.pi/config.json` holds `reminderNode`:
 
@@ -44,14 +44,15 @@ The event lasts 15 minutes; no freebusy check. A "done" needs a match of at leas
 | `enabled` | — | the hook runs at all |
 | `mode` | `"route"` | `"dry"` classifies and routes, runs nothing |
 | `print` | true | screen trace |
-| `writes` | true | the row in `reminders.jsonl`, its calendar event, the done op |
+| `writer` | `"tasks"` (sample) | `store` = jsonl + calendar; `tasks` = `gog tasks` on Reminders; `off` = route nothing |
 
-`writes: false` gates the deterministic path whole, not just the event: the node routes
-nothing, so `reminders.jsonl` gains no line, no event is written and nothing is closed. JEV
-still classifies and the verdict still lands in `verdicts.jsonl`; the harness then finishes
-no turn, and the message reaches the model as an ordinary turn with no hidden block. Same
-switch from a shell: `REMINDER_WRITES=0`, or `route.py --no-writes`. The `--list`, `--done`
-and `--undo` subcommands are not gated: those are explicit commands, not JEV triggers.
+`writer: off` gates the deterministic path whole: the node routes nothing, so `reminders.jsonl`
+gains no line, no event is written, no Google Task is added, nothing is closed. JEV still
+classifies and the verdict still lands in `verdicts.jsonl`; the harness then finishes no turn,
+and the message reaches the model as an ordinary turn with no hidden block. A leftover
+`writes: false` is `off`. Same switch from a shell: `REMINDER_WRITER=off`, or
+`route.py --writer off` / `--no-writes`. The `--list`, `--done` and `--undo` subcommands are
+the store table and are not gated: those are explicit commands, not JEV triggers.
 
 ## The table
 
