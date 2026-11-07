@@ -73,6 +73,9 @@ Each sibling owns two files in its agent home:
 To add a sibling: add its folder with those two files (its `npm run publish:agent` writes the
 `commands`, `tools`, and the generated block of `CALLING.md` from its code), then run
 `npm run fetch:publications` in the agent home to rebuild the `APPEND_SYSTEM.md` table.
+That is the COS call list only. If the new home should appear on `:8786` / `pi-config`
+(settings and dashboard start/stop), add a row to `control/agents.ts` as well. lan-agent
+is on the roster and not in `agents.ts` on purpose.
 
 The scan accepts two layouts: `<group>/<home>/agent.json` and `<group>/<repo>/<home>/agent.json`,
 where the repo root holds `.env` and the Pi home sits one level below it.

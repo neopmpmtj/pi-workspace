@@ -8,7 +8,9 @@
  *   - Standalone SQLite ledger & /usage command in ledger/
  *   - /ask command with default-model.json hot-swapping in extensions/chat/ and src/
  *   - Isolated launcher at ~/.local/bin/pi-<name> (0755)
- *   - Rebuilds CoS publication registry (APPEND_SYSTEM.md)
+ *   - Rebuilds CoS publication registry (APPEND_SYSTEM.md) only
+ *   - Does not edit control/agents.ts (:8786 / pi-config). Add a row there
+ *     if the new home should appear on the settings page.
  *   - Runs typecheck, unit tests, and live smoke test
  */
 
@@ -336,6 +338,8 @@ exec "$NODE_BIN/pi" "\${ARGS[@]}" "$@"
 
   console.log(`\n[ok] Agent "${name}" successfully scaffolded at ${agentHome}`);
   console.log(`[ok] Launcher available at ${launcherPath}`);
+  console.log(`[ok] COS roster updated (APPEND_SYSTEM.md).`);
+  console.log(`[ok] Not on :8786 / pi-config until you add a row in control/agents.ts.`);
   console.log(`[ok] Files left unstaged in ~/.pi for git review.`);
 
   return { agentHome, launcherPath };

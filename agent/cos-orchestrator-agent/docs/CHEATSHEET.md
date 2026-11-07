@@ -67,7 +67,7 @@ file replacement are the web page's own code. Runbooks:
 | Roster | `Sibling agents` table in `APPEND_SYSTEM.md` (re-sent with every turn, mostly at cached rates: one row per sibling) |
 | Manifest | `<sibling home>/agent.json`: `name`, `launcher`, `defaultPrompt`, `purpose`, `contract` |
 | Contract | `<sibling home>/docs/CALLING.md`, read only for non-default flags |
-| Add one | folder + `agent.json` + `CALLING.md` (the sibling's `npm run publish:agent`), then `npm run fetch:publications` here |
+| Add one | folder + `agent.json` + `CALLING.md` (the sibling's `npm run publish:agent`), then `npm run fetch:publications` here so COS can call it. If it should appear on `:8786` / `pi-config`, also add a row to `control/agents.ts`. lan-agent is roster-only on purpose. |
 
 ## The two channels
 
