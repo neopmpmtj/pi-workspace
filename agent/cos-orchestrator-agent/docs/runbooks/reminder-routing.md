@@ -103,3 +103,52 @@ every message becomes an ordinary model turn. Nothing is written by mistake.
 | `downgraded`, "second opinion" | the extractor read it as calendar or other; nothing written |
 | `no-match` on "I did X" | no pending reminder matched with >= 0.7; the pending list is shown |
 | reminder logged, event `failed` | `gog` missing or unauthenticated; the row stays pending |
+
+## This host: writer is `tasks` (since 2026-11-07)
+
+`pi-config set reminderNode.writer tasks` — `~/.pi/config.json` previously had no `writer`
+key, so `pi-config get reminderNode` reported the default `store` and reminders went to
+`reminders.jsonl` + a 15-minute calendar event. The hook passes `--writer tasks` to
+`route.py` on every message (`src/reminder-node.ts`), so the config value is the only switch.
+
+Verified after the flip:
+
+- `route.py --text ... --writer tasks --dry-run` → `do:reminder:tasks`
+- a real run created the Google Task on the `Reminders` list (`bVZhcmpkbWR4bUs4WldLNg`),
+  wrote no `reminders.jsonl` row and no calendar event (test task deleted afterwards)
+- `npm test` (`test/reminder-node.test.ts`, 20 tests) passes, including the write-switch test
+
+Consequences: `/reminders`, `/reminder-done <id>` and `/reminder-undo` operate on the jsonl
+store, so they are now empty/no-ops for new reminders — new ones live in Google Tasks and are
+closed by restating ("I bought the X") or by asking tasks-agent.
+
+Known limitation: Google Tasks `due` is date-only. A reminder with a stated time keeps the
+date and loses the time (the time survives only in the node's note line).
+
+## Two gotchas when switching to `writer: tasks`
+
+**1. The hook only knows about `writer` since commit `956502e` (2026-11-07 19:06).** Pi loads
+`src/` and `extensions/` at startup, so a pi process older than that code silently runs the
+previous behaviour: it reads `reminderNode` but ignores `writer`, takes the `store` path, and
+logs a jsonl row. That is exactly what a Telegram turn did at 19:28 on a pi started 18:35 —
+`do:reminder:log` + `do:reminder:calendar failed`. `pi-config set reminderNode.writer tasks`
+alone is not enough; `systemctl --user restart pi-cos.service` (from an SSH shell, never from
+inside the agent) is. Tell-tale: `~/.pi/config.json` says `tasks`, and the verdict in
+`verdicts.jsonl` still shows `do:reminder:log`.
+
+**2. `gog` was not on the service PATH.** `~/.pi/agent/bin/gog` is the only binary on this host;
+`~/.local/bin/gog` did not exist, and the pi process PATH contains `~/.local/bin` but *not*
+`~/.pi/agent/bin`. Tool shells masked this (pi prepends its own bin dir), so every hand-run
+probe succeeded while the hook failed with
+`gog not runnable: [Errno 2] No such file or directory: 'gog'`. Fixed with:
+
+```bash
+ln -sfn ~/.pi/agent/bin/gog ~/.local/bin/gog    # what CALLING.md in the sibling homes assumes
+```
+
+Check any future host with the service PATH, not yours:
+
+```bash
+env -i HOME=$HOME PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$HOME/.local/bin:$HOME/bin:/usr/local/bin:/usr/bin:/bin \
+  bash -c 'command -v gog && gog --version'
+```
