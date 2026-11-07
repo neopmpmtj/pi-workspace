@@ -9,7 +9,7 @@
 // promptBuild.<mode>`, then the read again as a read-back). No JEV classification, no decision
 // node, and no model decision about what to do: the replacement text already carries the result.
 //
-// A mode is the enabled promptBuild option: 1-Personal, 2-Development, 3-Work, 4-Automatic.
+// A mode is the enabled promptBuild option (names in control/prompt-build-options.ts).
 // "development" resolves to 2-Development; inputPhrase (normal/advanced) is untouched.
 //
 // Off unless ~/.pi/config.json has modeSwitch.enabled true.

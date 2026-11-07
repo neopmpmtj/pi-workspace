@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { readPromptBuild } from "../src/global-config.ts";
-import { promptBuildFromSection } from "../src/prompt-build.ts";
+import { promptBuildFromSection, promptBuildOptions, type PromptBuildOption } from "../src/prompt-build.ts";
 
 async function withGroupedRoot<T>(run: (env: NodeJS.ProcessEnv, configFile: string) => Promise<T>): Promise<T> {
   const root = await mkdtemp(path.join(tmpdir(), "cos-orchestrator-agent-"));
@@ -22,25 +22,24 @@ function entry(enabled: boolean, prompt: unknown = "", config: unknown = {}): Re
   return { enabled, prompt, config };
 }
 
-type ModeName = "1-Personal" | "2-Development" | "3-Work" | "4-Automatic";
-
-function section(on: Partial<Record<ModeName, Record<string, unknown>>>): Record<string, unknown> {
-  return {
-    enabled: true,
-    "1-Personal": on["1-Personal"] ?? entry(false),
-    "2-Development": on["2-Development"] ?? entry(false),
-    "3-Work": on["3-Work"] ?? entry(false),
-    "4-Automatic": on["4-Automatic"] ?? entry(false),
-  };
+function section(on: Partial<Record<PromptBuildOption, Record<string, unknown>>>): Record<string, unknown> {
+  const record: Record<string, unknown> = { enabled: true };
+  for (const name of promptBuildOptions) record[name] = on[name] ?? entry(false);
+  return record;
 }
 
 describe("promptBuild section", () => {
   it("renders the one enabled option", () => {
     const result = promptBuildFromSection(section({
-      "2-Development": entry(true, "stay brief", { tone: "short" }),
+      "5-Research": entry(true, "stay sourced", { tone: "long" }),
     }));
     assert.equal(result.conflict, null);
-    assert.equal(result.section, `2-Development\nstay brief\n${JSON.stringify({ tone: "short" }, null, 2)}`);
+    assert.equal(result.section, `5-Research\nstay sourced\n${JSON.stringify({ tone: "long" }, null, 2)}`);
+    const development = promptBuildFromSection(section({
+      "2-Development": entry(true, "stay brief", { tone: "short" }),
+    }));
+    assert.equal(development.conflict, null);
+    assert.equal(development.section, `2-Development\nstay brief\n${JSON.stringify({ tone: "short" }, null, 2)}`);
   });
 
   it("conflicts when 1-Personal and 2-Development are both on", () => {

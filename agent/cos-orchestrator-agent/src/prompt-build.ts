@@ -1,10 +1,11 @@
 // The selected prompt-build option becomes one section of the system prompt.
-// The option names live here so a later alternative is added in one place.
+// Option names live in control/prompt-build-options.ts so COS and the control plane share one list.
+import {
+  promptBuildOptions,
+  type PromptBuildOption,
+} from "../../../control/prompt-build-options.ts";
 
-/** Option entries in promptBuild. Exactly one may be enabled while the section is on. */
-export const promptBuildOptions = ["1-Personal", "2-Development", "3-Work", "4-Automatic"] as const;
-
-export type PromptBuildOption = (typeof promptBuildOptions)[number];
+export { promptBuildOptions, type PromptBuildOption };
 
 /** What an enabled promptBuild section contributes to the system prompt. */
 export interface PromptBuild {

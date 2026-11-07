@@ -20,6 +20,11 @@
       "enabled": false,
       "prompt": "",
       "config": {}
+    },
+    "5-Research": {
+      "enabled": false,
+      "prompt": "",
+      "config": {}
     }
   }
 }

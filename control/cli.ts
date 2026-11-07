@@ -6,6 +6,8 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PI_ROOT } from "./agents.ts";
+import { inputPhraseOptions } from "./input-phrase-options.ts";
+import { promptBuildOptions } from "./prompt-build-options.ts";
 import {
   planeProblem,
   readControlPlane,
@@ -52,9 +54,9 @@ Paths
                                  reminderNode{enabled,print,mode,writes}
   inputPhrase.enabled            input-phrase-config.json
   inputPhrase.append1
-  inputPhrase.<normal|advanced>.{enabled,allowBlank,phrase}
+  inputPhrase.<${inputPhraseOptions.join("|")}>.{enabled,allowBlank,phrase}
   promptBuild.enabled            prompt-build-config.json
-  promptBuild.<1-Personal|2-Development|3-Work|4-Automatic>.{enabled,prompt,config}
+  promptBuild.<${promptBuildOptions.join("|")}>.{enabled,prompt,config}
                                  config takes a JSON object
   agent.<id>.{provider,model,thinking,tools,enabledModels,extensions,packages}
                                  <id>: cos · image-describer · web-master · keep · google-workspace

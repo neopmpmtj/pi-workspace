@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { promptBuildOptions } from "./prompt-build-options.ts";
 import { SettingsError, readControlPlane, writeGate, writeInputPhrase, writePromptBuild, writeAgentSettings } from "./store.ts";
 
 async function fixture(): Promise<string> {
@@ -26,6 +27,7 @@ async function fixture(): Promise<string> {
       "2-Development": { enabled: true, prompt: "", config: {} },
       "3-Work": { enabled: false, prompt: "", config: {} },
       "4-Automatic": { enabled: false, prompt: "", config: {} },
+      "5-Research": { enabled: false, prompt: "", config: {} },
     },
   }, null, 2)}\n`);
   const home = path.join(root, "agent/cos-orchestrator-agent");
@@ -94,7 +96,7 @@ describe("project dashboard store", () => {
     const root = await fixture();
     try {
       const before = await readFile(path.join(root, "prompt-build-config.json"), "utf8");
-      const options = ["1-Personal", "2-Development", "3-Work", "4-Automatic"].map((name) => ({
+      const options = promptBuildOptions.map((name) => ({
         name,
         enabled: name === "1-Personal" || name === "2-Development",
         prompt: "",
@@ -105,6 +107,28 @@ describe("project dashboard store", () => {
       options[1].config = "[]";
       await assert.rejects(() => writePromptBuild({ enabled: true, options }, root), /JSON object/);
       assert.equal(await readFile(path.join(root, "prompt-build-config.json"), "utf8"), before);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("lists a missing promptBuild option as off, and a write stores it", async () => {
+    const root = await fixture();
+    try {
+      const file = path.join(root, "prompt-build-config.json");
+      const saved = JSON.parse(await readFile(file, "utf8")) as { promptBuild: Record<string, unknown> };
+      delete saved.promptBuild["5-Research"];
+      await writeFile(file, `${JSON.stringify(saved, null, 2)}\n`);
+      const plane = await readControlPlane(root);
+      const research = plane.promptBuild?.options.find((option) => option.name === "5-Research");
+      assert.equal(plane.promptBuild?.options.length, promptBuildOptions.length);
+      assert.deepEqual(research, { name: "5-Research", enabled: false, prompt: "", config: "{}" });
+      await writePromptBuild({ enabled: true, options: plane.promptBuild!.options }, root);
+      assert.deepEqual(JSON.parse(await readFile(file, "utf8")).promptBuild["5-Research"], {
+        enabled: false,
+        prompt: "",
+        config: {},
+      });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

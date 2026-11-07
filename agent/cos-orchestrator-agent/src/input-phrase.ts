@@ -1,10 +1,11 @@
 // Lines appended to a user message when inputPhrase is enabled and exactly one option is on.
-// The option names live here so a later alternative is added in one place.
+// Option names live in control/input-phrase-options.ts so COS and the control plane share one list.
+import {
+  inputPhraseOptions,
+  type InputPhraseOption,
+} from "../../../control/input-phrase-options.ts";
 
-/** Option entries in inputPhrase. Exactly one may be enabled while the section is on. */
-export const inputPhraseOptions = ["normal", "advanced"] as const;
-
-export type InputPhraseOption = (typeof inputPhraseOptions)[number];
+export { inputPhraseOptions, type InputPhraseOption };
 
 /** What an enabled inputPhrase section contributes to the next user message. */
 export interface InputPhrase {

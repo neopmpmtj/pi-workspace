@@ -7,7 +7,7 @@ three control-plane CLI calls, with no classifier and no decision node in the pa
 
 A mode is the enabled option of **`promptBuild`** in `~/.pi/prompt-build-config.json`, the
 session-level layer: the selected option contributes one section to the system prompt
-(`before_agent_start` → `sections.prompt_build`). Four modes, named 2026-11-07:
+(`before_agent_start` → `sections.prompt_build`). Names live in `control/prompt-build-options.ts`:
 
 | Mode | Meaning |
 | --- | --- |
@@ -15,17 +15,21 @@ session-level layer: the selected option contributes one section to the system p
 | `2-Development` | development work |
 | `3-Work` | work |
 | `4-Automatic` | left blank for the agent to drive |
+| `5-Research` | research; prompt left blank until filled |
 
 ```json
 "promptBuild": { "enabled": true,
   "1-Personal":    { "enabled": true, "prompt": "…", "config": {} },
   "2-Development": { "enabled": false, "prompt": "", "config": {} },
   "3-Work":        { "enabled": false, "prompt": "", "config": {} },
-  "4-Automatic":   { "enabled": false, "prompt": "", "config": {} } }
+  "4-Automatic":   { "enabled": false, "prompt": "", "config": {} },
+  "5-Research":    { "enabled": false, "prompt": "", "config": {} } }
 ```
 
 Exactly one option is on while the section is on. `promptBuild.enabled: false` means the
 section is off; the option flags still record which mode is selected, and the answer says so.
+A live file that predates `5-Research` still reads (the missing option shows as off). The next
+`pi-config` or `:8786` write stores it.
 
 **`normal` and `advanced` are not modes.** They belong to `inputPhrase` in
 `~/.pi/input-phrase-config.json`, a per-turn feature that appends a phrase to each typed
@@ -99,7 +103,7 @@ pi-config set modeSwitch.answer hook
 Name resolution (`resolveModeOption`): exact case-insensitive name, then the name without its
 number, then the number alone, then a unique prefix — so "development", "2-development", "2" and
 "dev" all reach `2-Development`, while "turbo" fails without ever calling `use` and the failure
-quotes the four modes that exist. An ambiguous match fails rather than guessing.
+quotes the modes that exist. An ambiguous match fails rather than guessing.
 
 The CLI is spawned as `node --experimental-strip-types ~/.pi/control/cli.ts …` with the node
 that runs pi. No shell, no PATH, no credentials. 15 s timeout, killed with `SIGKILL`.
@@ -124,7 +128,7 @@ the mode did **not** change:
 
 ```text
 Already executed by the pi-config CLI, which FAILED: the change to "turbo" did not happen.
-What the CLI said: no mode "turbo" · promptBuild has 1-Personal, 2-Development, 3-Work, 4-Automatic
+What the CLI said: no mode "turbo" · promptBuild has 1-Personal, 2-Development, 3-Work, 4-Automatic, 5-Research
 Reply in one short line saying it did not change, quoting that reason. Do not claim success, do not retry, do not run a tool.
 ```
 
