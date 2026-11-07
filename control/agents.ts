@@ -1,4 +1,6 @@
-// Live agents the project dashboard knows. Copies and the scaffold are omitted.
+// Homes the settings UI and dashboard start/stop know (:8786 / pi-config).
+// Not the COS delegation roster — that is APPEND_SYSTEM.md, built from agent.json.
+// Copies and the scaffold are omitted. lan-agent is roster-only (no row here).
 import path from "node:path";
 
 export interface AgentSpec {

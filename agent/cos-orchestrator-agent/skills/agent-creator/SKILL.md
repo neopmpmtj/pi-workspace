@@ -64,8 +64,10 @@ node --experimental-strip-types \
 
 The script automatically:
 1. Runs local unit tests (`args.test.ts`, `effective.test.ts`) in the new agent home.
-2. Runs `npm run fetch:publications` in CoS home so `APPEND_SYSTEM.md` immediately lists the new sibling in the delegation table.
+2. Runs `npm run fetch:publications` in CoS home so `APPEND_SYSTEM.md` immediately lists the new sibling in the delegation table. That is the COS call list only. It does not edit `control/agents.ts`.
 3. Runs a smoke test via `pi-<name> -p '/ask "ping"'`.
 4. Leaves all newly created files in `~/.pi` unstaged for git review.
+
+If the new home should appear on `:8786` / `pi-config`, add a row to `control/agents.ts` after the script finishes. lan-agent is roster-only on purpose.
 
 Report the final paths, launcher command, smoke test status, and review instructions to the user.
