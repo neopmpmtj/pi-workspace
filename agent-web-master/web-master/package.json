@@ -11,6 +11,9 @@
     "dashboard": "node --experimental-strip-types dashboard/server.ts",
     "publish:agent": "node --experimental-strip-types scripts/publish.ts"
   },
+  "dependencies": {
+    "jiti": "2.7.0"
+  },
   "devDependencies": {
     "@earendil-works/pi-ai": "1.4.0",
     "@earendil-works/pi-coding-agent": "1.4.0",
