@@ -1,6 +1,6 @@
 {
-  "provider": "google",
-  "model": "gemini-3.6-flash",
+  "provider": "deepseek",
+  "model": "deepseek-flash",
   "effort": "low",
-  "updatedAt": "2026-10-30T17:45:23.797Z"
+  "updatedAt": "2026-11-08T06:11:28.443Z"
 }
