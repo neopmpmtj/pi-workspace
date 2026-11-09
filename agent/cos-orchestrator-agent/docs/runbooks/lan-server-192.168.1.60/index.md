@@ -10,6 +10,8 @@ One folder per machine/topic cluster. Everything here documents the desktop at
 | `lan-server-full-access-and-local-agent.md` | Full access to the server, file organisation, local Pi agent plan: phases, GPU diagnosis, safeguards | plan |
 | `server-pi-install.md` | Install pi 1.4.0 + node for `pmpmt`: three traps, credential indirection, verification | done 2025-11-03 |
 | `rtx3060-ollama-server-install.md` | Ollama 0.40.14 on the RTX 3060: driver diagnosis + fix, weights on `/home`, install, pull, verify, open items | done 2025-11-04 |
+| `two-server-pi-agents.md` | Two pi agents on the server: `pi-cloud` (cloud keys) and `pi-ollama` (local RTX 3060 via `models.json`): layout, staging trick, wiring, verification, gaps | done 2025-11-08 |
+| `server-git-github-access.md` | git/gh on the server for an RTX repo: keys, identity, `insteadOf` rewrite, `gh` token invalid, `pmpmtj` read-only on `neopmpmtj/*`, three ways to get push access | done 2025-11-08 |
 
 Related machine facts live in `/home/pmpmt/AGENTS.md` (untracked, host-only).
 

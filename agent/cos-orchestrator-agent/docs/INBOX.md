@@ -78,8 +78,18 @@ Plan: `docs/runbooks/lan-server-192.168.1.60/lan-server-full-access-and-local-ag
       decision). `/home/pmpmt/.pi/agent/.env` holds the keys (600) and `auth.json` only references
       them via `!$HOME/.pi/agent/key <NAME>` — pi resolves the command per use. All three providers
       verified with live calls after the change.
-- [ ] Eventually give the server's pi its own agent home + ledger and a laptop-side shim so CoS can
-      call it the way it calls the local siblings.
+- [x] ~~Eventually give the server's pi its own agent home + ledger and a laptop-side shim so CoS can
+      call it the way it calls the local siblings.~~ 2025-11-08: **two** homes now exist on the server,
+      `cloud` (`pi-cloud`, cloud keys) and `ollama` (`pi-ollama`, local RTX 3060), each with its own
+      launcher, `.env`, SQLite ledger, `/ask` and `/usage`. Runbook:
+      `docs/runbooks/lan-server-192.168.1.60/two-server-pi-agents.md`. The shim is still missing.
+- [ ] Laptop-side shim so CoS can delegate to `pi-cloud` / `pi-ollama` on `.60` (an `ssh`-based
+      launcher keeps the roster unchanged). Not built — found them remote-only for now.
+- [ ] Server `cloud` agent: the copied `GEMINI_API_KEY` is invalid (`400 API_KEY_INVALID`, also from
+      the laptop) — replace it in `~/.pi/agent-cloud/.env`; until then the two `gemini-3.x` models fail.
+- [ ] Server agents: no OAuth credential exists in this tree (every `auth.json` is `api_key`). If a
+      provider should be used through OAuth, run `/login` on the server interactively — one human
+      step, not scriptable.
 - [ ] Safeguards, once the organisation work is finished: re-scope `piadmin` sudo to the commands
       actually used, snapshot the move log, optional restic/borg to an external disk.
 
@@ -322,3 +332,13 @@ Removed 2026-11-07 with keep-agent. Do not restore. The checked items record wha
       runs while pi is open.
 - [ ] `~/.pi/z.old` is 226 MB across two archive runs. Everything tracked is in git and the
       runtime state was recovered, so it can be pruned — on request only.
+- [x] ~~Server git/GitHub for the RTX repo: clone over SSH works, push does not.~~ 2026-11-08, route B:
+      the laptop's `neopmpmtj` `gho_` token is in the server keyring (`gh auth login --with-token`),
+      broken `pmpmtj` entry logged out, `gh auth setup-git` installed
+      `credential.https://github.com.helper`, and the `insteadOf` HTTPS→SSH rewrite was removed
+      because the server's SSH identity is read-only on `neopmpmtj/*`. Verified: HTTPS clone plus
+      `push --dry-run` to a new branch worked from a shell **and** from a `pi-cloud` tool call.
+      Runbook: `docs/runbooks/lan-server-192.168.1.60/server-git-github-access.md`.
+- [ ] The server's GitHub credential is a static `gho_` token — reinstall it
+      (`gh auth token | ssh lan-pmpmt 'gh auth login --with-token'`) if it is ever revoked; clone
+      RTX-repo work over HTTPS or `gh repo clone`, not `git@github.com:`.
