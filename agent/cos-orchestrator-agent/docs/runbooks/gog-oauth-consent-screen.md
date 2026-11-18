@@ -78,6 +78,57 @@ Google rejects a login-walled home page. The two pages above are files under
 `/home/pmpmt/app/uttdty_dashboard/staticfiles/` and return 200 without a session. Keep them in
 place — Google re-reads them during review.
 
+## What "available to any user with a Google Account" actually means
+
+The dialog warns about *eligibility*, not about data. Publishing removes the Test-users list
+requirement: any Google account that has your `client_id` could open the consent screen and be
+asked to approve. Nothing is shared with them, and no directory listing or app-store entry is
+created — the client is discoverable only if you hand out its id.
+
+What changes, concretely:
+
+| | Testing | In production (unverified) |
+|---|---|---|
+| Refresh token lifetime | 7 days | until revoked |
+| Who may authorise | accounts on the test-user list | any Google account |
+| Consent screen | no warning | "Google hasn't verified this app" → Advanced → Go to (unsafe) |
+| User cap | 100 test users | 100 users until verified |
+| Verification | not required | required for sensitive/restricted scopes to drop the warning |
+
+Your data is not exposed by publishing: access still needs a human to sign in and approve, and
+only `neopmpmtj@gmail.com` ever will. The assets to protect stay the same as before — the
+refresh token in the keyring and the client secret. Treat a Desktop client secret as
+semi-public anyway (Google ships them inside installed apps); the token is what matters.
+
+Residual risks that are real but small here:
+
+- **Quota theft** — anyone with the client id could consume the project's API quota. Bounded by
+  the 100-user cap and by the fact that the id is not published.
+- **Verification request** — Google may email the developer contact asking to verify the
+  restricted Gmail scopes. Ignoring it leaves the app working with the warning; it is not a
+  silent failure mode.
+- **Brand** — the app name `Pi Agent` appears on the consent screen; keep it free of Google
+  marks.
+
+Kill switch, unchanged: <https://myaccount.google.com/permissions>.
+
+## The exact hop chain the user sees
+
+```
+1. https://uttdty.com/static/gog-reauth-<slug>.html      our page, one <meta refresh>, no script
+        ↓ 302
+2. https://accounts.google.com/o/oauth2/auth?client_id=…&redirect_uri=http%3A%2F%2F127.0.0.1%3A<port>%2Foauth2%2Fcallback
+        ↓ user signs in, approves scopes          (Google's origin — no credential ever touches our host)
+3. http://127.0.0.1:<port>/oauth2/callback?code=…&state=…
+        ↓ browser shows "can't connect" — expected
+4. the operator copies that address-bar URL back into the chat; gog exchanges code+PKCE verifier
+```
+
+Step 1 exists only because the consent URL is ~870 characters and gets mangled when copied on a
+phone. Any static host works; a link shortener would hand the URL to a third party for no gain.
+The authorization code lands on `127.0.0.1` — a port on the operator's own machine — so no third
+party ever sees it, and the PKCE verifier never leaves the server.
+
 Publishing with `gmail.*`, `drive` and `calendar` scopes is a **restricted/sensitive** scope set.
 Google only drops the "unverified app" warning after verification (restricted scopes also need a
 security assessment). For a single-account personal tool that warning is acceptable: click
