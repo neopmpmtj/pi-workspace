@@ -60,6 +60,6 @@
     "npm:@llblab/pi-telegram"
   ],
   "extensionChangelogVersions": {
-    "{\"source\":\"npm:@llblab/pi-telegram\",\"scope\":\"user\"}": "0.58.3"
+    "{\"source\":\"npm:@llblab/pi-telegram\",\"scope\":\"user\"}": "0.59.2"
   }
 }

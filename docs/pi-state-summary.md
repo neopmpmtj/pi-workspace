@@ -8,7 +8,7 @@
 ## Quick facts
 
 - **Repo root**: `~/.pi` (`pi-workspace`)
-- **Main agent**: `~/.pi/agent` (Pi's default home; `PI_CODING_AGENT_DIR` is set explicitly by the service launcher). `~/.local/bin/pi-cos-orchestrator-agent` sources `~/.pi/agent/.env`, pins Node v24.21.0 and the model, and starts there; `~/.local/bin/pi` sources the same `.env`.
+- **Main agent**: `~/.pi/agent` (Pi's default home). `~/.local/bin/pi` explicitly sets `PI_CODING_AGENT_DIR` and the working directory to this home, sources its `.env`, pins Node v24.21.0, and reads its `default-model.json`. The VPS service launcher `~/.local/bin/pi-cos-orchestrator-agent` also starts this home.
 - **Providers**: deepseek (default), openai, google. Default model `deepseek-flash`, thinking `high`. Enabled: `deepseek-flash`, `deepseek-v4-pro`, `gpt-6.1-sol`, `gemini-3.8-flash`, `gemini-3.7-flash`.
 - **Tools**: `read`, `bash`, `edit`, `write`, `grep`, `find`. No web search and no `subagent` tool on COS — siblings are called from bash.
 - **Package on COS**: `npm:@llblab/pi-telegram` (Telegram surfaces).
