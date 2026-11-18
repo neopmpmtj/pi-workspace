@@ -322,3 +322,8 @@ Removed 2026-11-07 with keep-agent. Do not restore. The checked items record wha
       runs while pi is open.
 - [ ] `~/.pi/z.old` is 226 MB across two archive runs. Everything tracked is in git and the
       runtime state was recovered, so it can be pruned — on request only.
+- [ ] **2026-11-26**: confirm the gog day-8 verdict ping actually arrived. The one-shot
+      `gog-keepalive-day8.timer` fires at 08:30 Lisbon, messages Telegram, and disables the
+      daily `gog-token-keepalive.timer` on an OK verdict. If the timer or the send failed, no
+      one is told — check `tail ~/.pi/agent/logs/gog-keepalive-day8.log` and
+      `systemctl --user list-timers 'gog-*'`. Runbook: `docs/runbooks/gog-oauth-consent-screen.md`.
