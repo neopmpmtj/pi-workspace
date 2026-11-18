@@ -104,3 +104,19 @@ of the scope.
 
 Nothing to roll back but the token: re-run step 1/2 without `tasks`, or re-run the original
 `--services calendar,drive,gmail,sheets`.
+
+## Re-consent on 2026-11-18 (token had been revoked)
+
+- The refresh token died between 2026-11-14 08:00 and 2026-11-15 08:00 UTC: every gog call
+  answered `oauth2: "invalid_grant" "Token has been expired or revoked"`, for Tasks and
+  Calendar alike. The keepalive probe logged `FAIL` daily from 2026-11-15 to 2026-11-18
+  (streak 4) before anyone acted.
+- Re-consented the same account and the same five services with this runbook's step 1/step 2.
+  `gog auth list --json` shows `calendar,drive,gmail,sheets,tasks`; `gog tasks lists` prints
+  `My Tasks` and `Reminders`; `gog calendar events --today` returns.
+- Practical detail: the pending state expires in ~30 minutes. Step 2 must reuse the exact
+  `redirect_uri` recorded in `~/.config/gogcli/oauth-manual-state-<state>.json`, which is
+  **not** the port from an earlier run.
+- Cleanup after a successful exchange: delete the served redirect page under
+  `/home/pmpmt/app/uttdty_dashboard/staticfiles/` and the consumed
+  `oauth-manual-state-*.json`.
