@@ -1,10 +1,17 @@
 # Migrate the COS orchestrator agent home into `~/.pi/agent`
 
-> **Status: PLAN ONLY — nothing below has been executed.**
-> The only file written so far is this plan.
+> **Status: PLAN ONLY — no migration step has run.**
+> This plan is the only artifact created by this session. (The COS agent's `auto-sync`
+> committed it at 16:32 together with the pre-existing local changes; see the revision note.)
 >
 > - Written: 2026-11-18, by `pi` running in the default home (`~/.pi/agent`), SSH session.
-> - Baseline revision: `8849648` (`inbox: verify the 2026-11-26 day-8 verdict ping arrived`).
+> - Baseline revision: `f56e958` — an auto-sync checkpoint created at 16:32 while this
+>   plan was being written. It contains this plan, the owner's `.gitignore` rule, the
+>   settings changelog and the INBOX launcher audit. The pre-plan revision was `8849648`.
+> - Git state: **local and `origin/main` have diverged** — 10 local commits and 2 remote
+>   commits since merge base `8b71cb2`. The only overlapping file is
+>   `agent/cos-orchestrator-agent/docs/INBOX.md`. Auto-sync's rebase aborted cleanly. See
+>   Phase 0.3 and decision D9.
 > - Host: `neopmpmtj` (VPS, Ubuntu 24.04, user `pmpmt`), pi `1.5.2`.
 > - Target: flatten `~/.pi/agent/cos-orchestrator-agent/` into `~/.pi/agent/`, so
 >   `~/.pi/agent` **is** the chief-of-staff home and no nested agent home remains.
@@ -599,11 +606,35 @@ cd ~/.pi
 git status --short > ~/premerge-$STAMP-git-status.txt
 git rev-parse HEAD > ~/premerge-$STAMP-head.txt
 
-# 0.2 checkpoint the pre-existing dirt: settings changelog, INBOX launcher audit,
-#     the owner's agent#copy .gitignore rule, and this plan
-git add -A
-git commit -m "chore: checkpoint before flattening the cos home (settings, inbox, plan)"
+# 0.2 verify the checkpoint already exists and the tree is clean
+#     (auto-sync created f56e958 at 16:32)
+git status --short          # expect no output
+git log -1 --oneline        # expect f56e958 ...
+
+# 0.3 reconcile the divergence BEFORE the move (owner decision D9)
 ```
+
+The auto-sync checkpoint at 16:32 both committed the plan and exposed a pre-existing
+divergence: `origin/main` has two laptop commits (`cdd7b6c`, `0784e7f`: lan-agent
+runbooks) that are not local, and local has ten commits (gog runbooks, the day-8 script,
+the plan) that are not remote. Auto-sync's rebase aborted cleanly. The only overlapping
+file is `agent/cos-orchestrator-agent/docs/INBOX.md`.
+
+Recommended fix, run **before** Phase 2 so the conflict is resolved in the old layout:
+
+```bash
+cd ~/.pi
+git fetch origin
+git merge origin/main          # one conflict expected: agent/cos-orchestrator-agent/docs/INBOX.md
+# resolve INBOX by keeping BOTH blocks (remote lan-agent notes + local gog/plan notes)
+git add agent/cos-orchestrator-agent/docs/INBOX.md
+git commit                     # merge commit
+git push                       # now a fast-forward
+```
+
+If the owner defers this, the migration still works locally; only the final `git push`
+and the launcher's `git pull --ff-only` remain broken (the pull failure is non-fatal and
+prints a warning, then the launcher starts on local state).
 
 `auto-sync.ts` runs `git add -A` on shutdown. With `agent#copy/` ignored and the tree
 clean, that shutdown commit is a no-op. Do not run a `pi` in the home after Phase 2 until
@@ -815,7 +846,7 @@ Then, from Telegram, send `/usage` and one normal message. Confirm:
 - scheduler/reminder hooks still load (watch the startup extension lines);
 - `systemctl --user list-timers 'gog-*'` still shows both timers.
 
-Only after that:
+Only after that (requires Phase 0.3 to be resolved):
 
 ```bash
 cd ~/.pi && git push
@@ -854,6 +885,7 @@ Do not touch `~/retired-pi-cos-orchestrator-agent-20261102/` or
 - [ ] `npm run test:dashboard` exit 0.
 - [ ] `pi -p '/usage'` prints a table (no bridge).
 - [ ] `git submodule status --recursive` shows 6 entries (5 skills + `jev-classifier`), all clean.
+- [ ] (D9) local contains `origin/main`; `git push` succeeds after the migration commit.
 - [ ] `git status` clean except ignored runtime.
 - [ ] `systemctl --user is-active pi-cos.service` = active.
 - [ ] tmux pane says `telegram connected`.
@@ -873,7 +905,8 @@ Two backstops, both already exist:
 1. `~/.pi/agent#copy/` — the owner's full snapshot of `~/.pi/agent` from 2026-11-18 12:47,
    now gitignored. The owner keeps it as a safeguard and will delete it later; this plan
    does not touch it.
-2. The Phase 0.2 checkpoint commit — tracked files only.
+2. The checkpoint commit recorded in `~/premerge-<STAMP>-head.txt` (today: `f56e958`,
+   or the Phase 0.3 merge commit if the divergence is reconciled first). Tracked files only.
 
 Rollback procedure:
 
@@ -886,7 +919,7 @@ mv ~/.pi/agent#copy ~/.pi/agent                # your safeguard becomes the live
 
 # restore the repo state (the checkpoint commit from Phase 0.2)
 cd ~/.pi
-git reset --hard <phase-0-commit>
+git reset --hard $(cat ~/premerge-<STAMP>-head.txt)    # the checkpoint from Phase 0.1
 systemctl --user start pi-cos.service          # owner
 tmux -L pi-cos capture-pane -p -t pi-cos | tail -8
 ```
@@ -918,6 +951,7 @@ a missed import depth. Check `journalctl --user -u pi-cos -n 60` and
 | 10 | `npm/` superset has stale packages (`@mjakl/pi-subagent` etc.) | not loaded (settings only list `@llblab/pi-telegram`); leave or prune later |
 | 11 | `GEMINI_API_KEY` is invalid in **both** env files (one dead service account, one invalid key) | not caused by the migration; record as a separate task. Do not touch the key during migration |
 | 12 | docs claim the old home in ~20 places | §6.10 policy + checklist; history is intentionally left alone |
+| 13 | **Git branch diverged from `origin/main`** (2 remote, 10 local; `INBOX.md` overlaps); auto-sync's rebase already failed once | Phase 0.3 merge before the move; only one conflict. Until then, `git push` and the launcher's `--ff-only` pull fail (non-fatally) |
 
 Additional facts worth recording:
 
@@ -944,6 +978,7 @@ Additional facts worth recording:
 | D6 | Who runs the service restart? | **Answered:** the owner does. This session never runs `systemctl start` (and the owner also runs the stop). |
 | D7 | Rename this plan directory to `migrate-cos-to-agent/` after execution? | Optional; the owner chose the current path |
 | D8 | Fix the two invalid Gemini keys as part of this change? | No — separate task |
+| D9 | Reconcile the git divergence now (`git merge origin/main`, resolve `INBOX.md`) or defer the push? | Merge now — one known conflict; otherwise the final push and the launcher pull stay broken |
 
 ---
 
