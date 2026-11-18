@@ -58,6 +58,26 @@ The digits before the first `-` are the **project number** to open in the consol
    `calendar-json.googleapis.com`, `tasks.googleapis.com`, `drive.googleapis.com`,
    `gmail.googleapis.com`, `sheets.googleapis.com`.
 
+### Branding prerequisites (blocks "Publish app" when missing)
+
+A greyed-out **Publish app** button with "Valid app name, support email, homepage url, and
+privacy policy url are required" means the **Branding** page is incomplete. Values used on
+2026-11-18, served from the static alias this host already has:
+
+| Field | Value |
+|---|---|
+| App name | `Pi Agent` |
+| User support email | `neopmpmtj@gmail.com` |
+| App home page | `https://uttdty.com/static/pi-agent.html` |
+| Privacy policy | `https://uttdty.com/static/pi-agent-privacy.html` |
+| Authorised domain | `uttdty.com` |
+| Developer contact | `neopmpmtj@gmail.com` |
+
+Do **not** use `https://uttdty.com/` as the home page: it 301s to an `/accounts/login/` page and
+Google rejects a login-walled home page. The two pages above are files under
+`/home/pmpmt/app/uttdty_dashboard/staticfiles/` and return 200 without a session. Keep them in
+place — Google re-reads them during review.
+
 Publishing with `gmail.*`, `drive` and `calendar` scopes is a **restricted/sensitive** scope set.
 Google only drops the "unverified app" warning after verification (restricted scopes also need a
 security assessment). For a single-account personal tool that warning is acceptable: click
