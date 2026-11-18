@@ -132,7 +132,7 @@ date and loses the time (the time survives only in the node's note line).
 previous behaviour: it reads `reminderNode` but ignores `writer`, takes the `store` path, and
 logs a jsonl row. That is exactly what a Telegram turn did at 19:28 on a pi started 18:35 —
 `do:reminder:log` + `do:reminder:calendar failed`. `pi-config set reminderNode.writer tasks`
-alone is not enough; `systemctl --user restart pi-cos.service` (from an SSH shell, never from
+alone is not enough; `systemctl --user restart pi-vps-agent` (from an SSH shell, never from
 inside the agent) is. Tell-tale: `~/.pi/config.json` says `tasks`, and the verdict in
 `verdicts.jsonl` still shows `do:reminder:log`.
 

@@ -384,3 +384,6 @@ Both are the same three-line wrapper plus different jobs; the two defects below 
 - [ ] Delete the owner's `~/.pi/agent#copy/` safeguard when satisfied.
 - [ ] Fix the two invalid `GEMINI_API_KEY`s (separate task; both were already dead
       before the migration).
+
+- [x] Renamed the systemd unit `pi-cos.service` → `pi-vps-agent` (2026-11-18).
+      The supervisor, tmux socket/session (`-L pi-cos`) and launcher keep their names.

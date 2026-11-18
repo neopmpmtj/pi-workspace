@@ -64,8 +64,11 @@ correction matters because acting on the wrong reading briefly created a duplica
 
 | Unit | Socket | ExecStart | State |
 | --- | --- | --- | --- |
-| `pi-cos.service` — "chief of staff (Telegram bridge)" | `-L pi-cos` | `~/pi-service/pi-cos-supervisor.sh` → `~/.local/bin/pi` | **enabled + active**, the real owner since 2026-11-05 |
+| `pi-vps-agent` — "VPS chief of staff (Telegram bridge)" | `-L pi-cos` | `~/pi-service/pi-cos-supervisor.sh` → `~/.local/bin/pi` | **enabled**, normally active (stopped for the 2026-11-18 migration) |
 | `pi-agent.service` — legacy "Pi coding agent" | `-L pi` | `~/pi-service/pi-supervisor.sh` → `~/.local/bin/pi` (no `PI_CODING_AGENT_DIR` → old harness home `~/.pi/agent/`) | `disabled` + `inactive`, keep it that way |
+
+Renamed 2026-11-18: the unit is `pi-vps-agent` (was `pi-cos.service`). The tmux
+socket/session and the supervisor filename stay `pi-cos`.
 
 `pi-cos-supervisor.sh` also encodes two hard-won behaviours: it waits for the previous CoS pi to
 finish its shutdown push before starting a new one (otherwise the Telegram transport lock goes
@@ -85,7 +88,7 @@ Resolved the same way it broke: `systemctl --user stop && disable pi-agent.servi
 `~/pi-service/pi-supervisor.sh` from `~/pi-service/pi-supervisor.sh.bak-20261106-1302`, and the
 surviving `pi-cos` agent reclaimed the bot automatically. Verified after: one `pi` process
 (`PI_CODING_AGENT_DIR=~/.pi/agent`), one tmux socket (`pi-cos`), one session,
-`telegram connected`, `pi-cos.service` `NRestarts=0`.
+`telegram connected`, `pi-vps-agent` `NRestarts=0`.
 
 Also done at that time: `TELEGRAM_BOT_TOKEN` was removed from `~/.pi/agent/.env` so the legacy
 home could not poll, and the token existed only in the CoS home's `.env`.

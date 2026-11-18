@@ -4,7 +4,8 @@
 > and Phase 8 (restart + live Telegram check) is the owner's action. Offline checks pass:
 > typecheck, 262/262 home tests, 28/28 control tests. The migration was move-only; the
 > emptied source home is gone and every non-clashing duplicate is in
-> `~/pi-migration-leftovers-20261118/`.
+> `~/pi-migration-leftovers-20261118/`. The systemd unit was renamed
+> `pi-cos.service` → `pi-vps-agent` (same supervisor, socket and session).
 >
 > - Written: 2026-11-18, by `pi` running in the default home (`~/.pi/agent`), SSH session.
 > - Baseline revision: `d970308` (the commit that recorded the resolved divergence; the
@@ -27,7 +28,7 @@ at a path that no longer exists. That arrangement is not working out.
 
 The plan is to move every durable thing the COS home has onto the outer home,
 `~/.pi/agent`, then fix every path that pointed at the nested directory, verify, and
-restart the same `pi-cos.service` against the flat home. The Telegram bot, the bot token,
+restart the same `pi-vps-agent` against the flat home. The Telegram bot, the bot token,
 the model, the extensions, the skills, the ledger, the sessions and the docs all survive;
 only the directory boundary disappears.
 
@@ -45,7 +46,7 @@ The four decisions I still need from the owner are listed in §11.
 - One Pi agent home on this host: `~/.pi/agent`.
 - `PI_CODING_AGENT_DIR` is either unset (Pi's default is already `~/.pi/agent`) or set to
   `~/.pi/agent` by the launcher. No `cos-orchestrator-agent` directory remains.
-- The same systemd service (`pi-cos.service`) runs the chief of staff, with the same
+- The same systemd service (`pi-vps-agent`) runs the chief of staff, with the same
   Telegram bot, from the flat home.
 - Extensions, skills, prompts, ledger, sessions, dashboard, scripts and docs all work from
   the new layout.
@@ -72,7 +73,7 @@ The four decisions I still need from the owner are listed in §11.
 
 | PID | Since | Home | Role |
 |---|---|---|---|
-| 329655 | 2026-11-07 19:33 | `~/.pi/agent/cos-orchestrator-agent` | the `pi-cos.service` instance; tmux pane says **telegram connected** |
+| 329655 | 2026-11-07 19:33 | `~/.pi/agent/cos-orchestrator-agent` | the `pi-vps-agent` instance; tmux pane says **telegram connected** |
 | 858696 | 2026-11-18 12:41 | `~/.pi/agent/cos-orchestrator-agent` | a second, idle `pi` in a VS Code terminal (parent: vscode-server ptyHost) |
 | 873618 | 2026-11-18 16:12 | `~/.pi/agent` | this session (default home, SSH login, no Telegram token) |
 
@@ -132,7 +133,7 @@ Tracked in git under `agent/`: 151 files under `cos-orchestrator-agent`, plus 6 
 5. **Two `pi` processes share the nested home** (the service and an idle VS Code TUI).
 6. **`.dashboard-logs/*.pid`** are stale PID files from 2026-11-02, and the legacy
    `pi-agent.service` still exists (deliberately disabled); both are inert but confusing.
-7. **`pi-cos.service` is the only Telegram poller**, but the bridge's own multi-instance
+7. **`pi-vps-agent` is the only Telegram poller**, but the bridge's own multi-instance
    bus means a second same-home TUI becomes a follower, not a second poller. Cross-host
    or stale-lock starts are what cause `409`.
 
@@ -179,7 +180,7 @@ delete `shared-extensions/`; it is out of scope.
 | 6 | `~/.pi/docs/migrate_cos-orchestrator-agent-to-agent/` | keep (given by owner) | this plan | exception to the rename rule |
 | 7 | `~/pi-cos-migration-20261106-162626/` | untouched | retired migration bundle | archive |
 | 8 | `~/retired-pi-cos-orchestrator-agent-20261102/` | untouched | retired home | archive |
-| 9 | `~/.config/systemd/user/pi-cos.service` | keep name | unit | no rename; `ExecStart` unchanged |
+| 9 | `~/.config/systemd/user/pi-cos.service` | `pi-vps-agent.service` | unit | renamed 2026-11-18; `ExecStart`/`ExecStopPost` unchanged |
 | 10 | `~/pi-service/pi-cos-supervisor.sh` | keep name | supervisor | **content updated** (AGENT_DIR) |
 | 11 | `apps-scripts/svg-scripts/input-path/input-path.svg` | regenerate | generated image containing the old path | cosmetic |
 | 12 | `apps-scripts/svg-scripts/repo-backbone/repo-backbone.svg` | regenerate | generated image | cosmetic |
@@ -519,7 +520,9 @@ Edit two user units, then `systemctl --user daemon-reload`:
 + ExecStart=/home/pmpmt/.pi/agent/scripts/gog-keepalive-day8.sh
 ```
 
-`pi-cos.service` does not change. The `.bak-*` unit copies are historical; leave them.
+The unit was renamed from `pi-cos.service` to `pi-vps-agent` (2026-11-18);
+`ExecStart` and `ExecStopPost` are unchanged. The `.bak-*` unit copies are historical;
+leave them.
 
 ### 6.9 Git metadata
 
@@ -642,8 +645,8 @@ the migration commit exists.
 
 ```bash
 # OWNER ACTION: the owner owns the service lifecycle in this run.
-systemctl --user stop pi-cos.service
-systemctl --user is-active pi-cos.service || true    # expect: inactive/dead
+systemctl --user stop pi-vps-agent
+systemctl --user is-active pi-vps-agent || true    # expect: inactive/dead
 
 # the VS Code TUI must be closed by the owner; verify:
 for p in $(pgrep -x pi); do
@@ -830,7 +833,7 @@ bot. The tree is already committed, so even if auto-sync runs on shutdown it is 
 The owner restarts the service; this session does not call `systemctl start`.
 
 ```bash
-systemctl --user start pi-cos.service
+systemctl --user start pi-vps-agent
 sleep 20
 tmux -L pi-cos capture-pane -p -t pi-cos | tail -8     # expect "telegram connected"
 journalctl --user -u pi-cos -n 40 --no-pager
@@ -885,7 +888,7 @@ Do not touch `~/retired-pi-cos-orchestrator-agent-20261102/` or
 - [ ] `git submodule status --recursive` shows 6 entries (5 skills + `jev-classifier`), all clean.
 - [x] (D9) local contains `origin/main`; `git push` succeeds after the migration commit.
 - [ ] `git status` clean except ignored runtime.
-- [ ] `systemctl --user is-active pi-cos.service` = active.
+- [ ] `systemctl --user is-active pi-vps-agent` = active.
 - [ ] tmux pane says `telegram connected`.
 - [ ] Telegram echo test succeeds; `/usage` answers.
 - [ ] `~/.pi/agent/logs/ledger.sqlite` row count grew.
@@ -909,7 +912,7 @@ Two backstops, both already exist:
 Rollback procedure:
 
 ```bash
-systemctl --user stop pi-cos.service          # owner
+systemctl --user stop pi-vps-agent          # owner
 
 # keep the broken result for inspection
 mv ~/.pi/agent ~/pi-agent-failed-$(date +%Y%m%d-%H%M%S)
@@ -918,7 +921,7 @@ mv ~/.pi/agent#copy ~/.pi/agent                # your safeguard becomes the live
 # restore the repo state (the checkpoint commit from Phase 0.2)
 cd ~/.pi
 git reset --hard $(cat ~/premerge-<STAMP>-head.txt)    # the checkpoint from Phase 0.1
-systemctl --user start pi-cos.service          # owner
+systemctl --user start pi-vps-agent          # owner
 tmux -L pi-cos capture-pane -p -t pi-cos | tail -8
 ```
 
@@ -1146,10 +1149,10 @@ untouched and the JSON still parses.
 If Phase 8 shows "telegram disconnected" for more than one minute:
 
 ```bash
-systemctl --user stop pi-cos.service
+systemctl --user stop pi-vps-agent
 rm -f ~/.pi/agent/tmp/pi-telegram/state.json
 rm -f ~/.pi/agent/tmp/pi-telegram/runtime/*.sock
-systemctl --user start pi-cos.service
+systemctl --user start pi-vps-agent
 # if the status line is still dark after 30 s, the supervisor's fallback sends
 # /telegram-connect into the pane; watch `tmux -L pi-cos capture-pane -p -t pi-cos`
 ```

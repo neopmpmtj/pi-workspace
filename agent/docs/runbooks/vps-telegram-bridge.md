@@ -6,7 +6,7 @@ Symptom: phone messages get no answer. Bot is healthy; the bridge is not.
 ## How the VPS agent is wired
 
 ```
-pi-cos.service (user unit, WantedBy=default.target, enabled, linger=yes)
+pi-vps-agent (user unit, WantedBy=default.target, enabled, linger=yes)
 └── ~/pi-service/pi-cos-supervisor.sh        keeps one pi alive in tmux -L pi-cos
     └── tmux -L pi-cos  session "pi-cos"
         └── ~/.local/bin/pi
@@ -15,6 +15,9 @@ pi-cos.service (user unit, WantedBy=default.target, enabled, linger=yes)
                 ├── settings.json   -> packages: npm:@llblab/pi-telegram
                 └── telegram.json    -> { "botToken": "$TELEGRAM_BOT_TOKEN", "allowedUserId": 6363173838 }
 ```
+
+Renamed from `pi-cos.service` on 2026-11-18; the tmux socket/session and the supervisor
+filename remain `pi-cos`.
 
 `pi-telegram` reads `telegram.json` **from `$PI_CODING_AGENT_DIR`**. A missing file is not
 fatal: pi starts normally and the status line just says `telegram disconnected`.
@@ -35,7 +38,7 @@ fatal: pi starts normally and the status line just says `telegram disconnected`.
 
 ```bash
 # 1. is the unit up, and is a pi alive inside tmux?
-systemctl --user is-active pi-cos.service; tmux -L pi-cos ls
+systemctl --user is-active pi-vps-agent; tmux -L pi-cos ls
 systemctl --user list-units --all --no-pager | grep -i 'pi-'   # catches a second poller
 
 # 2. which home is the live pi using?
@@ -69,16 +72,16 @@ sed -i 's|AGENT_DIR="$HOME/.pi/cos-orchestrator-agent"|AGENT_DIR="$HOME/.pi/agen
   ~/pi-service/pi-cos-supervisor.sh
 
 systemctl --user daemon-reload
-systemctl --user enable pi-cos.service
-systemctl --user restart pi-cos.service
+systemctl --user enable pi-vps-agent
+systemctl --user restart pi-vps-agent
 sleep 25
-systemctl --user is-active pi-cos.service
+systemctl --user is-active pi-vps-agent
 for p in $(pgrep -x pi); do tr '\0' '\n' < /proc/$p/environ | grep PI_CODING_AGENT_DIR; done
 tmux -L pi-cos capture-pane -p -t pi-cos | tail -3     # "telegram connected"
 ```
 
 End-to-end check: send a message from the phone. It is answered only if the bridge is the sole
-poller and `pi-cos.service` reports `telegram connected`.
+poller and `pi-vps-agent` reports `telegram connected`.
 
 ## Notes / leftovers
 
