@@ -17,13 +17,18 @@ Observed on this host: re-consented 2026-11-07, healthy through 2026-11-14 08:00
 
 ## Which project to open — read this first
 
-This host has three Google OAuth clients lying around. Only one is live:
+Only one client is live. The other two numbers on this box are decoys:
 
 | Path | Client / project | Status |
 |---|---|---|
 | `~/.local/share/gogcli/credentials.json` | `257469568858-…` | **live** — this is the one the consent URL uses with `--client default` |
-| `~/.config/gogcli/credentials.json` | `844606295733-…` | stale, unused |
 | `~/.pi/agent/.env` → `GOOGLE_CLIENT_ID` | `811473298315-…` | not what gog uses; do not edit that project |
+
+A third client, `844606295733-…` in `~/.config/gogcli/credentials.json`, was removed on
+2026-11-18 together with its keyring backups (`~/.config/gogcli` now holds only `config.json`
+and the two download folders). Pre-deletion snapshot:
+`~/backup-gogcli-config-20261118.tar.gz` (mode 600, contains encrypted tokens — delete once the
+production switch is proven).
 
 Trust the number in the consent URL:
 
