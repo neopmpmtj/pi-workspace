@@ -1,3 +1,5 @@
 {
-  "/home/pmpmt": true
+  "/home/pmpmt": true,
+  "/home/pmpmt/.pi": true,
+  "/home/pmpmt/.pi/agent": true
 }

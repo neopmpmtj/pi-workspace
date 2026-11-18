@@ -30,7 +30,7 @@ async function fixture(): Promise<string> {
       "5-Research": { enabled: false, prompt: "", config: {} },
     },
   }, null, 2)}\n`);
-  const home = path.join(root, "agent/cos-orchestrator-agent");
+  const home = path.join(root, "agent");
   await mkdir(home, { recursive: true });
   await writeFile(path.join(home, "settings.json"), `${JSON.stringify({
     defaultProvider: "deepseek",
@@ -146,7 +146,7 @@ describe("project dashboard store", () => {
         extensions: [{ path: "extensions/chat/index.ts", enabled: false }],
         packages: null,
       }, root);
-      const settings = JSON.parse(await readFile(path.join(root, "agent/cos-orchestrator-agent/settings.json"), "utf8"));
+      const settings = JSON.parse(await readFile(path.join(root, "agent/settings.json"), "utf8"));
       assert.deepEqual(settings.extensions, ["-extensions/chat/index.ts"]);
       assert.equal(settings.theme, "dark");
       assert.deepEqual(settings.defaultTools, ["read", "bash"]);

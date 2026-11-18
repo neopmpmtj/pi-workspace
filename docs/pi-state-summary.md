@@ -1,6 +1,6 @@
 # Pi State Summary
 
-> *Last updated: 2026-11-07*
+> *Last updated: 2026-11-18*
 > *Living document — this git tree (`~/.pi` → `neopmpmtj/pi-workspace`), not history.*
 
 ---
@@ -8,12 +8,13 @@
 ## Quick facts
 
 - **Repo root**: `~/.pi` (`pi-workspace`)
-- **Main agent**: `~/.pi/agent/cos-orchestrator-agent` (`PI_CODING_AGENT_DIR`). Launcher `~/.local/bin/pi` sources `~/.pi/agent/.env`, pins Node v24.21.0, starts there.
+- **Main agent**: `~/.pi/agent` (Pi's default home; `PI_CODING_AGENT_DIR` is set explicitly by the service launcher). `~/.local/bin/pi-cos-orchestrator-agent` sources `~/.pi/agent/.env`, pins Node v24.21.0 and the model, and starts there; `~/.local/bin/pi` sources the same `.env`.
 - **Providers**: deepseek (default), openai, google. Default model `deepseek-flash`, thinking `high`. Enabled: `deepseek-flash`, `deepseek-v4-pro`, `gpt-6.1-sol`, `gemini-3.8-flash`, `gemini-3.7-flash`.
 - **Tools**: `read`, `bash`, `edit`, `write`, `grep`, `find`. No web search and no `subagent` tool on COS — siblings are called from bash.
 - **Package on COS**: `npm:@llblab/pi-telegram` (Telegram surfaces).
 
-COS settings live in `agent/cos-orchestrator-agent/settings.json`, not in a top-level `agent/settings.json`.
+COS settings live in `agent/settings.json`; the home is `~/.pi/agent`. There is no nested
+agent home since the 2026-11-18 flatten.
 
 ---
 
@@ -54,7 +55,7 @@ Gates in `config.json`: `modeSwitch`, `lessThanInputWords`, `inputContainsPath` 
 
 | Agent | Home | Launcher | Dashboard |
 | --- | --- | --- | --- |
-| COS | `agent/cos-orchestrator-agent` | `pi` | `:8787` |
+| COS | `agent` | `pi` / `pi-cos-orchestrator-agent` | `:8787` |
 | image-describer | `agent-image-describer/image-describer` | `pi-image-describer` | `:8788` (Vite UI `:5173`) |
 | web-master | `agent-web-master/web-master` | `pi-web-master` | `:8789` |
 | tasks-agent | `agent-tasks-agent/tasks-agent` | `pi-tasks-agent` | `:8791` |
@@ -62,7 +63,7 @@ Gates in `config.json`: `modeSwitch`, `lessThanInputWords`, `inputContainsPath` 
 | template-new-agent | `agent-template-new-agent/template-new-agent` | `pi-template-new-agent` (seed, not a live sibling) | default `:8792` if you run it |
 | lan-agent | `agent-lan-agent/lan-agent` (not in this git) | `pi-lan-agent` | none |
 
-Each live sibling has its own `.env`, `PI_CODING_AGENT_DIR`, and `logs/ledger.sqlite`. COS delegates with `cd <home> && <launcher> -p "<defaultPrompt>"`. Web-master default is `/ask`. Google Workspace and lan-agent use a plain-language chat turn so they have tools.
+Each sibling container has its own `.env`, `PI_CODING_AGENT_DIR`, and `logs/ledger.sqlite`; COS itself uses `~/.pi/agent/.env` and `~/.pi/agent/logs/ledger.sqlite`. COS delegates with `cd <home> && <launcher> -p "<defaultPrompt>"`. Web-master default is `/ask`. Google Workspace and lan-agent use a plain-language chat turn so they have tools.
 
 ---
 
@@ -112,7 +113,7 @@ There is no `~/.pi/html` dashboard on `:3000` in this tree. Token usage is the p
 
 Tracked in-tree: `agent-creator`, `svg-photo-convert`.
 
-Git submodules under `agent/cos-orchestrator-agent/skills/`: `agent-replica-adapt`, `pi-prompt-dump`, `skill-creator`, `video-finder`, `yt-download`. New siblings are scaffolded from COS by `skills/agent-creator/scripts/scaffold.ts`, not from `agent-template-new-agent`.
+Git submodules under `agent/skills/`: `agent-replica-adapt`, `pi-prompt-dump`, `skill-creator`, `video-finder`, `yt-download`. New siblings are scaffolded from COS by `skills/agent-creator/scripts/scaffold.ts`, not from `agent-template-new-agent`.
 
 ---
 
@@ -130,17 +131,18 @@ Git submodules under `agent/cos-orchestrator-agent/skills/`: `agent-replica-adap
 
 | File | Purpose |
 | --- | --- |
-| `~/.local/bin/pi` | COS launcher |
+| `~/.local/bin/pi` | main wrapper; sources `~/.pi/agent/.env` |
+| `~/.local/bin/pi-cos-orchestrator-agent` | service launcher; sets the home and model |
 | `~/.local/bin/pi-config` | Control-plane CLI |
 | `control/store.ts` | Validated writer for gates, phrases, modes, agent settings |
 | `control/agents.ts` | Settings / dashboard roster |
-| `agent/cos-orchestrator-agent/APPEND_SYSTEM.md` | COS call roster + environment |
-| `agent/cos-orchestrator-agent/settings.json` | COS Pi settings |
-| `agent/cos-orchestrator-agent/extensions/` | COS hooks and commands |
+| `agent/APPEND_SYSTEM.md` | COS call roster + environment |
+| `agent/settings.json` | COS Pi settings |
+| `agent/extensions/` | COS hooks and commands |
 | `config.sample.json` (and input-phrase / prompt-build samples) | Schema for the gitignored live files |
 | `~/AGENTS.md` | Machine-local facts |
 
-Operator detail: `agent/cos-orchestrator-agent/docs/CHEATSHEET.md`. Replica / Telegram / VPS: `docs/runbooks/`.
+Operator detail: `agent/docs/CHEATSHEET.md`. Replica / Telegram / VPS: `docs/runbooks/`.
 
 ---
 

@@ -9,7 +9,7 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "types": ["node"],
-    "typeRoots": ["../agent/cos-orchestrator-agent/node_modules/@types"]
+    "typeRoots": ["../agent/node_modules/@types"]
   },
   "include": ["*.ts"]
 }

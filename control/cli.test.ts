@@ -42,7 +42,7 @@ async function fixture(): Promise<string> {
     },
   }, null, 2)}\n`);
   const homes: Record<string, Record<string, unknown>> = {
-    "agent/cos-orchestrator-agent": {
+    "agent": {
       defaultProvider: "deepseek",
       defaultModel: "deepseek-flash",
       defaultThinkingLevel: "high",
@@ -190,7 +190,7 @@ describe("pi-config", () => {
   it("writes an agent model setting into settings.json, and into default-model.json when that exists", async () => {
     const root = await fixture();
     try {
-      const home = path.join(root, "agent/cos-orchestrator-agent");
+      const home = path.join(root, "agent");
       assert.equal((await run(root, ["set", "agent.cos.thinking", "medium"])).code, 0);
       assert.equal((await run(root, ["set", "agent.cos.tools", "read,bash , grep"])).code, 0);
       const settings = await readJson(path.join(home, "settings.json"));

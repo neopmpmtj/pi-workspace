@@ -1,18 +1,20 @@
 # Migrate the COS orchestrator agent home into `~/.pi/agent`
 
-> **Status: PLAN ONLY — no migration step has run.**
-> This plan is the only artifact created by this session. (The COS agent's `auto-sync`
-> committed it at 16:32 together with the pre-existing local changes; see the revision note.)
+> **Status: EXECUTED through Phase 5 (2026-11-18).** The service is stopped by the owner
+> and Phase 8 (restart + live Telegram check) is the owner's action. Offline checks pass:
+> typecheck, 262/262 home tests, 28/28 control tests. The migration was move-only; the
+> emptied source home is gone and every non-clashing duplicate is in
+> `~/pi-migration-leftovers-20261118/`.
 >
 > - Written: 2026-11-18, by `pi` running in the default home (`~/.pi/agent`), SSH session.
-> - Baseline revision: `26f7a32` — the merge of `origin/main` into the auto-sync checkpoint
->   `f56e958`. The divergence is resolved and pushed. The pre-plan revision was `8849648`.
-> - Git state: clean; `git rev-list --left-right --count origin/main...HEAD` is `0 0`.
->   The only merge conflict, `docs/INBOX.md`, was resolved by keeping both blocks.
+> - Baseline revision: `d970308` (the commit that recorded the resolved divergence; the
+>   merge itself is `26f7a32`). The plan was first committed by auto-sync as `f56e958`;
+>   the pre-plan revision was `8849648`.
+> - Git state before the migration: clean; `git rev-list --left-right --count
+>   origin/main...HEAD` was `0 0`.
 > - Host: `neopmpmtj` (VPS, Ubuntu 24.04, user `pmpmt`), pi `1.5.2`.
 > - Target: flatten `~/.pi/agent/cos-orchestrator-agent/` into `~/.pi/agent/`, so
 >   `~/.pi/agent` **is** the chief-of-staff home and no nested agent home remains.
-> - Owner approval required before Phase 0.
 
 ---
 
@@ -1136,6 +1138,10 @@ GOG/Google/pg/retention keys preserved from the default file.
 `tmp/pi-telegram/state.json` is the bridge's last snapshot from PID 329655. After the move
 it contains old paths, but the bridge rewrites the state on take-over and has tolerated a
 missing `journalPath` since 2026-11-06. Do not edit it pre-emptively.
+
+**Executed before the first start:** the two path prefixes were rewritten to
+`/home/pmpmt/.pi/agent` (`cwd`, `journalPath`, socket paths). The schema and secrets were
+untouched and the JSON still parses.
 
 If Phase 8 shows "telegram disconnected" for more than one minute:
 

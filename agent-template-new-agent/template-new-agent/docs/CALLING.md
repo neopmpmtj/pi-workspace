@@ -1,7 +1,7 @@
 # Calling template-new-agent
 
 This is a lean portable seed, not a live sibling. `"publish": false` keeps it off the COS
-roster. COS creates new siblings from `agent/cos-orchestrator-agent` via
+roster. COS creates new siblings from `agent` via
 `skills/agent-creator/scripts/scaffold.ts`, not from this folder.
 
 To insert this home as its own agent: copy and rename the container, pick a free

@@ -14,14 +14,16 @@ web-master are the siblings. `/ask`, `/usage`, ingested chat turns, and the dash
 ## Layout
 
 ```
-~/.pi/agent/   repo root: .env, rate card, docs
-└── cos-orchestrator-agent/                           Pi agent home (PI_CODING_AGENT_DIR)
-    ├── default-model.json    provider + model + effort; written by the dashboard
-    ├── extensions/chat/      the /ask command
-    ├── ledger/               reusable: models, providers, tokens, rates, store, runs
-    ├── src/                  agent-specific glue
-    ├── dashboard/            local API + web UI
-    └── logs/ledger.sqlite    the ledger itself
+~/.pi/agent/                          Pi agent home (PI_CODING_AGENT_DIR)
+├── .env                              credentials, mode 600
+├── model-rates.json                  optional rate card (template: model-rates.example.json)
+├── AGENTS.md · APPEND_SYSTEM.md      the prompt files
+├── default-model.json                provider + model + effort; written by the dashboard
+├── extensions/chat/                  the /ask and /usage commands
+├── ledger/                           reusable: models, providers, tokens, rates, store, runs
+├── src/                              agent-specific glue
+├── dashboard/                        local API + web UI
+└── logs/ledger.sqlite                the ledger itself
 ```
 
 ## Use
@@ -77,8 +79,9 @@ That is the COS call list only. If the new home should appear on `:8786` / `pi-c
 (settings and dashboard start/stop), add a row to `control/agents.ts` as well. lan-agent
 is on the roster and not in `agents.ts` on purpose.
 
-The scan accepts two layouts: `<group>/<home>/agent.json` and `<group>/<repo>/<home>/agent.json`,
-where the repo root holds `.env` and the Pi home sits one level below it.
+For sibling containers the scan accepts two layouts: `<group>/<home>/agent.json` and
+`<group>/<repo>/<home>/agent.json`, where the container holds `.env` and the Pi home sits one
+level below it. The COS home itself is `~/.pi/agent`; the scan skips it as `self`.
 
 ## Usage
 
@@ -113,7 +116,7 @@ than migrating: sessions rebuild the chat side, and the next command rewrites it
 ## Dashboard
 
 ```bash
-cd ~/.pi/agent/cos-orchestrator-agent && npm run dashboard     # http://127.0.0.1:8787
+cd ~/.pi/agent && npm run dashboard     # http://127.0.0.1:8787
 ```
 
 Port 8787 is this dashboard. The image describer API uses 8788.
