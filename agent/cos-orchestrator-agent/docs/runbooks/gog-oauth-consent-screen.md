@@ -167,3 +167,17 @@ In that case:
 
 - `docs/runbooks/gog-add-tasks-scope.md` — the re-consent procedure and its traps.
 - `docs/runbooks/gog-token-keepalive.md` — the daily probe that catches this.
+
+## Status after 2026-11-18
+
+- App published to **In production** on project `257469568858`; branding filled with the three
+  `uttdty.com/static/pi-agent*.html` pages.
+- Re-consented at **2026-11-18T11:50:37Z** so the live token is minted in production mode rather
+  than testing (the 11:04 token would still have died on 2026-11-25).
+- Verified after the swap: `gog auth list` shows the five services, Calendar/Tasks/Drive read
+  back, `scripts/gog-token-keepalive.sh` prints `OK` and the streak resets to 0.
+- **Open proof: keepalive must still print `OK` on 26 Nov 2026.** Anything before that date does
+  not demonstrate anything, because the testing-mode token also ran fine for its first week.
+- The 15–18 Nov alarms did reach Telegram (`journalctl --user -u gog-token-keepalive` shows
+  `alarm sent to 6363173838` for each failed morning), so the tripwire works; what failed was
+  reacting to it.
