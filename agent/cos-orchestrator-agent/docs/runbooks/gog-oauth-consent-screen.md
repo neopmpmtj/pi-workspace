@@ -181,3 +181,28 @@ In that case:
 - The 15–18 Nov alarms did reach Telegram (`journalctl --user -u gog-token-keepalive` shows
   `alarm sent to 6363173838` for each failed morning), so the tripwire works; what failed was
   reacting to it.
+
+## Scheduled day-8 verdict (2026-11-26)
+
+`gog-keepalive-day8.timer` fires once at **2026-11-26 08:30 Europe/Lisbon** (day 8 of the token
+issued 2026-11-18T11:50:37Z). It runs `scripts/gog-keepalive-day8.sh`, which:
+
+1. runs `scripts/gog-token-keepalive.sh` and reads the verdict from the log tail;
+2. reports verdict, streak, token age and the last probe line to Telegram;
+3. **only on OK** disables `gog-token-keepalive.timer` (the owner asked for the daily probe to
+   stop once the production token is proven); a FAIL leaves it armed;
+4. disables its own timer, so it cannot fire again.
+
+Files: `~/.config/systemd/user/gog-keepalive-day8.{service,timer}` (machine-local, untracked —
+recreate from the headers) and `scripts/gog-keepalive-day8.sh` (tracked).
+
+```bash
+systemctl --user list-timers 'gog-*' --no-pager   # both timers and their next elapse
+~/.pi/agent/cos-orchestrator-agent/scripts/gog-keepalive-day8.sh --dry-run   # no send, no disable
+journalctl --user -u gog-keepalive-day8 --no-pager
+tail ~/.pi/agent/logs/gog-keepalive-day8.log
+```
+
+Cancel it with `systemctl --user disable --now gog-keepalive-day8.timer`. Re-arm it by editing
+`OnCalendar` and re-enabling — the script is date-agnostic apart from `TOKEN_CREATED`, which
+must match the live token's `created_at` from `gog auth list --json`.
