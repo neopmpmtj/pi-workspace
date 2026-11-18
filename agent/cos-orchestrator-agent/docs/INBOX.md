@@ -327,3 +327,28 @@ Removed 2026-11-07 with keep-agent. Do not restore. The checked items record wha
       daily `gog-token-keepalive.timer` on an OK verdict. If the timer or the send failed, no
       one is told — check `tail ~/.pi/agent/logs/gog-keepalive-day8.log` and
       `systemctl --user list-timers 'gog-*'`. Runbook: `docs/runbooks/gog-oauth-consent-screen.md`.
+
+## Launcher audit (2026-11-18)
+
+Found while comparing `~/.local/bin/pi` with `~/.local/bin/pi-cos-orchestrator-agent`.
+Both are the same three-line wrapper plus different jobs; the two defects below are about
+`pi`, not about the CoS launcher.
+
+- [ ] **The bare `pi` wrapper is shadowed on a non-login PATH.** `~/.local/bin/pi` exists to
+      source `~/.pi/agent/.env` and pin node, but `which -a pi` in a non-login shell returns
+      `~/.nvm/versions/node/v24.21.0/bin/pi` **first**; only a login shell (where
+      `~/.local/bin` really is first) reaches the wrapper. Any cron job, systemd unit, or
+      `ssh host 'pi …'` therefore bypasses it and runs with no `.env` sourcing at all —
+      silently, since the wrapper's own comment claims the opposite ("takes priority over the
+      nvm pi symlink"). Two ways out: put `~/.local/bin` ahead of nvm in the non-login PATH
+      (`/etc/environment`, or `systemd --user` `environment.d`), or drop the wrapper and let
+      callers export the keys they need. Decide when revisited; do not "fix" it by editing the
+      comment.
+- [ ] **The pre-start `git pull` in `pi-cos-orchestrator-agent` duplicates
+      `extensions/auto-sync.ts`.** The launcher runs `git -C ~/.pi pull --ff-only`, debounced
+      120 s via `~/.cache/pi-workspace-last-pull` and skipped inside subagents; the extension
+      syncs on its own schedule from inside the turn. Two mechanisms updating the same tree is
+      how a confusing status line or a spurious "diverged" warning gets born. Keep one: either
+      the launcher (sync before the turn, deterministic) or the extension (rate-limited inside
+      it), and record which in `docs/pi-state-summary.md`. Left as-is until then — it is
+      belt-and-braces, not a fire.
