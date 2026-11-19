@@ -3,7 +3,6 @@
 **/.env
 **/auth.json
 **/secrets/
-**/secrets/
 *.pem
 *.key
 *-key.json
@@ -15,8 +14,68 @@ service_account*.json
 *gdrive_token*.json
 *gdrive*.json
 
-# ── Sessions & state ───────────────────────────────────────────────
+# ── PER-HOST STATE: written independently on the laptop and on the VPS ─
+# Nothing here is synced. Every pattern below is a file or folder that one
+# host rewrites on its own — pi settings stores, trust decisions, bot tokens,
+# caches, dashboards, ledgers, verdicts. Tracking any of it makes the next
+# push/pull collide, so the rule is: if the runtime writes it, it lives here.
+# Inventory, evidence and the conflict table:
+#   agent/docs/runbooks/host-parity-laptop-vps.md
+# Add a new path here the first time it shows up as a per-host change.
+#
+# pi's own per-host files (the agent home)
+agent/auth.json
+agent/telegram.json
+agent/model-rates.json
+agent/models-store.json
+agent/default-model.json
+agent/trust.json
+agent/front-and-center.md
+#
+# trust decisions, at any depth (every sibling home writes its own)
+**/trust.json
+# Telegram bot config + bridge runtime state, at any depth
+**/telegram.json
+**/tmp/pi-telegram/
+#
+# session, log and live state
 **/sessions/
+**/logs/
+agent/tmp/
+agent/pi-web-access/
+agent/state/prompt-capture/
+agent/observability/
+#
+# control-plane store (which mode/phrase is on differs per host)
+# The *.sample.json copies are the tracked schema. Seed or reset a machine with:
+#   cd ~/.pi && cp config.sample.json config.json \
+#     && cp input-phrase-config.sample.json input-phrase-config.json \
+#     && cp prompt-build-config.sample.json prompt-build-config.json
+# Anchored to the repo root: nested config.json files stay tracked.
+/config.json
+/input-phrase-config.json
+/prompt-build-config.json
+#
+# cron store and run history
+cron/jobs.json
+cron/runs/
+#
+# dashboards (pid files are per host and rewritten on every start)
+.dashboard-logs/
+#
+# decision-node runtime (verdicts, sweep logs, message text kept 14 days)
+decision-nodes/**/verdicts.jsonl
+decision-nodes/**/logs/
+decision-nodes/**/__pycache__/
+decision-nodes/review.jsonl
+#
+# model catalog cache, at any depth (agent dirs, sub-agents)
+models-store.json
+#
+# last archive-to-target run (one move, machine-local)
+apps-scripts/archive-to-target-full-tree/archive-to-target-full-tree/archive-to-target-full-tree.last.json
+
+# ── Sessions & state artifacts ─────────────────────────────────────
 *.session.jsonl
 *.db
 *.db-shm
@@ -30,6 +89,8 @@ sessions-summarizer/summarizer-state.json
 sessions-summaries/
 sessions-memory/
 sessions-slim/
+sessions-summaries/**
+postgres-migration/**
 
 # ── Node modules & packages ────────────────────────────────────────
 node_modules/
@@ -64,83 +125,22 @@ Thumbs.db
 
 # ── Nested repos ───────────────────────────────────────────────────
 explore-discover-pi/
-
+# agent-lan-agent is a standalone git repo (own history, own .gitignore).
+# Tracked here only until 2026-11-03; the nested repo would otherwise be
+# picked up as an untracked directory by every status call.
+agent-lan-agent/
 
 # ── Misc ───────────────────────────────────────────────────────────
 *.log
 *.tmp
 .cache/
 web-search-cache/
-
-# ── Sessions & Summaries ───────────────────────────────────────────────
-sessions-summaries/**
-
-postgres-migration/**
-
-# ── Runtime observability state (session data, not source) ────────
-# Writes on every run; keeps the repo clean. To track again:
-#   git add -f agent/observability/
-agent/observability/
+z.old/
+keep-agent-copy/**
+agent#copy/
 
 # ── Skills ────────────────────────────────────────────────────────
 # skill-creator, video-finder, yt-download, pi-prompt-dump and
 # agent-replica-adapt are git submodules (see .gitmodules); agent-creator and
 # svg-photo-convert are plain directories tracked by this repo.
 # Initialise a clone with: git submodule update --init --recursive
-
-# ── Cron store & run history (machine-local state, never synced) ──
-cron/jobs.json
-cron/runs/
-
-# ── Machine-local runtime dirs (regenerated, never synced) ──
-agent/tmp/
-agent/pi-web-access/
-
-# ── Control-plane store (per-machine state, never synced) ─────────
-# Which mode/phrase is on and the gate values differ per host; tracking them made
-# every pull conflict between laptop and VPS. The *.sample.json copies are the
-# tracked schema. Seed or reset a machine with:
-#   cd ~/.pi && cp config.sample.json config.json \
-#     && cp input-phrase-config.sample.json input-phrase-config.json \
-#     && cp prompt-build-config.sample.json prompt-build-config.json
-# Anchored to the repo root: nested config.json files stay tracked.
-/config.json
-/input-phrase-config.json
-/prompt-build-config.json
-
-# Per-machine Telegram bot config (botToken ref + owner id) — never shared
-agent/telegram.json
-
-# Prompt-capture runtime state (rewritten every turn)
-agent/state/prompt-capture/
-
-# Per-machine model catalog cache, at any depth (agent dirs, sub-agents)
-models-store.json
-
-# Per-machine Telegram bot config, at any depth (agent dirs, sub-agents)
-**/telegram.json
-# Runtime state of bridge/sub-agents. state.json must stay 0600: the bridge
-# refuses a world-readable runtime state, and a git checkout rewrote it 0664.
-# (Anchored rules missed nested agent homes; use ** so any depth matches.)
-**/tmp/pi-telegram/
-
-z.old/
-
-# Last archive-to-target run (one move, machine-local)
-apps-scripts/archive-to-target-full-tree/archive-to-target-full-tree/archive-to-target-full-tree.last.json
-
-# ── Siblings that keep their own repository ────────────────────────
-# agent-lan-agent is a standalone git repo (own history, own .gitignore).
-# Tracked here only until 2026-11-03; the nested repo would otherwise be
-# picked up as an untracked directory by every status call.
-agent-lan-agent/
-
-# ── Decision-node runtime (verdicts and sweep logs, never synced) ──
-decision-nodes/**/verdicts.jsonl
-decision-nodes/**/logs/
-decision-nodes/**/__pycache__/
-# Message text kept 14 days for reviewing misclassifications (src/jev-classify.ts)
-decision-nodes/review.jsonl
-keep-agent-copy/**
-
-agent#copy/
