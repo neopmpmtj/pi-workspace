@@ -196,3 +196,54 @@ ssh neopmpmtj 'cd /tmp/trust-bak && find . -name trust.json -exec cp --parents {
 After that the layout is identical on both hosts: `.gitignore` at the repo root is the
 single source of ignore rules (the nested `agent/.gitignore` is gone), and the whole
 per-host inventory sits under one titled section, "PER-HOST STATE".
+
+## Gotchas that survive parity (as of 2026-11-19)
+
+1. `agent/settings.json` is still **tracked** and pi rewrites it (theme, model
+   defaults, `packages`, `lastChangelogVersion`). It is the next file that will
+   conflict; treat it as shared config and never hand-edit it on both hosts.
+2. `decision-nodes/reminder/reminders.jsonl` is still **tracked** and is appended on
+   whichever host hears the reminder. Two appends at EOF = conflict, and a merged
+   file means each host sees the other's reminders. Undecided on purpose.
+3. Sibling `settings.json` files and `agent-web-master/web-master/default-web-master-model.json`
+   are still tracked → same drift as `trust.json` before it was ignored.
+4. `pi update` (self) is invisible to git: it bumps the global install on one host
+   only. Run it on both hosts, or let the parity script catch the split.
+5. `agent/npm` needs `npm ci --omit=dev --legacy-peer-deps`. Plain `npm ci` deletes
+   `node_modules` and then aborts on the missing peer entries.
+6. Both `~/.pi/agent/.env` files carry the **same** `TELEGRAM_BOT_TOKEN`. One poller
+   per token: the bridge must run only where the agent service runs (the VPS). A
+   laptop session that loads the telegram package competes with it.
+7. Per-host by design, so they will never match: `logs/ledger.sqlite` (so `/usage`
+   numbers differ per host), `sessions/`, `models-store.json`, `model-rates.json`.
+8. VPS still holds 359 MB in `~/.pi/agent#copy` — ignored, unused, not deleted yet.
+
+## Decisions taken 2026-11-19
+
+1. **Reminders are per host.** `decision-nodes/reminder/reminders.jsonl` is untracked
+   and ignored; each host keeps its own file on disk, so a reminder made on the VPS
+   stays on the VPS. No code change was needed — the path is unchanged, only its
+   tracking. Side effect: the file must be backed up across any pull that deletes it.
+2. **Sibling settings are per host.** `settings.json` in the web-master, tasks-agent,
+   sm-google-workspace, image-describer and template-agent homes, plus
+   `default-web-master-model.json`, are untracked and ignored. Configure a sibling on
+   the host that runs it.
+3. **`agent/settings.json` stays tracked** (the one exception). It holds what must be
+   identical on both hosts: the `extensions` list, `packages`, `enabledModels`,
+   `defaultProvider`/`defaultModel`. Ignoring it would let the two hosts load
+   different extensions while looking identical. Its only routine rewrite is
+   `lastChangelogVersion` on a pi upgrade, so conflicts are rare and trivially
+   resolved; the runbook rule is: never hand-edit it on both hosts between syncs.
+   Model selection per host already lives in `agent/default-model.json` (ignored).
+4. **`pi update` is a two-host operation.** Use `scripts/update-pi-both-hosts.sh`,
+   which upgrades both, reinstalls the pinned packages, restarts the VPS agent and
+   runs the parity check.
+5. `~/.pi/agent#copy` (359 MB) stays for now, by request.
+
+## Remaining, not urgent
+
+- `agent/settings.json` conflict policy (see 3) is a convention, not enforcement.
+- Sibling rosters differ (laptop: lan-agent, sm-google-workspace, image-describer;
+  VPS: tasks-agent, template agent), so some tracked sibling code only ever runs on
+  one host.
+- `z.old/` was already ignored (`z.old/`, Misc section).

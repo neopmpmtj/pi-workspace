@@ -34,6 +34,17 @@ agent/front-and-center.md
 #
 # trust decisions, at any depth (every sibling home writes its own)
 **/trust.json
+#
+# sibling agent settings — each home has its own model/theme/extension choices
+agent-web-master/web-master/settings.json
+agent-web-master/web-master/default-*.json
+agent-tasks-agent/tasks-agent/settings.json
+agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace/settings.json
+agent-image-describer/image-describer/settings.json
+agent-template-new-agent/template-new-agent/settings.json
+#
+# reminder store — per host, so a reminder made on one host stays there
+decision-nodes/reminder/reminders.jsonl
 # Telegram bot config + bridge runtime state, at any depth
 **/telegram.json
 **/tmp/pi-telegram/
