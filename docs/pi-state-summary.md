@@ -123,6 +123,16 @@ Git submodules under `agent/skills/`: `agent-replica-adapt`, `pi-prompt-dump`, `
 - **apps-scripts/**: `backup_laptop_tool`, `ExplainLike12`, `on-demand-stt-rewrite`, `text-to-speech`, `svg-scripts`, `archive-to-target-full-tree`
 - **agents-shared-scripts/session-slim/** — `slim_session.py`
 - **shared-extensions/** — unused copies; COS loads local files
+- **scripts/** (repo root) — host-identity and sync tooling: `check-host-parity.sh`,
+  `sync-hosts.sh`, `pre-sync.sh`, `fingerprint.sh`, `publish-fingerprint.sh`,
+  `parity-alert.sh`, `backup-host-state.sh`, `update-pi-both-hosts.sh`, `env.sh`
+  (single source for the nvm node path), plus `scripts/systemd/pi-host-backup.*` and
+  `pi-parity-check.*`
+- **.githooks/** — `post-merge`: initialises missing submodules and reinstalls
+  `agent/` + `agent/npm/` only when their locks arrive. Active via
+  `git config core.hooksPath .githooks` on both hosts
+- Laptop runs `sshd` bound to its Tailscale address only (100.85.248.6:22, key-only), so
+  the VPS can fingerprint it live for the nightly parity alert
 - Machine facts: untracked `~/AGENTS.md`
 
 ---

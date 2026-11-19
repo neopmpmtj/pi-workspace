@@ -99,6 +99,29 @@ ahead, else tomorrow — or tomorrow 06:00 when no time was stated. "I bought th
   repo root is the living map of this tree; if you change layout, ports, lists, or config
   files, update that file in the same change.
 
+## Two hosts, one workspace (laptop ↔ VPS)
+
+`~/.pi` is the same repo on this laptop and on the VPS (`neopmpmtj`). Work alternates
+between them; they must stay identical. Do not re-derive this — it is already built:
+
+- **Sync**: the launcher runs `scripts/pre-sync.sh` (debounced `pull --ff-only`, loud when
+  the clone is ahead/behind), and `extensions/auto-sync.ts` commits + pushes on shutdown.
+  To sync deliberately: `bash scripts/sync-hosts.sh check|pull|push`.
+- **Verify**: `bash scripts/check-host-parity.sh` prints a 10-row fingerprint table of both
+  hosts and exits non-zero on drift. A VPS timer re-checks daily at 09:00 and messages the
+  user's Telegram on a real difference.
+- **Machine-local files** are declared in one place: the "PER-HOST STATE" block of
+  `~/.pi/.gitignore`. When a new runtime file appears, add it there; auto-sync unstages
+  anything matching and names it. Never commit per-host state.
+- **`pi update` only** through `scripts/update-pi-both-hosts.sh` (both hosts + VPS agent
+  restart + parity). A one-sided upgrade is invisible to git.
+- **Backups**: `scripts/backup-host-state.sh`, timer at 03:30 on both hosts, archives in
+  `~/pi-host-backups` (mode 600, 14 kept).
+- Deep detail: `docs/runbooks/host-parity-laptop-vps.md`, and
+  `docs/runbooks/laptop-sshd-tailscale-only.md` for the VPS→laptop ssh path.
+
+When the user asks "are they the same?", run the parity script before answering.
+
 ## Do not reintroduce
 
 These were real bugs in this tree. Do not put them back.
@@ -118,6 +141,9 @@ These were real bugs in this tree. Do not put them back.
 - Pi auto-discovers `extensions/*.ts`. Omitting a path from `settings.json` does not disable
   it (`/commit` from unlisted `git-commit.ts` is that case). Disable with `-path`. Leave
   `shared-extensions/` unused; this home loads its own files.
+- One ignore file only: `~/.pi/.gitignore`. The per-agent-home `.gitignore` files were
+  folded into it on 2026-11-19; do not recreate them. Only vendored `apps-scripts/`
+  projects keep their own.
 - Modes live in `prompt-build-config.json`. Phrases live in `input-phrase-config.json`. Do not
   describe `~/.pi/html` on `:3000` as current.
 
