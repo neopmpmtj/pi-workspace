@@ -17,7 +17,8 @@
 set -uo pipefail
 
 REMOTE="${REMOTE:-neopmpmtj}"
-NODE_BIN="$HOME/.nvm/versions/node/v24.21.0/bin"
+. "$HOME/.pi/scripts/env.sh"
+NODE_BIN="$PI_NODE_BIN"
 ASSUME_YES=0
 [ "${1:-}" = "--yes" ] && ASSUME_YES=1
 

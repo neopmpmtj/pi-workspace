@@ -1,0 +1,8 @@
+[Unit]
+Description=Backup the per-host pi state (settings, trust, reminders, ledgers, .env)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.pi/scripts/backup-host-state.sh
+Nice=10
+IOSchedulingClass=idle

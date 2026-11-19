@@ -33,7 +33,30 @@ const SECRET_PATTERNS: Array<[string, RegExp]> = [
 	["private key block", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
 	["google api key", /\bAIza[0-9A-Za-z_-]{30,}\b/],
 	["slack token", /\bxox[baprs]-[0-9A-Za-z-]{10,}\b/],
+]
+
+/**
+ * Files that are per-host by design (the "PER-HOST STATE" section of ~/.pi/.gitignore).
+ * The ignore file cannot cover a path nobody has seen yet — when a new runtime file
+ * appears, `git add -A` would commit it and the next pull on the other host would
+ * conflict. These patterns unstage such a file, warn, and let the rest commit.
+ */
+const PER_HOST_PATTERNS: [string, RegExp][] = [
+	["trust decisions", /(^|\/)trust\.json$/],
+	["telegram config", /(^|\/)telegram\.json$/],
+	["sibling settings", /(^|\/)settings\.json$/],
+	["per-host model files", /(^|\/)default-[^/]*\.json$/],
+	["reminder store", /(^|\/)reminders\.jsonl$/],
+	["dashboard pid", /(^|\/)\.dashboard-logs\//],
+	["process/id files", /\.pid$/],
+	["ledgers and databases", /\.(sqlite|sqlite3|db)$/],
+	["control-plane store", /^(config|input-phrase-config|prompt-build-config)\.json$/],
+	["cron store", /(^|\/)cron\/jobs\.json$/],
+	["model catalog/rates", /(^|\/)(models-store|model-rates)\.json$/],
 ];
+
+/** Tracked on purpose: the shared extension/package/model configuration. */
+const PER_HOST_EXCEPTIONS = new Set(["agent/settings.json"]);
 
 function log(line: string): void {
 	try {
@@ -91,6 +114,29 @@ async function syncNow(pi: ExtensionAPI, ctx: any, opts: { push: boolean; quiet?
 	const add = await git(["add", "-A"]);
 	if (add.code !== 0) {
 		return { committed: false, pushed: false, note: `git add failed: ${(add.stderr || add.stdout).trim()}` };
+	}
+
+	// Per-host guard: never let a runtime-written file enter history by accident.
+	const staged = await git(["diff", "--cached", "--name-only"]);
+	if (staged.code === 0) {
+		const offenders = staged.stdout
+			.split("\n")
+			.map((f) => f.trim())
+			.filter((f) => f.length > 0)
+			.filter((f) => !PER_HOST_EXCEPTIONS.has(f))
+			.filter((f) => PER_HOST_PATTERNS.some(([, re]) => re.test(f)));
+
+		if (offenders.length > 0) {
+			await git(["restore", "--staged", "--", ...offenders]);
+			const labels = [...new Set(offenders.map((f) => PER_HOST_PATTERNS.find(([, re]) => re.test(f))?.[0] ?? "per-host"))];
+			const msg = `auto-sync: skipped ${offenders.length} per-host file(s) [${labels.join(", ")}] — add them to .gitignore: ${offenders.slice(0, 4).join(", ")}`;
+			log(msg);
+			if (ctx.hasUI && !opts.quiet) ctx.ui.notify(msg, "warning");
+			const stillStaged = await git(["diff", "--cached", "--name-only"]);
+			if (stillStaged.code === 0 && stillStaged.stdout.trim().length === 0) {
+				return { committed: false, pushed: false, note: "only per-host files changed" };
+			}
+		}
 	}
 
 	// Secret gate: scan only what is about to be committed.

@@ -9,18 +9,9 @@
 set -uo pipefail
 
 REMOTE="${1:-neopmpmtj}"
-NODE_BIN="$HOME/.nvm/versions/node/v24.21.0/bin"
+. "$HOME/.pi/scripts/env.sh"
 HOME_DIR="$HOME/.pi"
 
-probe() {
-  # $1 = command to run; local when $2 == local, otherwise over ssh
-  local cmd="$1" where="${2:-local}"
-  if [ "$where" = local ]; then
-    bash -lc "$cmd" 2>/dev/null
-  else
-    ssh -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE" "$cmd" 2>/dev/null
-  fi
-}
 
 # Keep the probes identical on both sides: no interactive shell config, explicit PATH.
 BODY=$(cat <<'EOS'

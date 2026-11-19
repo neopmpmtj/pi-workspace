@@ -12,9 +12,8 @@
 
 set -uo pipefail
 
-REPO="${PI_REPO:-$HOME/.pi}"
-NODE_BIN="$HOME/.nvm/versions/node/v24.21.0/bin"
-export PATH="$NODE_BIN:$PATH"
+. "$HOME/.pi/scripts/env.sh"
+REPO="$PI_REPO"
 
 cd "$REPO" || exit 0
 
@@ -27,7 +26,7 @@ fi
 # 2. package trees: reinstall only when the manifest or lock arrived in this merge
 changed() { git diff --name-only 'HEAD@{1}' HEAD 2>/dev/null | grep -qx "$1"; }
 
-if changed agent/npm/package-lock.json || changed agent/npm/package.json; then
+if [ ! -d agent/npm/node_modules ] || changed agent/npm/package-lock.json || changed agent/npm/package.json; then
   if [ -d agent/npm ]; then
     echo "[post-merge] reinstalling agent/npm (pinned)"
     (cd agent/npm && npm ci --omit=dev --legacy-peer-deps --silent) \
@@ -35,7 +34,7 @@ if changed agent/npm/package-lock.json || changed agent/npm/package.json; then
   fi
 fi
 
-if changed agent/package-lock.json || changed agent/package.json; then
+if [ ! -d agent/node_modules ] || changed agent/package-lock.json || changed agent/package.json; then
   echo "[post-merge] reinstalling agent devDependencies"
   (cd agent && npm ci --silent) \
     || echo "[post-merge] WARN agent install failed — run: cd ~/.pi/agent && npm install"

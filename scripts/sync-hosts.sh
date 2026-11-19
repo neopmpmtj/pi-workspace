@@ -21,8 +21,9 @@
 set -uo pipefail
 
 REMOTE="${REMOTE:-neopmpmtj}"
-NODE_BIN="$HOME/.nvm/versions/node/v24.21.0/bin"
-REPO="$HOME/.pi"
+. "$HOME/.pi/scripts/env.sh"
+NODE_BIN="$PI_NODE_BIN"
+REPO="$PI_REPO"
 REMOTE_REPO='$HOME/.pi'
 MODE="${1:-check}"
 
