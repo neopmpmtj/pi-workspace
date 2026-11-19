@@ -34,6 +34,7 @@ self_fp=$(bash "$HOME/.pi/scripts/fingerprint.sh" 2>/dev/null)
 # since 2026-11-19 bound to its Tailscale address only.
 PEER_SSH="${PI_PEER_HOST:-laptop}"
 peer_fp=""
+peer_file=""
 peer_source="none"
 
 TMPFP=$(mktemp) || exit 1
@@ -49,7 +50,7 @@ if [ -z "$peer_fp" ]; then
 	for cand in "$STATE"/*.fingerprint; do
 		[ -f "$cand" ] && peer_file="$cand"
 	done
-	if [ -n "$peer_file" ]; then
+	if [ -n "${peer_file:-}" ]; then
 		peer_fp=$(cat "$peer_file")
 		peer_source="published $(basename "$peer_file")"
 	fi
