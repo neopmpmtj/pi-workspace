@@ -208,9 +208,21 @@ per-host inventory sits under one titled section, "PER-HOST STATE".
 | `scripts/sync-hosts.sh setup` | `git config core.hooksPath .githooks` on both hosts |
 | `.githooks/post-merge` | after any pull: initialise missing submodules, `npm ci` **only** if `agent/package*.json` or `agent/npm/package*.json` arrived, then remind to run the parity check |
 | `scripts/update-pi-both-hosts.sh` | `pi update` on both, reinstall pinned packages, restart the VPS agent, wait for `telegram connected`, verify |
+| `scripts/env.sh` | single source for the nvm node path (`PI_NODE_BIN`) and `PI_REPO`; sourced by every script above |
+| `scripts/pre-sync.sh` | the launchers' debounced `pull --ff-only`; fetches again on failure and **prints ahead/behind** instead of a one-line shrug |
+| `scripts/backup-host-state.sh` + `systemd/pi-host-backup.{service,timer}` | nightly 03:30 archive of the per-host state into `~/pi-host-backups`, mode 600, 14 kept, optional `PI_BACKUP_REMOTE` rsync |
+| `extensions/auto-sync.ts` | now unstages anything matching the per-host list before committing, warns, and names the files to add to `.gitignore` (`agent/settings.json` exempt) |
 
 Nothing here commits or resets: `extensions/auto-sync.ts` still owns commit-on-shutdown,
 and a dirty tree is reported rather than repaired.
+
+## Reminders: current reality (checked 2026-11-19)
+
+The reminder node is **disabled on the laptop** (`reminderNode.enabled: false`, writer
+`store`) and enabled on the VPS with writer **`tasks`** (Google Tasks). So the only host
+that routes reminders writes to Google, not to `reminders.jsonl`; the 34-line
+`reminders.jsonl` on both hosts is legacy data. No divergence happens today. If routing is
+ever enabled on the laptop, set `writer: tasks` there too so both hosts share one store.
 
 ## Gotchas that survive parity (as of 2026-11-19)
 
