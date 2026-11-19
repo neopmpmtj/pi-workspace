@@ -34,7 +34,7 @@ echo "DEVDEP_VER=$(node -e 'const r=p=>{try{return require(process.env.HOME+"/.p
 EOS
 )
 
-LOCAL_OUT=$(probe "$BODY" local)
+LOCAL_OUT=$(bash -c "$BODY" 2>/dev/null)
 REMOTE_OUT=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE" "$BODY" 2>/dev/null)
 
 if [ -z "$REMOTE_OUT" ]; then
