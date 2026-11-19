@@ -72,6 +72,13 @@ for k in "${!self_vals[@]}"; do
 	[ "$sv" != "$pv" ] && drift+=("$k: vps=$sv  peer=$pv")
 done
 
+# PI_PARITY_TEST=1 injects one synthetic drift field so the delivery path can be
+# exercised end to end without breaking either host.
+if [ -n "${PI_PARITY_TEST:-}" ]; then
+	peer_source="test"
+	drift+=("TEST: induced drift (PI_PARITY_TEST=1) — not a real problem")
+fi
+
 behind="${self_vals[BEHIND]:-0}"
 self_host="${self_vals[HOST]:-unknown}"
 
@@ -84,6 +91,7 @@ if [ -n "${peer_at:-}" ]; then
 fi
 
 lines=()
+[ -n "${PI_PARITY_TEST:-}" ] && lines+=("🧪 <i>test message — parity-alert.sh delivery check</i>" "")
 [ "${#drift[@]}" -gt 0 ] && lines+=("🔀 <b>Host parity drift</b>" "" ) && for d in "${drift[@]}"; do lines+=("• <code>${d//</&lt;}</code>"); done
 case "${behind:-0}" in ''|*[!0-9]*) behind=0 ;; esac
 [ "${behind:-0}" -gt 0 ] && lines+=("⏬ $self_host is $behind commit(s) behind origin")
