@@ -217,7 +217,12 @@ per-host inventory sits under one titled section, "PER-HOST STATE".
 7. Per-host by design, so they will never match: `logs/ledger.sqlite` (so `/usage`
    numbers differ per host), `sessions/`, `models-store.json`, `model-rates.json`.
 8. VPS still holds 359 MB in `~/.pi/agent#copy` — ignored, unused, not deleted yet.
-9. `agent/settings.json` divergence is now checked by the parity script
+9. A fresh clone is **not** complete until `git submodule update --init --recursive`
+   runs: five skill submodules and `jev-classifier` are gitlinks, and an
+   uninitialised checkout silently ships empty skill directories. The parity script
+   now compares them (`SUBMODULES` = hash of the six SHAs, `SUB_INIT` = initialised
+   count); laptop caught up with the VPS on 2026-11-19.
+10. `agent/settings.json` divergence is now checked by the parity script
    (`SETTINGS_CORE` = hash of extensions/packages/enabledModels/defaultProvider/
    defaultModel, plus `SETTINGS_EXT` counts), so ignore-vs-track is enforced either way.
 
