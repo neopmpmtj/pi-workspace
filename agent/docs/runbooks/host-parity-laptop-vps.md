@@ -1,0 +1,198 @@
+# Host parity: laptop ↔ VPS (`neopmpmtj`)
+
+Goal: both hosts run the same agent installation — same repo commit, same pi
+runtime, same node, same package tree. `~/.pi/agent#copy` is out of scope.
+
+Written 2026-11-19 after a side-by-side inspection. Nothing here has been
+executed yet.
+
+## Diagnosis (measured, 2026-11-19)
+
+| Thing | Laptop | VPS | Verdict |
+| --- | --- | --- | --- |
+| `~/.pi` HEAD | `7906e1e` (= `origin/main`, 0/0) | `e82048f` (behind 4, clean tree) | VPS lags; laptop is tip |
+| `~/.pi` working tree | dirty: `.gitignore` clobbered, stray `$.gitignore`, untracked dirs | clean | laptop needs repair |
+| `.gitignore` | working copy **2 lines / 14 B**, HEAD version 142 lines | 142 lines (HEAD) | laptop file was truncated 2026-11-19; full copy of HEAD sits in stray `$.gitignore` (2026-11-18) |
+| pi version | `1.5.2` | `1.5.2` | same (an older note in `/home/pmpmt/AGENTS.md` still says 1.5.0 — stale) |
+| node (pinned by launcher) | `v24.21.0` | `v24.21.0` | same |
+| node (shell default) | `v24.21.0` | `v22.22.2` | VPS nvm default alias differs (cosmetic; launchers pin PATH) |
+| `agent/npm/node_modules` | 1 pkg: `@llblab/pi-telegram@0.59.2` (clean) | 200 pkgs: `@llblab/pi-telegram@0.58.3` + ~199 orphans (`express`, `defuddle`, `cors`, `ajv`, …) | VPS stale + bloated |
+| `agent/npm/package.json` | `@llblab/pi-telegram ^0.59.2` | same | same |
+| `agent/npm/package-lock.json` | present, 0.59.2 | present, 0.59.2, but installed dir is 0.58.3 | VPS lock ≠ installed |
+| `agent/node_modules` (devDeps) | absent | absent | both: `npm run typecheck` broken |
+| `NODE_PATH` | unset | unset | same |
+
+Root causes:
+
+1. `agent/npm/` is **gitignored** (`~/.pi/.gitignore:36`), so the package manifest
+   and lock are not synced — each host resolves its own tree.
+2. The laptop's root `.gitignore` was overwritten with a 2-line stub, so
+   previously-ignored paths (`agent/npm/`, `agent/bin/`, `agent(tmp)`, `config.json`,
+   `cron/jobs.json`, …) now report as untracked.
+3. Node/pnpm/npm trees were installed ad hoc on each host, never from one lock.
+
+## Target state
+
+- both: `git -C ~/.pi rev-parse HEAD` equal to `origin/main`, clean tree
+- both: pi `1.5.2` under `~/.nvm/versions/node/v24.21.0` (already true)
+- both: `agent/npm` installed from a **tracked** `package.json` + `package-lock.json`
+  → exactly `@llblab/pi-telegram@0.59.2`, no orphans
+- both: `agent/node_modules` installed from the tracked devDeps (typecheck works)
+- both: nvm default alias `v24.21.0`
+
+## Steps
+
+Status 2026-11-19: steps 2 (VPS pull), 4 (npm trees) and 5 (devDeps) done; the
+only remaining diff is the laptop's two untracked files (this runbook and
+`~/.pi/scripts/`), which are not pushed yet by choice.
+
+### 1. Repair the laptop repo (do first — nothing else can be trusted before it)
+
+```bash
+cd ~/.pi
+git diff --stat .gitignore        # 142 lines deleted — confirm before curing
+git checkout -- .gitignore        # restore the committed 142-line file
+rm -f './$.gitignore'             # stray copy made by a bad redirect on 2026-11-18
+git status --porcelain | head -40 # now only genuinely local files should show
+```
+
+### 2. Sync the VPS repo
+
+```bash
+ssh neopmpmtj 'cd ~/.pi && git pull --ff-only && git log --oneline -1'
+```
+
+### 3. Track the package manifest (one commit, laptop side)
+
+`~/.pi/.gitignore` currently ignores `agent/npm/` wholesale. Narrow it so the
+manifest and lock travel but `node_modules` does not:
+
+```gitignore
+agent/npm/node_modules/
+agent/npm/package-lock.json   # -> DELETE this ignore line (keep the lock tracked)
+```
+
+Then:
+
+```bash
+cd ~/.pi
+git add .gitignore agent/npm/package.json agent/npm/package-lock.json
+git commit -m "chore(npm): track agent/npm manifest and lock for host parity"
+git push
+ssh neopmpmtj 'cd ~/.pi && git pull --ff-only'
+```
+
+Note: `package-lock.json` is also ignored globally in the laptop stub — check the
+restored file (`grep -n package-lock .gitignore`) before committing; the lock must
+end up tracked, so use `git add -f` if a broad ignore rule still matches it.
+
+### 4. Rebuild `agent/npm` identically on both hosts
+
+`npm ci` **must** carry `--legacy-peer-deps`: the lock has no entries for
+pi-telegram's peer deps (pi-ai, pi-agent-core, typebox — host-provided), and plain
+`npm ci` aborts with "Missing: @earendil-works/pi-schema@1.5.2 from lock file"
+after it has already deleted `node_modules`. Verified 2026-11-19: with the flag,
+both hosts install exactly one package.
+
+```bash
+cd ~/.pi/agent/npm && rm -rf node_modules && npm ci --omit=dev --legacy-peer-deps
+ssh neopmpmtj 'cd ~/.pi/agent/npm && rm -rf node_modules && npm ci --omit=dev --legacy-peer-deps'
+```
+
+Expected on both: `pi-extensions@ └── @llblab/pi-telegram@0.59.2`, one entry.
+
+Done on the VPS 2026-11-19 by `rsync` from the laptop (same result, no registry
+round trip); the running `pi-vps-agent` session reported `telegram connected`
+afterwards, so a live rebuild does not need a restart.
+
+### 5. Install the agent's devDeps on both (fixes `npm run typecheck`) — DONE 2026-11-19
+
+Outcome: both hosts ended up with `pi-ai@1.5.2`, `pi-coding-agent@1.5.2`,
+`typebox@1.4.7`, `typescript@5.9.3`, 80 dirs; `npm run typecheck` exits 0 on both.
+The VPS had its own older `agent/package-lock.json` pinning `1.5.0`/`1.4.5`; it was
+replaced by the laptop's lock (generated by `npm install`) and `npm ci` re-run there.
+Both locks are now **tracked** (commit `3e9a7e9`, local, unpushed): the root
+`.gitignore` keeps ignoring `package-lock.json` generally but re-includes
+`agent/package-lock.json` and `agent/npm/package-lock.json`; the blanket `agent/npm/`
+rule was narrowed to `agent/npm/node_modules/`, `package-lock.json` was dropped from
+`agent/.gitignore`, and the stray `agent/npm/.gitignore` (`*`) was deleted. The dependency is pinned
+exactly (`"@llblab/pi-telegram": "0.59.2"`, no caret) so `pi update --extensions`
+cannot move the tree on one host only — bumping is a deliberate manifest edit.
+
+
+pi itself is already `1.5.2` on both hosts, so only the agent-home devDeps are
+missing. The tracked `package.json` asks for `^1.5.0` of the pi packages; pin it to
+the installed `^1.5.2` in the same commit as step 3, then:
+
+```bash
+cd ~/.pi/agent && npm install
+ssh neopmpmtj 'cd ~/.pi/agent && npm install'
+```
+
+### 6. Align the shell default node (VPS only, cosmetic)
+
+```bash
+ssh neopmpmtj 'source ~/.nvm/nvm.sh && nvm alias default 24.21.0'
+```
+
+### 7. Verify
+
+```bash
+bash ~/.pi/scripts/check-host-parity.sh
+```
+
+Exit 0 means every row matches. Re-run after any upgrade on either host.
+
+## Out of scope (asked separately)
+
+- `~/.pi/agent#copy` (359 MB on the VPS) — explicitly excluded.
+- Sibling agent homes differ in roster and `node_modules` (laptop:
+  `agent-lan-agent`, `sm-google-workspace`, image-describer 6 pkgs; VPS:
+  `tasks-agent` 79 pkgs, template/new-agent). Bringing those to parity is a
+  separate, larger change.
+- Machine-local state stays per-host by design: `.env`, `auth.json`,
+  `telegram.json`, `config.json`, `cron/jobs.json`, `sessions/`, `models-store.json`.
+
+## Files that will collide when you alternate hosts
+
+A conflict needs two different writes to the same tracked path between two syncs.
+The sequence that causes one: host A pushed → host B starts with a dirty copy of the
+same file (or edits it before pulling) → B's auto-sync push rebases and fails.
+
+| Path | Written by | Risk | Suggested action |
+| --- | --- | --- | --- |
+| `agent/settings.json` | pi itself: theme, `lastChangelogVersion`, `packages`, `extensions`, model defaults | **highest** — touched by both hosts' auto-sync commits (`cc5dfdb`, `f56e958`) | keep tracked (it is shared config) but never hand-edit on both; accept rare conflict |
+| `agent/trust.json` | pi on project-trust decisions | high (`fe7df21`) | per-host → ignore, or keep and resolve |
+| `decision-nodes/reminder/reminders.jsonl` | reminder node, one appended line per reminder on whichever host heard it | high (`bcf0b40`, `8e55df5`; 9 commits of history) | both appends land at EOF → textual conflict; decide whether reminders are shared (keep) or per-host (ignore) |
+| `agent/npm/package.json`, `agent/npm/package-lock.json`, `agent/package-lock.json` | `npm install`, `pi update --extensions` | medium — spec is pinned now, but npm rewrites lock metadata | keep tracked; reinstall both hosts after any change |
+| `agent-web-master/web-master/settings.json` + `trust.json` + `default-web-master-model.json` | web-master runs, model switch | medium (`8b71cb2`) | per-host state |
+| `agent-tasks-agent/tasks-agent/settings.json` + `trust.json` | tasks-agent runs | medium | per-host state |
+| `agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace/settings.json` + `trust.json` | gog agent runs | medium | per-host state |
+| `agent-image-describer/image-describer/settings.json` | describer runs | medium | per-host state |
+| `agent-template-new-agent/template-new-agent/settings.json` + `trust.json` | template agent runs | low | per-host state |
+| `.dashboard-logs/*.pid` | dashboards, per host | **not ignored** — deletions were already committed once (`7906e1e`) | add `.dashboard-logs/` to `.gitignore` |
+| `agent/skills/*` (gitlinks), `jev-classifier` | `git submodule update` | low — only if both move the pointer | update one host, pull the other |
+| `docs/INBOX.md`, `docs/pi-state-summary.md`, runbooks, code | you, by hand | low under one-host-at-a-time | commit before switching hosts |
+
+Already safe (ignored, verified with `git check-ignore`): `agent/.env`, `auth.json`,
+`telegram.json`, `model-rates.json`, `models-store.json`, `agent/tmp/`, `agent/logs/`,
+`agent/sessions/`, `cron/jobs.json`, `/config.json`, `/input-phrase-config.json`,
+`/prompt-build-config.json`, `decision-nodes/**/verdicts.jsonl`, `review.jsonl`,
+`state/prompt-capture/`, `**/tmp/pi-telegram/`, all `node_modules/`.
+
+## When commit `d3be288` reaches the VPS (read before pulling)
+
+That commit stops tracking `**/trust.json` and deletes `agent/.gitignore`. A pull on
+the VPS will therefore **delete the five `trust.json` files** from its working tree
+(git removes them; the ignore rules only stop them coming back). Trust decisions are
+per host, so preserve them across the pull:
+
+```bash
+ssh neopmpmtj 'mkdir -p /tmp/trust-bak && cd ~/.pi && for f in agent/trust.json agent-web-master/web-master/trust.json agent-tasks-agent/tasks-agent/trust.json agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace/trust.json agent-template-new-agent/template-new-agent/trust.json; do [ -f "$f" ] && install -D "$f" "/tmp/trust-bak/$f"; done'
+ssh neopmpmtj 'cd ~/.pi && git pull --ff-only'
+ssh neopmpmtj 'cd /tmp/trust-bak && find . -name trust.json -exec cp --parents {} /home/pmpmt/.pi/ \; && ls -l /home/pmpmt/.pi/agent/trust.json'
+```
+
+After that the layout is identical on both hosts: `.gitignore` at the repo root is the
+single source of ignore rules (the nested `agent/.gitignore` is gone), and the whole
+per-host inventory sits under one titled section, "PER-HOST STATE".
