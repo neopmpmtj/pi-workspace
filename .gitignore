@@ -1,3 +1,7 @@
+# ══════════════════════════════════════════════════════════════════
+# BOILERPLATE — nothing below this line is specific to this repo
+# ══════════════════════════════════════════════════════════════════
+
 # ── Secrets & credentials ──────────────────────────────────────────
 .env
 **/.env
@@ -13,6 +17,50 @@ service_account*.json
 *client_secret*.json
 *gdrive_token*.json
 *gdrive*.json
+
+# ── OS junk ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*~
+
+# ── IDE & editor ───────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Dependencies ───────────────────────────────────────────────────
+node_modules/
+**/node_modules/
+package-lock.json
+
+# ── Compiled assets & virtualenvs ──────────────────────────────────
+bin/
+*.pyc
+__pycache__/
+*.egg-info/
+.venv/
+venv/
+
+# ── Databases & session dumps ──────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+*.session.jsonl
+
+# ── Logs, temp & caches ────────────────────────────────────────────
+*.log
+*.tmp
+.cache/
+
+# ══════════════════════════════════════════════════════════════════
+# THIS REPO — everything below is specific to the pi workspace
+# ══════════════════════════════════════════════════════════════════
 
 # ── PER-HOST STATE: written independently on the laptop and on the VPS ─
 # Nothing here is synced. Every pattern below is a file or folder that one
@@ -31,6 +79,7 @@ agent/models-store.json
 agent/default-model.json
 agent/trust.json
 agent/front-and-center.md
+agent/git/
 #
 # trust decisions, at any depth (every sibling home writes its own)
 **/trust.json
@@ -43,8 +92,6 @@ agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace/settings.json
 agent-image-describer/image-describer/settings.json
 agent-template-new-agent/template-new-agent/settings.json
 #
-# reminder store — per host, so a reminder made on one host stays there
-decision-nodes/reminder/reminders.jsonl
 # Telegram bot config + bridge runtime state, at any depth
 **/telegram.json
 **/tmp/pi-telegram/
@@ -79,6 +126,8 @@ decision-nodes/**/verdicts.jsonl
 decision-nodes/**/logs/
 decision-nodes/**/__pycache__/
 decision-nodes/review.jsonl
+# reminder store — per host, so a reminder made on one host stays there
+decision-nodes/reminder/reminders.jsonl
 #
 # model catalog cache, at any depth (agent dirs, sub-agents)
 models-store.json
@@ -86,67 +135,31 @@ models-store.json
 # last archive-to-target run (one move, machine-local)
 apps-scripts/archive-to-target-full-tree/archive-to-target-full-tree/archive-to-target-full-tree.last.json
 
-# ── Sessions & state artifacts ─────────────────────────────────────
-*.session.jsonl
-*.db
-*.db-shm
-*.db-wal
-*.sqlite3
-*.sqlite
-*.sqlite-shm
-*.sqlite-wal
-*.sqlite-journal
-sessions-summarizer/summarizer-state.json
-sessions-summaries/
-sessions-memory/
-sessions-slim/
-sessions-summaries/**
-postgres-migration/**
-
-# ── Node modules & packages ────────────────────────────────────────
-node_modules/
-agent/npm/node_modules/
-agent/git/
-**/node_modules/
-package-lock.json
-# The two locks that define a reproducible agent install travel with the repo so
-# laptop and VPS resolve the same tree. Other lockfiles stay ignored.
+# ── Lockfiles that DO travel (they define the install on both hosts) ──
+# Overrides the blanket `package-lock.json` rule above so the two locks that
+# pin the agent install are versioned. Everything else stays ignored.
 !agent/package-lock.json
 !agent/npm/package-lock.json
+# The tree itself is still per-host:
+agent/npm/node_modules/
 
-# ── Binaries & compiled assets ─────────────────────────────────────
+# ── This repo's local artifacts, scratch dirs and nested repos ─────
 agent/bin/
-bin/
-*.pyc
-__pycache__/
-*.egg-info/
-.venv/
-venv/
-
-# ── OS junk ────────────────────────────────────────────────────────
-.DS_Store
-Thumbs.db
-*~
-
-# ── IDE & editor ───────────────────────────────────────────────────
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# ── Nested repos ───────────────────────────────────────────────────
-explore-discover-pi/
+sessions-summarizer/summarizer-state.json
+sessions-summaries/
+sessions-summaries/**
+sessions-memory/
+sessions-slim/
+postgres-migration/**
+web-search-cache/
+z.old/
 # agent-lan-agent is a standalone git repo (own history, own .gitignore).
 # Tracked here only until 2026-11-03; the nested repo would otherwise be
 # picked up as an untracked directory by every status call.
 agent-lan-agent/
-
-# ── Misc ───────────────────────────────────────────────────────────
-*.log
-*.tmp
-.cache/
-web-search-cache/
-z.old/
+# explore-discover-pi is a separate checkout, not part of this repo
+explore-discover-pi/
+# removed agents kept for reference (004-style copies)
 keep-agent-copy/**
 agent#copy/
 
