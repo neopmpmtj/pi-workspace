@@ -29,14 +29,35 @@ is_blacklisted() { case " $FIELD_BLACKLIST " in *" $1 "*) return 0 ;; *) return 
 self_fp=$(bash "$HOME/.pi/scripts/fingerprint.sh" 2>/dev/null)
 [ -z "$self_fp" ] && { log "cannot fingerprint self"; exit 1; }
 
-peer_file=""
-for cand in "$STATE"/*.fingerprint; do
-	[ -f "$cand" ] && peer_file="$cand"
-done
-[ -z "$peer_file" ] && { log "no peer fingerprint in $STATE — nothing to compare"; exit 0; }
+# Peer fingerprint: live over ssh when the peer answers, otherwise the last one it
+# published (agent/tmp/parity/). The live path needs sshd on the laptop, which exists
+# since 2026-11-19 bound to its Tailscale address only.
+PEER_SSH="${PI_PEER_HOST:-laptop}"
+peer_fp=""
+peer_source="none"
 
-peer_host=$(awk -F= '/^HOST=/{print $2}' "$peer_file")
-peer_fp=$(cat "$peer_file")
+TMPFP=$(mktemp) || exit 1
+trap 'rm -f "$TMPFP"' EXIT
+
+if command -v ssh >/dev/null 2>&1 && timeout 25 ssh -o BatchMode=yes -o ConnectTimeout=8 "$PEER_SSH" \
+	'bash ~/.pi/scripts/fingerprint.sh' > "$TMPFP" 2>/dev/null; then
+	grep -q '^HOST=' "$TMPFP" && { peer_fp=$(cat "$TMPFP"); peer_source="live via $PEER_SSH"; }
+fi
+
+if [ -z "$peer_fp" ]; then
+	peer_file=""
+	for cand in "$STATE"/*.fingerprint; do
+		[ -f "$cand" ] && peer_file="$cand"
+	done
+	if [ -n "$peer_file" ]; then
+		peer_fp=$(cat "$peer_file")
+		peer_source="published $(basename "$peer_file")"
+	fi
+fi
+
+[ -z "$peer_fp" ] && { log "peer unreachable and no published fingerprint in $STATE — nothing to compare"; exit 0; }
+
+peer_host=$(printf '%s\n' "$peer_fp" | awk -F= '/^HOST=/{print $2}')
 
 declare -A self_vals peer_vals
 while IFS='=' read -r k v; do [[ "${k:-}" =~ ^[A-Z_]+$ ]] && self_vals["$k"]="$v"; done <<< "$self_fp"
@@ -67,7 +88,7 @@ case "${behind:-0}" in ''|*[!0-9]*) behind=0 ;; esac
 [ "${behind:-0}" -gt 0 ] && lines+=("⏬ $self_host is $behind commit(s) behind origin")
 
 if [ "${#lines[@]}" -eq 0 ]; then
-	log "ok (peer=$peer_host, peer_age=${peer_age_h}h)"
+	log "ok (peer=$peer_host, source=$peer_source, peer_age=${peer_age_h}h)"
 	exit 0
 fi
 
