@@ -20,8 +20,10 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `backup-host-state.sh` | nightly archive of per-host state into `~/pi-host-backups` | `pi-host-backup.timer` (both hosts, 03:30) |
 | `update-pi-both-hosts.sh` | `pi update` on both, reinstall pinned packages, restart VPS agent, verify | run by hand |
 | `env.sh` | single source for the nvm node path and `PI_REPO` | sourced by every script above |
-| `systemd/` | source-of-truth copies of the two timer pairs | copied to `~/.config/systemd/user` |
+| `systemd/pi-host-backup.service` + `.timer` | nightly backup unit (03:30, both hosts) | copied to `~/.config/systemd/user` |
+| `systemd/pi-parity-check.service` + `.timer` | nightly drift check unit (09:00, VPS) | copied to `~/.config/systemd/user` |
 | `protected-paths.txt` | **data, not a script**: what `/archive` must refuse | `agent/src/protected-paths.ts` |
+| `check-registers.sh` | fails when a script or runbook is missing from its register | run by hand, `sync-hosts.sh check` |
 
 ## 2. `~/.pi/agent/scripts` — agent-side jobs
 

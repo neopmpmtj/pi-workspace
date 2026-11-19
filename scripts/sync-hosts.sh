@@ -116,6 +116,10 @@ esac
 
 rc=$?
 echo
+bash "$HOME/.pi/scripts/check-registers.sh"
+regs=$?
+[ "$regs" -ne 0 ] && rc=$regs
+echo
 bash "$HOME/.pi/scripts/check-host-parity.sh"
 parc=$?
 [ "$parc" -ne 0 ] && rc=$parc

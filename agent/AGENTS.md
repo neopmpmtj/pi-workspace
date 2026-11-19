@@ -132,6 +132,26 @@ between them; they must stay identical. Do not re-derive this — it is already 
 
 When the user asks "are they the same?", run the parity script before answering.
 
+## Where things go (keep it modular)
+
+Before creating a file, decide its home — and register it in the same change. A file nobody
+can find is a bug, not a preference.
+
+- **New script** → the right one of the five homes listed in `docs/SCRIPTS.md`, named by
+  domain (`host-`, `backup-`, `gog-`, `downloads-`), plus a row in that map. Shared helpers
+  go in `scripts/lib/`.
+- **New runbook** → `agent/docs/runbooks/`, plus a row in `INDEX.md`
+  (safety / host-sync / topic).
+- **New instruction-document folder** → add it to `scripts/protected-paths.txt`, or `/archive`
+  will happily move it away.
+- **Machine-local state** → the "PER-HOST STATE" block of `~/.pi/.gitignore`; never commit it.
+- **Reachability** → AGENTS.md → `INDEX.md` or `docs/SCRIPTS.md` → the file. Two hops, never
+  three.
+- **Split a flat folder** when it passes ~15 files or holds two unrelated domains. Update
+  every reference and the register in the same commit, never "later".
+- **Verify** → `bash scripts/check-registers.sh` (also run by `sync-hosts.sh check`) fails when
+  a script or runbook has no row.
+
 ## Do not reintroduce
 
 These were real bugs in this tree. Do not put them back.
