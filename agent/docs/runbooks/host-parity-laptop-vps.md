@@ -197,6 +197,21 @@ After that the layout is identical on both hosts: `.gitignore` at the repo root 
 single source of ignore rules (the nested `agent/.gitignore` is gone), and the whole
 per-host inventory sits under one titled section, "PER-HOST STATE".
 
+## Automation
+
+| Script / hook | What it does |
+| --- | --- |
+| `scripts/check-host-parity.sh` | read-only fingerprint table (commit, pi, node, packages, submodules, settings core); exits 1 on any drift |
+| `scripts/sync-hosts.sh check` | fetch **both** hosts (so a stale ref cannot answer "already up to date"), print ahead/behind + dirty, then parity |
+| `scripts/sync-hosts.sh pull` | `fetch --all --prune` + `pull --ff-only` + `submodule update --init --recursive` on both hosts |
+| `scripts/sync-hosts.sh push` | push local commits, then pull the VPS the same way |
+| `scripts/sync-hosts.sh setup` | `git config core.hooksPath .githooks` on both hosts |
+| `.githooks/post-merge` | after any pull: initialise missing submodules, `npm ci` **only** if `agent/package*.json` or `agent/npm/package*.json` arrived, then remind to run the parity check |
+| `scripts/update-pi-both-hosts.sh` | `pi update` on both, reinstall pinned packages, restart the VPS agent, wait for `telegram connected`, verify |
+
+Nothing here commits or resets: `extensions/auto-sync.ts` still owns commit-on-shutdown,
+and a dirty tree is reported rather than repaired.
+
 ## Gotchas that survive parity (as of 2026-11-19)
 
 1. `agent/settings.json` is still **tracked** and pi rewrites it (theme, model

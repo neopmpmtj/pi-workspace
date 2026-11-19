@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# post-merge — runs after `git pull` / `git merge` in ~/.pi.
+#
+# Two failures keep coming back and both are invisible to git:
+#   1. a clone whose skill submodules were never initialised (empty dirs that
+#      silently ship no skills),
+#   2. a package tree that no longer matches the lockfile that just arrived.
+#
+# Installed with: git -C ~/.pi config core.hooksPath .githooks
+# Deliberately does nothing heavy on a no-op merge, never blocks the pull, and
+# never commits.
+
+set -uo pipefail
+
+REPO="${PI_REPO:-$HOME/.pi}"
+NODE_BIN="$HOME/.nvm/versions/node/v24.21.0/bin"
+export PATH="$NODE_BIN:$PATH"
+
+cd "$REPO" || exit 0
+
+# 1. submodules: any that are not initialised, in one call
+if git submodule status 2>/dev/null | grep -q '^-'; then
+  echo "[post-merge] initialising skill submodules"
+  git submodule update --init --recursive --quiet || echo "[post-merge] WARN submodule update failed"
+fi
+
+# 2. package trees: reinstall only when the manifest or lock arrived in this merge
+changed() { git diff --name-only 'HEAD@{1}' HEAD 2>/dev/null | grep -qx "$1"; }
+
+if changed agent/npm/package-lock.json || changed agent/npm/package.json; then
+  if [ -d agent/npm ]; then
+    echo "[post-merge] reinstalling agent/npm (pinned)"
+    (cd agent/npm && npm ci --omit=dev --legacy-peer-deps --silent) \
+      || echo "[post-merge] WARN agent/npm install failed — run: cd ~/.pi/agent/npm && npm ci --omit=dev --legacy-peer-deps"
+  fi
+fi
+
+if changed agent/package-lock.json || changed agent/package.json; then
+  echo "[post-merge] reinstalling agent devDependencies"
+  (cd agent && npm ci --silent) \
+    || echo "[post-merge] WARN agent install failed — run: cd ~/.pi/agent && npm install"
+fi
+
+# 3. reminder only: drift between hosts cannot be seen from git
+if git rev-parse --verify --quiet '@{u}' >/dev/null; then
+  echo "[post-merge] run: bash ~/.pi/scripts/check-host-parity.sh"
+fi
+
+exit 0
