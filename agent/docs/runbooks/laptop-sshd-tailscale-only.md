@@ -1,5 +1,11 @@
 # Laptop sshd, Tailscale-only
 
+**Status 2026-11-19: DONE.** `openssh-server 1:9.6p1-3ubuntu13.20` installed, `ssh.socket`
+binds `100.85.248.6:22` only, VPS reaches it (`nc` succeeded — `ufw` did not block
+`tailscale0`), the VPS key `id_ed25519_neopmpmtj` is in the laptop's `authorized_keys`,
+and `Host laptop` carries `IdentityFile ~/.ssh/id_ed25519_neopmpmtj`. `parity-alert.sh`
+now fingerprints the laptop live over that path.
+
 Why: the VPS cannot reach the laptop today (`ssh 100.85.248.6` → port 22 refused; no
 `openssh-server` installed). That is the only thing standing between the current
 publish-based parity check and a true two-way comparison — the VPS's nightly

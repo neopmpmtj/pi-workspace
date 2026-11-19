@@ -220,8 +220,8 @@ into it on 2026-11-19 (13 → 8 files repo-wide, and the 8 left are vendored pro
 | `scripts/pre-sync.sh` | the launchers' debounced `pull --ff-only`; fetches again on failure and **prints ahead/behind** instead of a one-line shrug |
 | `scripts/backup-host-state.sh` + `systemd/pi-host-backup.{service,timer}` | nightly 03:30 archive of the per-host state into `~/pi-host-backups`, mode 600, 14 kept, optional `PI_BACKUP_REMOTE` rsync |
 | `scripts/fingerprint.sh` | offline `KEY=value` fingerprint of one host (git, pi, node, packages, submodules, settings core) |
-| `scripts/publish-fingerprint.sh` | laptop → VPS over ssh into `agent/tmp/parity/<host>.fingerprint`; called from `pre-sync.sh` (the VPS cannot reach the laptop: no sshd listening there) |
-| `scripts/parity-alert.sh` + `systemd/pi-parity-check.{service,timer}` | VPS-only, daily 09:00: compares its fingerprint with the published one, messages Telegram on drift or when the VPS is behind origin, logs every run to `logs/parity-alert.log` |
+| `scripts/publish-fingerprint.sh` | laptop → VPS over ssh into `agent/tmp/parity/<host>.fingerprint`; called from `pre-sync.sh`. Fallback only since 2026-11-19: the VPS can now ssh in (`laptop-sshd-tailscale-only.md`) |
+| `scripts/parity-alert.sh` + `systemd/pi-parity-check.{service,timer}` | VPS-only, daily 09:00: fingerprints the laptop **live over ssh** (`Host laptop`, Tailscale-only) and falls back to the last published file when it is unreachable; messages Telegram on install drift or when the VPS is behind origin; logs every run to `logs/parity-alert.log` |
 | `extensions/auto-sync.ts` | now unstages anything matching the per-host list before committing, warns, and names the files to add to `.gitignore` (`agent/settings.json` exempt) |
 
 Nothing here commits or resets: `extensions/auto-sync.ts` still owns commit-on-shutdown,
