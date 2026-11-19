@@ -100,6 +100,8 @@ ahead, else tomorrow — or tomorrow 06:00 when no time was stated. "I bought th
   protected file legitimately has to go, edit that list first — deliberately.
 - Runbook index: `agent/docs/runbooks/INDEX.md` (safety → host/sync → topic). Add a row when
   you add a runbook.
+- Script map: `docs/SCRIPTS.md` — the five places scripts live and what each one does. A new
+  script gets a row there in the same change, or it is effectively invisible to the user.
 - A comment or runbook that names the wrong file is a bug. `docs/pi-state-summary.md` at the
   repo root is the living map of this tree; if you change layout, ports, lists, or config
   files, update that file in the same change.

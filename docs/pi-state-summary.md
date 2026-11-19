@@ -150,6 +150,7 @@ Git submodules under `agent/skills/`: `agent-replica-adapt`, `pi-prompt-dump`, `
 | `agent/settings.json` | COS Pi settings |
 | `agent/extensions/` | COS hooks and commands |
 | `agent/docs/runbooks/INDEX.md` | Runbook index: safety → host/sync → topic |
+| `docs/SCRIPTS.md` | Script map: `scripts/`, `agent/scripts/`, `apps-scripts/`, skill scripts, launchers |
 | `agent/src/protected-paths.ts` + `scripts/protected-paths.txt` | `/archive` failsafe: refuses to move anything the agent needs |
 | `config.sample.json` (and input-phrase / prompt-build samples) | Schema for the gitignored live files |
 | `~/AGENTS.md` | Machine-local facts |
