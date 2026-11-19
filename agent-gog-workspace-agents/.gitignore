@@ -10,7 +10,7 @@ front-and-center.md
 # secrets and machine-local config
 .env
 auth.json
-model-rates.json
+# model-rates.json is tracked: the price card is shared data, not machine state
 
 *.tmp
 *.log
