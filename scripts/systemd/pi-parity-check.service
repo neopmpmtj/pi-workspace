@@ -1,0 +1,7 @@
+[Unit]
+Description=Compare this host with the peer's last published fingerprint and alert on drift
+
+[Service]
+Type=oneshot
+ExecStart=%h/.pi/scripts/parity-alert.sh
+Nice=10

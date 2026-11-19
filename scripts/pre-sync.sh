@@ -44,5 +44,8 @@ if git -C "$REPO" rev-parse --verify --quiet '@{u}' >/dev/null 2>&1; then
 	fi
 fi
 
+# Publish this host's fingerprint so the peer's nightly parity check can compare.
+[ -x "$HOME/.pi/scripts/publish-fingerprint.sh" ] && timeout 20 bash "$HOME/.pi/scripts/publish-fingerprint.sh" >/dev/null 2>&1
+
 mkdir -p "$HOME/.cache" 2>/dev/null && date +%s > "$MARKER" 2>/dev/null
 exit 0

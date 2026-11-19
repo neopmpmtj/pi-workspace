@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily host-parity drift check (Telegram alert on mismatch)
+
+[Timer]
+OnCalendar=*-*-* 09:00:00
+Persistent=true
+RandomizedDelaySec=180
+
+[Install]
+WantedBy=timers.target
