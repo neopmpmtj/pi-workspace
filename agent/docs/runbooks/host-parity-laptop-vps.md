@@ -197,6 +197,14 @@ After that the layout is identical on both hosts: `.gitignore` at the repo root 
 single source of ignore rules (the nested `agent/.gitignore` is gone), and the whole
 per-host inventory sits under one titled section, "PER-HOST STATE".
 
+## Ignore rules live in one file
+
+`~/.pi/.gitignore` is the only ignore file that governs the agent homes. The five
+`agent-*/.gitignore` files and `agent-web-master/web-master/npm/.gitignore` were folded
+into it on 2026-11-19 (13 → 8 files repo-wide, and the 8 left are vendored projects under
+`apps-scripts/` whose layout is not ours). Verification used on that change: a 22-path
+`git check-ignore` probe and the full ignored-file snapshot, both identical before/after.
+
 ## Automation
 
 | Script / hook | What it does |

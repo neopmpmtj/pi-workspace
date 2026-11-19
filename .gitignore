@@ -135,6 +135,26 @@ models-store.json
 # last archive-to-target run (one move, machine-local)
 apps-scripts/archive-to-target-full-tree/archive-to-target-full-tree/archive-to-target-full-tree.last.json
 
+# ── Sibling agent homes ───────────────────────────────────────────
+# These rules used to live in five separate .gitignore files (one per agent home).
+# Consolidated here so a single list governs the repo; the vendored projects under
+# apps-scripts/ keep their own, because that layout is not ours.
+**/default-model.json
+**/front-and-center.md
+agent-image-describer/**/model-rates.json
+agent-tasks-agent/**/model-rates.json
+agent-template-new-agent/**/model-rates.json
+agent-web-master/**/model-rates.json
+agent-web-master/**/tool-rates.json
+# image-describer drops screenshots and dashboard builds next to its source
+agent-image-describer/images/
+agent-image-describer/**/dashboard/dist/
+agent-image-describer/**/docs/archive/images/
+agent-image-describer/**/.cursor/
+agent-image-describer/**/.cursorignore
+# web-master keeps a scratch npm dir
+agent-web-master/web-master/npm/*
+
 # ── Lockfiles that DO travel (they define the install on both hosts) ──
 # Overrides the blanket `package-lock.json` rule above so the two locks that
 # pin the agent install are versioned. Everything else stays ignored.
