@@ -34,6 +34,8 @@ echo "NODE=$(node -v 2>/dev/null || echo none)"
 echo "NPM_PKGS=$(ls "$HOME/.pi/agent/npm/node_modules" 2>/dev/null | grep -v '^\.' | wc -l | tr -d ' ')"
 echo "TELEGRAM=$(node -e 'console.log(require(process.env.HOME+"/.pi/agent/npm/node_modules/@llblab/pi-telegram/package.json").version)' 2>/dev/null || echo none)"
 echo "LOCK=$(node -e 'const p=require(process.env.HOME+"/.pi/agent/npm/package-lock.json");console.log(p.packages["node_modules/@llblab/pi-telegram"]?.version||"none")' 2>/dev/null || echo none)"
+echo "SETTINGS_CORE=$(node -e 'const s=require(process.env.HOME+"/.pi/agent/settings.json");const core={extensions:s.extensions,packages:s.packages,enabledModels:s.enabledModels,defaultProvider:s.defaultProvider,defaultModel:s.defaultModel};process.stdout.write(require("node:crypto").createHash("sha256").update(JSON.stringify(core)).digest("hex").slice(0,12))' 2>/dev/null || echo none)"
+echo "SETTINGS_EXT=$(node -e 'const s=require(process.env.HOME+"/.pi/agent/settings.json");console.log((s.extensions||[]).length+" ext,"+(s.packages||[]).length+" pkg,"+(s.enabledModels||[]).length+" models")' 2>/dev/null || echo none)"
 echo "DEVDEP_NM=$([ -d "$HOME/.pi/agent/node_modules" ] && echo present || echo absent)"
 echo "DEVDEP_VER=$(node -e 'const r=p=>{try{return require(process.env.HOME+"/.pi/agent/node_modules/"+p+"/package.json").version}catch{return "none"}};console.log(["@earendil-works/pi-ai","@earendil-works/pi-coding-agent","typebox","typescript"].map(p=>p.split("/").pop()+"@"+r(p)).join(","))' 2>/dev/null || echo none)"
 EOS

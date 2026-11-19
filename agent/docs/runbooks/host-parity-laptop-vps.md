@@ -211,12 +211,15 @@ per-host inventory sits under one titled section, "PER-HOST STATE".
    only. Run it on both hosts, or let the parity script catch the split.
 5. `agent/npm` needs `npm ci --omit=dev --legacy-peer-deps`. Plain `npm ci` deletes
    `node_modules` and then aborts on the missing peer entries.
-6. Both `~/.pi/agent/.env` files carry the **same** `TELEGRAM_BOT_TOKEN`. One poller
-   per token: the bridge must run only where the agent service runs (the VPS). A
-   laptop session that loads the telegram package competes with it.
+6. ~~Both `.env` files carry the same Telegram token.~~ Checked 2026-11-19: the
+   laptop's `TELEGRAM_BOT_TOKEN` is already commented out ("deliberately unset on this
+   laptop, 2026-11-06"); only the VPS has it. One poller per token holds, no action.
 7. Per-host by design, so they will never match: `logs/ledger.sqlite` (so `/usage`
    numbers differ per host), `sessions/`, `models-store.json`, `model-rates.json`.
 8. VPS still holds 359 MB in `~/.pi/agent#copy` — ignored, unused, not deleted yet.
+9. `agent/settings.json` divergence is now checked by the parity script
+   (`SETTINGS_CORE` = hash of extensions/packages/enabledModels/defaultProvider/
+   defaultModel, plus `SETTINGS_EXT` counts), so ignore-vs-track is enforced either way.
 
 ## Decisions taken 2026-11-19
 
