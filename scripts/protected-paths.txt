@@ -49,7 +49,13 @@ pi-service/*
 .ssh/config
 .ssh/authorized_keys
 
-# ── the safety net itself ──────────────────────────────────────────
-.pi/agent/docs/runbooks/what-must-remain.md
-.pi/agent/docs/runbooks/host-parity-laptop-vps.md
+# ── instruction documents (the durable copy of everything we know) ─
+# Whole folders, not single files: a rename must not fall out of protection.
+.pi/agent/docs/runbooks/*
+.pi/agent/docs/*.md
+.pi/docs/*.md
+.pi/agent/AGENTS.md
+.pi/agent/APPEND_SYSTEM.md
+.pi/agent/agent.json
+# the safety net itself
 .pi/scripts/protected-paths.txt

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { archiveRefusal, isReadOnlyArchive, protectedHitFor } from "../src/protected-paths.ts";
+import { homedir } from "node:os";
+import { archiveRefusal, isReadOnlyArchive, loadProtectedPatterns, protectedHitFor } from "../src/protected-paths.ts";
 
 const HOME = "/home/tester";
 const PATTERNS = [
@@ -60,5 +61,35 @@ describe("archiveRefusal", () => {
 	it("never blocks an argv without --source", () => {
 		assert.equal(isReadOnlyArchive(["--list"]), true);
 		assert.equal(archiveRefusal([], HOME, PATTERNS), null);
+	});
+});
+
+describe("the shipped protected list", () => {
+	const patterns = loadProtectedPatterns();
+
+	it("exists and covers the essentials", () => {
+		assert.ok(patterns.length > 10, "list should not be empty");
+	});
+
+	it("protects instruction documents by folder, not by name", () => {
+		for (const target of [
+			"~/.pi/agent/docs/runbooks/what-must-remain.md",
+			"~/.pi/agent/docs/runbooks/INDEX.md",
+			"~/.pi/agent/docs/runbooks/a-runbook-added-later.md",
+			"~/.pi/agent/docs/INBOX.md",
+			"~/.pi/docs/pi-state-summary.md",
+			"~/.pi/scripts/protected-paths.txt",
+			"~/.pi/agent/AGENTS.md",
+			"~/.pi/agent/APPEND_SYSTEM.md",
+		]) {
+			assert.ok(protectedHitFor(target, homedir(), patterns), `${target} should be protected`);
+		}
+	});
+
+	it("still allows ordinary workspace files", () => {
+		assert.equal(protectedHitFor("~/.pi/agent/README.md", homedir(), patterns), null);
+		assert.equal(protectedHitFor("~/.pi/agent/src/notes.md", homedir(), patterns), null);
+		// docs/*.md IS protected, including a path that only normalises into it
+		assert.ok(protectedHitFor("~/.pi/agent/docs/runbooks/../README.md", homedir(), patterns));
 	});
 });

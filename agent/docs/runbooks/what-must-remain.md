@@ -74,6 +74,10 @@ a protected path (so `/archive ~/.pi/agent` is refused as a whole). The list is
 `~/.pi/scripts/protected-paths.txt` — one pattern per line, `~`/`*`/`**` supported — read by
 `agent/src/protected-paths.ts` before the archive script is spawned.
 
+Scope since 2026-11-19: every instruction document, by folder rather than by name —
+`agent/docs/runbooks/*`, `agent/docs/*.md`, `docs/*.md`, `AGENTS.md`, `APPEND_SYSTEM.md`,
+`agent.json`. A renamed or newly added runbook therefore stays protected automatically.
+
 - refused: normal moves of tier-0/1 paths, including this file
 - allowed: `--dry-run` (shows the plan, moves nothing), `--list`, `--undo`
 - to protect something new, add a line to `protected-paths.txt`; no code change needed
