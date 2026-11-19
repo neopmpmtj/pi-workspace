@@ -33,10 +33,14 @@ sessions-slim/
 
 # ── Node modules & packages ────────────────────────────────────────
 node_modules/
-agent/npm/
+agent/npm/node_modules/
 agent/git/
 **/node_modules/
 package-lock.json
+# The two locks that define a reproducible agent install travel with the repo so
+# laptop and VPS resolve the same tree. Other lockfiles stay ignored.
+!agent/package-lock.json
+!agent/npm/package-lock.json
 
 # ── Binaries & compiled assets ─────────────────────────────────────
 agent/bin/
