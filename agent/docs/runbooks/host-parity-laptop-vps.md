@@ -241,6 +241,13 @@ that routes reminders writes to Google, not to `reminders.jsonl`; the 34-line
 `reminders.jsonl` on both hosts is legacy data. No divergence happens today. If routing is
 ever enabled on the laptop, set `writer: tasks` there too so both hosts share one store.
 
+### Testing the alert
+
+`PI_PARITY_TEST=1 bash ~/.pi/scripts/parity-alert.sh` (on the VPS) injects one synthetic
+drift field and sends a real Telegram card prefixed `🧪 test message`, without touching
+either host. Verified end to end 2026-11-19 (`alert sent: 1 drift field(s)`); the very
+next clean run logged `ok (… source=live via laptop)` and sent nothing.
+
 ## Gotchas that survive parity (as of 2026-11-19)
 
 1. `agent/settings.json` is still **tracked** and pi rewrites it (theme, model
