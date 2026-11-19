@@ -37,8 +37,8 @@ peer_host=$(awk -F= '/^HOST=/{print $2}' "$peer_file")
 peer_fp=$(cat "$peer_file")
 
 declare -A self_vals peer_vals
-while IFS='=' read -r k v; do [ -n "${k:-}" ] && self_vals["$k"]="$v"; done <<< "$self_fp"
-while IFS='=' read -r k v; do [ -n "${k:-}" ] && peer_vals["$k"]="$v"; done <<< "$peer_fp"
+while IFS='=' read -r k v; do [[ "${k:-}" =~ ^[A-Z_]+$ ]] && self_vals["$k"]="$v"; done <<< "$self_fp"
+while IFS='=' read -r k v; do [[ "${k:-}" =~ ^[A-Z_]+$ ]] && peer_vals["$k"]="$v"; done <<< "$peer_fp"
 
 drift=()
 for k in "${!self_vals[@]}"; do
@@ -61,6 +61,7 @@ fi
 
 lines=()
 [ "${#drift[@]}" -gt 0 ] && lines+=("🔀 <b>Host parity drift</b>" "" ) && for d in "${drift[@]}"; do lines+=("• <code>${d//</&lt;}</code>"); done
+case "${behind:-0}" in ''|*[!0-9]*) behind=0 ;; esac
 [ "${behind:-0}" -gt 0 ] && lines+=("⏬ $self_host is $behind commit(s) behind origin")
 
 if [ "${#lines[@]}" -eq 0 ]; then

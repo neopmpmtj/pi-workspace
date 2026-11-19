@@ -211,10 +211,19 @@ per-host inventory sits under one titled section, "PER-HOST STATE".
 | `scripts/env.sh` | single source for the nvm node path (`PI_NODE_BIN`) and `PI_REPO`; sourced by every script above |
 | `scripts/pre-sync.sh` | the launchers' debounced `pull --ff-only`; fetches again on failure and **prints ahead/behind** instead of a one-line shrug |
 | `scripts/backup-host-state.sh` + `systemd/pi-host-backup.{service,timer}` | nightly 03:30 archive of the per-host state into `~/pi-host-backups`, mode 600, 14 kept, optional `PI_BACKUP_REMOTE` rsync |
+| `scripts/fingerprint.sh` | offline `KEY=value` fingerprint of one host (git, pi, node, packages, submodules, settings core) |
+| `scripts/publish-fingerprint.sh` | laptop → VPS over ssh into `agent/tmp/parity/<host>.fingerprint`; called from `pre-sync.sh` (the VPS cannot reach the laptop: no sshd listening there) |
+| `scripts/parity-alert.sh` + `systemd/pi-parity-check.{service,timer}` | VPS-only, daily 09:00: compares its fingerprint with the published one, messages Telegram on drift or when the VPS is behind origin, logs every run to `logs/parity-alert.log` |
 | `extensions/auto-sync.ts` | now unstages anything matching the per-host list before committing, warns, and names the files to add to `.gitignore` (`agent/settings.json` exempt) |
 
 Nothing here commits or resets: `extensions/auto-sync.ts` still owns commit-on-shutdown,
 and a dirty tree is reported rather than repaired.
+
+## Node trees on the VPS: do not prune (checked 2026-11-19)
+
+`/usr/bin/node` is a root symlink to `~/.nvm/versions/node/v22.22.2/bin/node`, and the
+`openclaw-gateway.service` user unit runs `v24.18.0`. Both of those nvm trees are **live**;
+only `v24.21.0` carries pi. `~/.npmrc` `prefix-warning=false` was removed (cosmetic warn).
 
 ## Reminders: current reality (checked 2026-11-19)
 
