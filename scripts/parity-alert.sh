@@ -21,7 +21,9 @@ mkdir -p "$(dirname "$LOG")" 2>/dev/null
 
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" >> "$LOG" 2>/dev/null; }
 
-FIELD_BLACKLIST="HOST AT BEHIND"
+# HEAD/BEHIND describe git timing, not install shape: a commit pushed after the peer last
+# published would otherwise alert on every push. Install parity is what this checks.
+FIELD_BLACKLIST="HOST AT BEHIND HEAD"
 is_blacklisted() { case " $FIELD_BLACKLIST " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 
 self_fp=$(bash "$HOME/.pi/scripts/fingerprint.sh" 2>/dev/null)
