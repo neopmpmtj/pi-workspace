@@ -2,6 +2,7 @@
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
 import path from "node:path";
+import { archiveRefusal } from "./protected-paths.ts";
 
 export const ARCHIVE_HELP = `/archive <path>
 /archive --dry-run <path>
@@ -100,6 +101,10 @@ export function runArchive(
   cwd: string,
   signal?: AbortSignal,
 ): Promise<{ code: number; output: string }> {
+  // Failsafe: never archive something the agent needs to keep working.
+  const refusal = archiveRefusal(argv, cwd);
+  if (refusal) return Promise.resolve({ code: 1, output: refusal });
+
   return new Promise((resolve, reject) => {
     const child = spawn("python3", [archiveScriptPath(), ...argv], { cwd, signal });
     let output = "";

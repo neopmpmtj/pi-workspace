@@ -95,6 +95,8 @@ ahead, else tomorrow — or tomorrow 06:00 when no time was stated. "I bought th
 - These instructions and commands almost never change, so the file is the durable copy: the chat
   answer is a summary, the file is what gets reused and edited later. Update the file instead of
   retyping the same steps in a new turn.
+- `/archive` refuses tier-0/1 paths automatically (`scripts/protected-paths.txt`). If a
+  protected file legitimately has to go, edit that list first — deliberately.
 - A comment or runbook that names the wrong file is a bug. `docs/pi-state-summary.md` at the
   repo root is the living map of this tree; if you change layout, ports, lists, or config
   files, update that file in the same change.

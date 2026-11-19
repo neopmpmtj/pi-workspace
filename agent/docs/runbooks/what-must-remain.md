@@ -67,6 +67,17 @@ contains every tier-0/1 file that is **not** in git: `.env`, bot/trust/model sta
 reminders, launchers, supervisor, systemd user units, `~/.ssh/config` and
 `authorized_keys`. It does not contain private keys, sessions, or `node_modules`.
 
+## Failsafe: /archive refuses these paths
+
+`/archive` cannot move anything on the protected list, nor any **directory containing**
+a protected path (so `/archive ~/.pi/agent` is refused as a whole). The list is
+`~/.pi/scripts/protected-paths.txt` — one pattern per line, `~`/`*`/`**` supported — read by
+`agent/src/protected-paths.ts` before the archive script is spawned.
+
+- refused: normal moves of tier-0/1 paths, including this file
+- allowed: `--dry-run` (shows the plan, moves nothing), `--list`, `--undo`
+- to protect something new, add a line to `protected-paths.txt`; no code change needed
+
 ## Things that look deletable but are not
 
 - `~/.local/bin/pi*` — plain bash wrappers; the system's `pi` binary alone will not load

@@ -1,0 +1,55 @@
+# Paths /archive must never move.
+#
+# Read by src/protected-paths.ts before the archive script runs. One pattern per line:
+#   - relative patterns are relative to $HOME, `~` is expanded
+#   - `*` matches inside one path segment, `**` matches across segments
+#   - moving a DIRECTORY that contains a protected path is refused too
+# `/archive --undo` and `/archive --list` are never blocked, and `--dry-run` shows what
+# would happen without moving anything.
+#
+# Rationale and the full inventory: agent/docs/runbooks/what-must-remain.md
+# Add a line here the first time you find yourself protecting something new.
+
+# ── tier 0: the agent stops working ────────────────────────────────
+.pi/.git
+.pi/.gitignore
+.pi/.githooks/*
+.pi/agent/.env
+.pi/agent/settings.json
+.pi/agent/agent.json
+.pi/agent/AGENTS.md
+.pi/agent/APPEND_SYSTEM.md
+.pi/agent/extensions/*
+.pi/agent/skills/*
+.pi/agent/npm/*
+.pi/agent/auth.json
+.pi/control/*
+.pi/decision-nodes/*
+.pi/cron/*
+.pi/scripts/*
+.local/bin/pi
+.local/bin/pi-*
+pi-service/*
+.config/systemd/user/pi-*.service
+.config/systemd/user/pi-*.timer
+
+# ── tier 1: continuity, parity, access ─────────────────────────────
+.pi/agent/trust.json
+.pi/agent/telegram.json
+.pi/agent/model-rates.json
+.pi/agent/models-store.json
+.pi/agent/default-model.json
+.pi/agent/logs/ledger.sqlite
+.pi/agent/sessions/*
+.pi/config.json
+.pi/input-phrase-config.json
+.pi/prompt-build-config.json
+.pi/cron/jobs.json
+.pi/decision-nodes/reminder/reminders.jsonl
+.ssh/config
+.ssh/authorized_keys
+
+# ── the safety net itself ──────────────────────────────────────────
+.pi/agent/docs/runbooks/what-must-remain.md
+.pi/agent/docs/runbooks/host-parity-laptop-vps.md
+.pi/scripts/protected-paths.txt
