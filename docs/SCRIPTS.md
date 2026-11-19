@@ -58,6 +58,15 @@ Each skill owns its helpers (e.g. `agent-creator/scripts/scaffold.ts`,
 | `pi-web-master`, `pi-tasks-agent`, `pi-image-describer`, `pi-sm-google-workspace` | both | sibling launchers |
 | `pi-lan-agent`, `pi-explore-discover-pi` | laptop only | laptop-exclusive siblings |
 
+## 6. Documentation that is not a script
+
+| Path | What it holds |
+| --- | --- |
+| `agent/docs/runbooks/INDEX.md` | index of every runbook (safety → host/sync → topic) |
+| `agent/docs/{CHEATSHEET,INBOX,NOTES}.md` | operator cheatsheet, open work, loose notes |
+| `docs/pi-state-summary.md` | living map of the whole tree |
+| `docs/SCRIPTS.md` | this file |
+
 ## Decision: folders or not?
 
 Not yet. Nine executables in `scripts/`, all but two in one family (host identity/sync), and 53

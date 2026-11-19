@@ -36,6 +36,22 @@ protected from `/archive` — see "Protecting or archiving a doc" at the bottom.
 | [lan-python-venv-hotword-cnn.md](lan-python-venv-hotword-cnn.md) | hotword CNN venv on the LAN server |
 | [svg-rendering.md](svg-rendering.md) | SVG rendering pipeline |
 
+## Subfolders
+
+| Folder | Contents |
+| --- | --- |
+| [lan-server-192.168.1.60/](lan-server-192.168.1.60/index.md) | the LAN box at `192.168.1.60`: ssh keys, file server, pi install, Ollama/RTX 3060, two-server agents. Start at its own `index.md` |
+
+## Elsewhere in `agent/docs/`
+
+| Doc | What it answers |
+| --- | --- |
+| [CHEATSHEET.md](../CHEATSHEET.md) | operator commands for this agent, one screen |
+| [INBOX.md](../INBOX.md) | agreed future work; read when asked "what is next" |
+| [NOTES.md](../NOTES.md) | loose notes that have not earned a runbook yet |
+
+Scripts have their own map: `docs/SCRIPTS.md` at the repo root.
+
 ## Protecting or archiving a doc
 
 `/archive` refuses every file in this folder (and `agent/docs/*.md` and `docs/*.md`), because
