@@ -119,6 +119,9 @@ between them; they must stay identical. Do not re-derive this — it is already 
   `~/pi-host-backups` (mode 600, 14 kept).
 - Deep detail: `docs/runbooks/host-parity-laptop-vps.md`, and
   `docs/runbooks/laptop-sshd-tailscale-only.md` for the VPS→laptop ssh path.
+- Before deleting anything, or when asked what is safe to remove: the tiered list is
+  `docs/runbooks/what-must-remain.md` (tier 0 = agent stops working, tier 1 = lose access
+  or history, tier 2 = regenerable).
 
 When the user asks "are they the same?", run the parity script before answering.
 

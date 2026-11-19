@@ -151,6 +151,7 @@ Git submodules under `agent/skills/`: `agent-replica-adapt`, `pi-prompt-dump`, `
 | `agent/extensions/` | COS hooks and commands |
 | `config.sample.json` (and input-phrase / prompt-build samples) | Schema for the gitignored live files |
 | `~/AGENTS.md` | Machine-local facts |
+| `agent/docs/runbooks/what-must-remain.md` | What may never be deleted, in tiers |
 
 Operator detail: `agent/docs/CHEATSHEET.md`. Replica / Telegram / VPS: `docs/runbooks/`.
 

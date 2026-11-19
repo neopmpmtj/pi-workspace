@@ -68,6 +68,25 @@ while IFS= read -r extra; do
 done < <(find "$HOME/.pi" -maxdepth 4 \( -name trust.json -o -name settings.json -o -name reminders.jsonl \) \
 	-not -path "*/node_modules/*" "${PRUNE_ARGS[@]}" 2>/dev/null)
 
+# Things outside the repo that the agent cannot run without: launchers, supervisors and
+# the systemd user units that start them. They are in no git history, so they belong here.
+PATTERNS=(
+	".local/bin/pi" ".local/bin/pi-*"
+	"pi-service/*.sh"
+	".config/systemd/user/*.service" ".config/systemd/user/*.timer"
+	".ssh/config" ".ssh/authorized_keys"
+)
+for pat in "${PATTERNS[@]}"; do
+	for abs in $HOME/$pat; do
+		[ -f "$abs" ] || continue
+		rel="${abs#"$HOME"/}"
+		case " ${CANDIDATES[*]} " in
+			*" $rel "*) ;;
+			*) CANDIDATES+=("$rel") ;;
+		esac
+	done
+done
+
 PRESENT=()
 for rel in "${CANDIDATES[@]}"; do
 	[ -f "$HOME/$rel" ] && PRESENT+=("$rel")
