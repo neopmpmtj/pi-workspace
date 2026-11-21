@@ -107,8 +107,14 @@ and the tool never follows a path out of the target filesystem.
 
 ## Decisions to confirm before coding
 
-Confirmed so far: **nothing is wiped, the drive's contents are kept**, the goal is reclaimed
-space. Decisions below still need a yes/no.
+**DECIDED by the user 2026-11-21 — take these as final, do not re-ask:**
+
+- action = **quarantine** (move to `<root>/.dedupe/quarantine-<date>/`, never delete)
+- name sensitivity = **any identical content** counts as a duplicate
+- size floor = **1 MB**
+- scope = **several roots, one SQLite index**
+- nothing is wiped; the drive's contents are kept; the goal is reclaimed space
+- first run = **dry-run** over `/media/pmpmt/Elements`
 
 | Decision | Options | Proposed default |
 | --- | --- | --- |
