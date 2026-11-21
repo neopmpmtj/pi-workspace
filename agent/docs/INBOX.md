@@ -394,3 +394,15 @@ Build `apps-scripts/file-dedupe/` — content-hash duplicate finder with quarant
 5% re-verify. Targets: the 1 TB USB drive, then the two NTFS SATA disks on the server. Four
 decisions to confirm (action / name sensitivity / size floor / multi-root). Full brief:
 `agent/docs/runbooks/file-dedupe-plan.md`. Started 2026-11-20.
+
+## VPS access: Tailscale SSH check expires (deferred 2026-11-20)
+
+`neopmpmtj` has **no OpenSSH server** (`ssh.service` inactive/disabled); port 22 is served by
+Tailscale SSH with `action: check`, so laptop→VPS access expires every few hours and silently
+blocks `git pull`/`push` (broke sync three times on 2026-11-20). Do **not** run
+`tailscale up --ssh=false` before an OpenSSH server is installed and proven — it would lock us
+out. Two fixes: (A) admin console → Access controls, change that `ssh` rule `check` →
+`accept`; or (B) install `openssh-server` on the VPS, add the laptop key
+(`ssh-ed25519 …IGUdz6ZZiVtTj9ansz1I0nCiXtflUIgeDjw1Ka3HSUyR`), bind to the Tailscale address,
+verify, then disable Tailscale SSH. Prefer B (key-based, never expires). Revisit after the
+file-dedupe work.
