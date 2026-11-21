@@ -1,8 +1,12 @@
 # File dedupe — task brief (handoff)
 
-Status: **PLAN ONLY, nothing built yet.** Written 2026-11-20 to hand the task to a fresh
-session with a clean context. Updated 2026-11-21 with the drive mounted and measured. Read this file, then read the two files it points at, then ask
-the questions in "Decisions to confirm" — do not start writing code before the answers.
+Status: **BUILT 2026-11-21.** `apps-scripts/file-dedupe/` exists with 15 passing tests and a
+row in `docs/SCRIPTS.md`. The first real dry run is **blocked**: no USB block device is
+attached to the laptop (`/dev/sd*` absent, `lsblk` shows only `nvme0n1`), so
+`/media/pmpmt/Elements` does not exist. The tool now fails that run cleanly with
+`[FAIL] not a directory`. Resume with the commands in `apps-scripts/file-dedupe/README.md`
+once the drive is unlocked and mounted. Written 2026-11-20 to hand the task to a fresh
+session with a clean context; updated 2026-11-21 with the drive mounted and measured.
 
 ## The mission
 
@@ -151,7 +155,30 @@ drive only, `--dry-run`**, read the report, then decide about the SATA disks.
 
 ## Next steps for the new session
 
-1. Read this file, then `agent/docs/runbooks/what-must-remain.md` (scope of "never delete")
+### Done 2026-11-21
+
+1. Read this file, `agent/docs/runbooks/what-must-remain.md`, `docs/SCRIPTS.md`.
+2. Built `apps-scripts/file-dedupe/`: `dedupe.py` with `scan`, `report`, `apply`, `verify`,
+   `restore`, `purge`; `tests/test_dedupe.py` (15 tests, `python3 -m unittest discover -s tests`);
+   README with exact commands and recovery; `.gitignore`; row in `docs/SCRIPTS.md` section 3.
+   Decisions taken as final (quarantine, name-insensitive, 1 MB floor, several roots / one
+   index). `--min-size` defaults to 1 MiB; the index and quarantine live in `<root>/.dedupe/`.
+   `bash scripts/check-registers.sh` passes.
+3. Attempted the first real dry run — **blocked, the drive is not attached**:
+   `ls /dev/sd*` → no such file, `lsblk` → only `nvme0n1`, `/media/pmpmt/Elements` absent.
+   Nothing was read or written on the drive.
+
+### Still to do
+
+1. Plug in and unlock the WD Elements (`sudo cryptsetup open --type bitlk /dev/sdc1 wd2tb`,
+   then mount; the user's action), confirm `mount | grep Elements` and `df -h`.
+2. `cd ~/.pi/apps-scripts/file-dedupe && python3 dedupe.py scan --root /media/pmpmt/Elements`
+   (the 10-minute freshness guard will abort if a copy is still running — that is intended).
+3. Present `summary.md` + `duplicates.csv`, then wait for approval before any `--apply`.
+
+## Original next steps (superseded by the section above, kept for reference)
+
+1. Read this file, `agent/docs/runbooks/what-must-remain.md` (scope of "never delete")
    and `docs/SCRIPTS.md` (where scripts live).
 2. Confirm the four decisions above and the two open questions.
 3. Write `apps-scripts/file-dedupe/` with tests; run `npm test`-independent tests

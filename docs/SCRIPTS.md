@@ -38,10 +38,14 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 
 ## 3. `~/.pi/apps-scripts/` — standalone projects
 
-Seven self-contained projects (`backup_laptop_tool`, `ExplainLike12`, `on-demand-stt-rewrite`,
-`text-to-speech`, `svg-scripts`, `archive-to-target-full-tree`, `temp_holding_folder`).
-Each keeps its own `.gitignore`, README and tests; they are not agent scripts.
+Eight self-contained projects (`backup_laptop_tool`, `ExplainLike12`, `on-demand-stt-rewrite`,
+`text-to-speech`, `svg-scripts`, `archive-to-target-full-tree`, `temp_holding_folder`,
+`file-dedupe`). Each keeps its own `.gitignore`, README and tests; they are not agent scripts.
 `archive-to-target-full-tree` is what `/archive` runs.
+
+| Project | What it does |
+| --- | --- |
+| `file-dedupe/` | `dedupe.py` — content-hash duplicate finder (`scan`/`report`/`apply`/`verify`/`restore`/`purge`), quarantine by default, resumable SQLite index, `python3 -m unittest discover -s tests` |
 
 ## 4. `~/.pi/agent/skills/*/scripts` — scripted skills
 

@@ -120,7 +120,7 @@ Git submodules under `agent/skills/`: `agent-replica-adapt`, `pi-prompt-dump`, `
 ## Also in this repo
 
 - **decision-nodes/**, **jev-classifier/** (submodule; empty until `git submodule update --init`)
-- **apps-scripts/**: `backup_laptop_tool`, `ExplainLike12`, `on-demand-stt-rewrite`, `text-to-speech`, `svg-scripts`, `archive-to-target-full-tree`
+- **apps-scripts/**: `backup_laptop_tool`, `ExplainLike12`, `on-demand-stt-rewrite`, `text-to-speech`, `svg-scripts`, `archive-to-target-full-tree`, `file-dedupe` (content-hash duplicate finder, quarantine-first)
 - **agents-shared-scripts/session-slim/** — `slim_session.py`
 - **shared-extensions/** — unused copies; COS loads local files
 - **scripts/** (repo root) — host-identity and sync tooling: `check-host-parity.sh`,
