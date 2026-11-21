@@ -35,6 +35,7 @@ protected from `/archive` — see "Protecting or archiving a doc" at the bottom.
 | [google-keep-read-all.md](google-keep-read-all.md) | Keep read access |
 | [lan-python-venv-hotword-cnn.md](lan-python-venv-hotword-cnn.md) | hotword CNN venv on the LAN server |
 | [svg-rendering.md](svg-rendering.md) | SVG rendering pipeline |
+| [file-dedupe-plan.md](file-dedupe-plan.md) | **active task brief** — content-based duplicate cleaner for the 1 TB USB drive and the two NTFS data disks; plan, decisions, measured disk facts |
 
 ## Subfolders
 

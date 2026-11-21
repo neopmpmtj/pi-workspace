@@ -387,3 +387,10 @@ Both are the same three-line wrapper plus different jobs; the two defects below 
 
 - [x] Renamed the systemd unit `pi-cos.service` → `pi-vps-agent` (2026-11-18).
       The supervisor, tmux socket/session (`-L pi-cos`) and launcher keep their names.
+
+## File dedupe tool (task brief ready, awaiting decisions)
+
+Build `apps-scripts/file-dedupe/` — content-hash duplicate finder with quarantine, report and
+5% re-verify. Targets: the 1 TB USB drive, then the two NTFS SATA disks on the server. Four
+decisions to confirm (action / name sensitivity / size floor / multi-root). Full brief:
+`agent/docs/runbooks/file-dedupe-plan.md`. Started 2026-11-20.
