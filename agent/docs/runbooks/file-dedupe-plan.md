@@ -1,7 +1,7 @@
 # File dedupe — task brief (handoff)
 
 Status: **PLAN ONLY, nothing built yet.** Written 2026-11-20 to hand the task to a fresh
-session with a clean context. Read this file, then read the two files it points at, then ask
+session with a clean context. Updated 2026-11-21 with the drive mounted and measured. Read this file, then read the two files it points at, then ask
 the questions in "Decisions to confirm" — do not start writing code before the answers.
 
 ## The mission
@@ -16,6 +16,33 @@ Targets, in the order the user wants to tackle them:
 1. **1 TB external USB drive** — years of accumulated backups, believed to be full of copies.
 2. **Two SATA disks on the home server**, both NTFS, both currently unmounted (`Dados` 931 G,
    `Novo volume` 298 G) — also believed to hold many duplicates.
+
+## The external drive, as measured 2026-11-21
+
+- **WD Elements Portable 2 TB** (`sdc`), BitLocker-encrypted, **unlocked by the user** and
+  auto-mounted at **`/media/pmpmt/Elements`** (`ntfs3`, read-write, uid 1000).
+- **1.9 T total, 1.7 T used, 186 G free (91 % full).**
+- To re-open after a reboot: `sudo cryptsetup open --type bitlk /dev/sdc1 wd2tb` (user knows the
+  password) — the volume is **not** in fstab.
+- Top-level contents by size:
+
+| Path | Size | Note |
+| --- | --- | --- |
+| `MULTIMEDIA/` | 991 G | `Filmes` 947 G, `PopcornTime` 32 G, `Videos Vários` 3.5 G |
+| `Ante Maio2018/` | 286 G | pre-2018 archive |
+| `Copied to server/` | 204 G | `musicas` 137 G, `Linux_python 64G SDCard` 26 G, `Electronics` 23 G, `Alan Watts` 8.1 G |
+| `models/` | 61 G | model weights |
+| `BCKUP190910/` | 36 G | one of nine `BCKUP*` folders (190314, 190524, 190629, 190910, 191021, 200614, 201026, 230423, 250420) — overlaps likely |
+| `PC Casa - Pedro/` | 19 G | |
+| `ATALHOS/` | 16 G | Windows shortcuts — expect many 0-byte/duplicate `.lnk` |
+| `BCKUP201026/` | 15 G | |
+| `BCKUP200614 NB_NB/` | 12 G | |
+| `BCKUP190524/` | 11 G | |
+| `Bckup230423/` | 8.3 G | |
+| `$rECYCLE.BIN/` | 4.0 G | recycle bin — skip, but its 4 G is a free win |
+
+Expect the duplicates mostly in the `BCKUP*` family, `Copied to server/musicas` vs `MULTIMEDIA`,
+and `Ante Maio2018` vs later backups. Movies are unlikely to duplicate.
 
 ## Context: why this matters now
 
@@ -79,6 +106,9 @@ ever removed without a report, resumable SQLite index (interrupted = resume, not
 and the tool never follows a path out of the target filesystem.
 
 ## Decisions to confirm before coding
+
+Confirmed so far: **nothing is wiped, the drive's contents are kept**, the goal is reclaimed
+space. Decisions below still need a yes/no.
 
 | Decision | Options | Proposed default |
 | --- | --- | --- |
