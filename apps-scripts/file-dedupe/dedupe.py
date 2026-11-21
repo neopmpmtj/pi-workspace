@@ -199,6 +199,7 @@ class ScanStats:
     kept: int = 0
     skipped: dict = field(default_factory=dict)
     fresh: list = field(default_factory=list)
+    future: list = field(default_factory=list)
     errors: list = field(default_factory=list)
 
     def skip(self, reason: str) -> None:
@@ -244,8 +245,14 @@ def iter_candidates(root: Path, dev: int, min_size: int, excludes: list[str],
             if st.st_size < min_size:
                 stats.skip("below-min-size")
                 continue
-            if fresh_window and now_ns - st.st_mtime_ns < fresh_window * 1_000_000_000:
+            # Only a *past* mtime inside the window means "still copying".
+            # Future mtimes are odd data (camera clocks, restored archives),
+            # not an active write, so they must not abort the scan.
+            age_ns = now_ns - st.st_mtime_ns
+            if fresh_window and 0 <= age_ns < fresh_window * 1_000_000_000:
                 stats.fresh.append(str(p))
+            elif age_ns < 0:
+                stats.future.append(str(p))
             rel = p.relative_to(root)
             stats.kept += 1
             yield str(rel), st.st_size, st.st_mtime_ns, depth_of(rel)
@@ -287,8 +294,12 @@ def run_hashes(con, kind: str, rows: list[sqlite3.Row], root: Path, jobs: int,
     if not todo:
         return
     update = f"UPDATE files SET {column}=? WHERE root=? AND path=?"
+    # head+tail reads are tiny random reads: many in flight beats one spindle.
+    # A full-file hash is a long sequential read: two streams is already plenty
+    # on a single 5400 rpm disk, more just makes the heads thrash.
+    workers = max(1, jobs) if kind == "headtail" else max(1, min(2, jobs))
     done = 0
-    with ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
+    with ThreadPoolExecutor(max_workers=workers) as pool:
         for start in range(0, len(todo), 2000):
             batch = todo[start:start + 2000]
             buffer = []
@@ -381,6 +392,9 @@ def cmd_scan(args) -> int:
 
     print(f"[scan] {stats.kept:,} candidates from {stats.seen:,} entries; "
           f"skipped: {dict(sorted(stats.skipped.items()))}")
+    if stats.future:
+        print(f"[scan] note: {len(stats.future):,} file(s) carry a future mtime "
+              f"(first: {stats.future[0]}) — older data, not an active write")
 
     # stage B: head+tail for size buckets that actually collide
     roots_sql = ",".join("?" * len(roots))

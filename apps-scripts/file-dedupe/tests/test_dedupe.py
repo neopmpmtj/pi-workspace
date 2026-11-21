@@ -81,6 +81,10 @@ class Fixture(unittest.TestCase):
         # 6) symlink to a real candidate: must not be followed
         os.symlink(r / "root.bin", r / "sym.bin")
 
+        # 6b) future mtime (camera clock / restored archive): odd data, not a
+        # live write — must not trip the freshness guard
+        write(r / "future/camera.jpg", blob(1300 * 1024, b"future"), mtime=3_978_000_000)
+
         # 7) zero byte and below the size floor
         write(r / "e/empty.bin", b"")
         write(r / "e/small.bin", b"x" * 100)
@@ -176,6 +180,12 @@ class Fixture(unittest.TestCase):
                        "--min-size", "1MB", "--allow-any-dir", "--jobs", "2",
                        "--ignore-fresh"])
         self.assertEqual(rc, 0, out)
+
+    def test_future_mtime_does_not_abort_scan(self):
+        rc, out = run(["scan", "--root", str(self.root), "--db", str(self.db),
+                       "--min-size", "1MB", "--allow-any-dir", "--jobs", "2"])
+        self.assertEqual(rc, 0, out)
+        self.assertIn("future mtime", out)
 
     def test_apply_is_dry_by_default(self):
         self.scan()
