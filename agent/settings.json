@@ -55,7 +55,7 @@
     "gemini-3.7-flash"
   ],
   "theme": "dark",
-  "lastChangelogVersion": "1.5.2",
+  "lastChangelogVersion": "1.6.0",
   "packages": [
     "npm:@llblab/pi-telegram"
   ],
