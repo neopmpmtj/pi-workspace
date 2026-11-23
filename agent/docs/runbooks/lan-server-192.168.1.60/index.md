@@ -13,6 +13,8 @@ One folder per machine/topic cluster. Everything here documents the desktop at
 | `two-server-pi-agents.md` | Two pi agents on the server: `pi-cloud` (cloud keys) and `pi-ollama` (local RTX 3060 via `models.json`): layout, staging trick, wiring, verification, gaps | done 2025-11-08 |
 | `ollama-models.md` | What the RTX 3060 12 GB actually runs: installed models, measured load/GPU split/throughput per context size, recommended settings, re-measure commands | done 2026-11-19 |
 | `server-git-github-access.md` | git/gh on the server for an RTX repo: keys, identity, `insteadOf` rewrite, `gh` token invalid, `pmpmtj` read-only on `neopmpmtj/*`, three ways to get push access | done 2025-11-08 |
+| `disk-wipe-and-reinstall.md` | Wiping the SSD and reinstalling Ubuntu from the live USB — why GRUB cannot format anything, what each tool is for, `blkdiscard`/`nvme format`, manual `wipefs`+`sgdisk`+`mkfs`, reinstalling GRUB by hand, traps | done 2026-11-22 |
+| `omarchy-install-from-usb.md` | Writing the Omarchy 4.5.0 ISO to the Kingston stick (`/dev/sda`) and installing it over the whole NVMe on `192.168.1.60`: wipe from the live VT, the installer wizard screens read out of the ISO, NVIDIA note | done 2026-11-22 |
 
 Related machine facts live in `/home/pmpmt/AGENTS.md` (untracked, host-only).
 
