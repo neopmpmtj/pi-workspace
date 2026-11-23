@@ -19,6 +19,7 @@ protected from `/archive` — see "Protecting or archiving a doc" at the bottom.
 | [vps-agent-parity.md](vps-agent-parity.md) | earlier replica notes (superseded by host-parity-laptop-vps.md, kept for history) |
 | [vps-telegram-bridge.md](vps-telegram-bridge.md) | the Telegram bridge on the VPS: bot, owner, single-poller rule |
 | [pi-config-terminal-toggles.md](pi-config-terminal-toggles.md) | `pi-config` from bash: every gate, mode and phrase |
+| [agent-sudo-passwordless.md](agent-sudo-passwordless.md) | passwordless sudo for the agent: the `host-sudo-mode.sh` toggle, why OFF is free and ON costs a password, the narrow-rule and askpass alternatives, actions still handed back to the human |
 | [mode-switch.md](mode-switch.md) | the mode-switch hook (1-Personal … 5-Research) |
 
 ## Topic runbooks

@@ -106,6 +106,32 @@ pi --provider google   --model gemini-3.8-flash -p "…" → ENVREF_GOOGLE
 pi --provider openai   --model gpt-6.1-sol     -p "…"  → ENVREF_OPENAI
 ```
 
+## 2026-11-23 — reinstalled on the fresh 24.04.5.1 system (current state)
+
+Same recipe, current versions. `pistore` no longer exists, so everything runs as `pmpmt` over the
+plain `lan-pmpmt` key (no `sudo -u pmpmt` dance needed).
+
+- nvm `0.40.3` → **node v24.22.3**, npm 11.19.1; nvm block added to `.bashrc` (by the installer)
+  **and** to `.profile` (trap 2 above is still real: `.bashrc` exits early for non-interactive shells)
+- **pi 1.6.0** — `npm i -g @earendil-works/pi-coding-agent@1.6.0`
+- launcher `~/.local/bin/pi` pins `~/.nvm/versions/node/v24.22.3/bin`; verified with
+  `env -i HOME=/home/pmpmt PATH=/home/pmpmt/.local/bin:/usr/bin:/bin bash -c 'pi --version'` → 1.6.0
+- credentials unchanged in spirit: `~/.pi/agent/.env` (600, piped over SSH), `~/.pi/agent/key`
+  (700 reader), `~/.pi/agent/auth.json` (600) with `!$HOME/.pi/agent/key <VAR>` entries for
+  deepseek / google / openai
+- `~/.pi/agent/settings.json` pins `defaultProvider: deepseek`, `defaultModel: deepseek-flash`,
+  so bare `pi -p "…"` works
+
+Verified: `pi --provider deepseek …` → `PI_OK`, bare `pi -p` → `DEFAULT_OK`.
+
+**Known bad:** the copied `GEMINI_API_KEY` returns HTTP 400 `API_KEY_INVALID` from Google on *both*
+laptop and server (identical sha256, so the transfer is fine — the key itself is dead). Replace it in
+`.env` when Google models are wanted. No `OPENAI_API_KEY` is present, so the openai auth entry fails
+if used.
+
+Local models: Ollama 0.40.17 runs as a system service on `127.0.0.1:11434` (see `ollama-models.md`),
+so a `models.json` entry can point pi at the RTX 3060 without any key.
+
 ## Still open
 
 - No default model is pinned: `pi` with no flags falls back to its own default. Add

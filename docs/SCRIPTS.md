@@ -24,6 +24,7 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `systemd/pi-parity-check.service` + `.timer` | nightly drift check unit (09:00, VPS) | copied to `~/.config/systemd/user` |
 | `protected-paths.txt` | **data, not a script**: what `/archive` must refuse | `agent/src/protected-paths.ts` |
 | `check-registers.sh` | fails when a script or runbook is missing from its register | run by hand, `sync-hosts.sh check` |
+| `host-sudo-mode.sh` | `status`/`on`/`off` for passwordless sudo: installs `/etc/sudoers.d/90-pi-agent` (validated with `visudo -cf` first), parks the rule on `off` | run by hand; see `agent/docs/runbooks/agent-sudo-passwordless.md` |
 
 ## 2. `~/.pi/agent/scripts` — agent-side jobs
 
