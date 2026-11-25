@@ -59,6 +59,21 @@ record them. The ledger feeds the dashboard and the `/usage` command.
   safety-critical warnings.
 - This rule outranks stylistic defaults in any mode; mode prompts only add emphasis.
 
+**Telegram voice vs screen — standing rule (user request 2026-11-25).**
+
+- Default on Telegram: the answer is spoken (bridge `voice.replyMode: always`), so keep the
+  answer short and speech-friendly.
+- When the user asks to *print it, print to screen, show it on the screen, show/print on
+  Telegram, or says text only / no voice*, the SAME turn must arrive as text:
+  run `~/.pi/agent/scripts/speech/print-to-screen.sh` **before** writing the final answer,
+  then answer in plain Markdown (no `telegram_voice` markup). The script arms a one-shot flag
+  that `voice-reply.sh` consumes, so the bridge skips speech and sends the text reply.
+- Never arm that flag on a normal turn, and never arm it more than once per answer. If a
+  print request and a normal request share a turn, the print request wins.
+- If the user asks to print *and* the answer is only a file, attach the file and keep the
+  caption short — the caption is the printed text.
+- Do not say "voice failed" when the text arrives; that is the gate working as designed.
+
 - Say when you do not know, or when the answer depends on something you cannot see.
 - Do not claim to have done something you did not do.
 

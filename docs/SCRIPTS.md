@@ -36,6 +36,8 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `downloads-reclaim.sh` | reclaims space from the downloads folder |
 | `fetch-publications.ts` | fetches publication lists (`npm run fetch:publications`) |
 | `speech/speak.sh` | **the one TTS seam**: text on stdin → `.ogg/.opus` (or `.wav`), engine `piper` → `espeak-ng`, `--play` for laptop speakers. Every surface calls this, nothing else calls piper directly |
+| `speech/voice-reply.sh` | Telegram `voice` handler: execs `speak.sh` normally, or exits 5 (no audio) when `print-to-screen.sh` armed a one-shot text-only flag, so the bridge falls back to the visible text reply |
+| `speech/print-to-screen.sh` | arms exactly one text-only Telegram reply (`tmp/voice-textonly.flag`, epoch seconds); run it in the same turn as the answer when the user says print/show on screen |
 | `speech/clean.py` | markdown → speakable text (drops code fences, URLs, tables, emoji; caps length) |
 | `speech/setup-host.sh` | idempotent per-host setup: piper venv, voices, `~/.config/pi-speech.env`, Telegram `outboundHandlers` voice wiring, self-test |
 | `fruit_portrait_svg.py`, `photo_trace_svg.py` | SVG tracing helpers for the svg-photo-convert skill |
