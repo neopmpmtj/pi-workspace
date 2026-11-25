@@ -2,6 +2,8 @@
 
 One folder per machine/topic cluster. Everything here documents the desktop at
 `192.168.1.60` (`pmpmt-B550-AORUS-ELITE-V2`, Ubuntu 24.04.4): SSH access, storage, pi, and the GPU.
+When the user says **desktop** or **home server** they mean this same box; there is no other
+desktop in the workspace.
 
 | Runbook | Covers | Status |
 | --- | --- | --- |

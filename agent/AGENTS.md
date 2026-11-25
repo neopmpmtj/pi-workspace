@@ -147,6 +147,9 @@ between them; they must stay identical. Do not re-derive this — it is already 
 
 - **Home server** (`192.168.1.60`, alias `home-server` over Tailscale from the VPS and
   `lan-pmpmt` from the laptop; RTX 3060 12 GB, `NOPASSWD` sudo) is the GPU and long-job box.
+  **The user says "desktop" and "home server" for this one machine — nothing else.** Read
+  every "desktop" as `192.168.1.60` / `ssh home-server`; there is no separate desktop. If a
+  message is ambiguous, it is still this box, not the laptop.
   From the VPS reach it with `ssh home-server '<cmd>'`; put GPU or multi-hour work there, not on
   the laptop or the VPS. It has no pi home: a job there is an ssh command, not a chat turn.
   All three machines share one tailnet, so this works from any network.
