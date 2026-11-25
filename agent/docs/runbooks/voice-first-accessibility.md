@@ -21,7 +21,7 @@ Surfaces are *transports*, not TTS implementations:
 | Surface | How it reaches the user's ears | Code needed |
 | --- | --- | --- |
 | Telegram (VPS, phone) | `speak.sh` → `.ogg` → Bot API `sendVoice` | none — bridge config (`outboundHandlers` voice handler) |
-| Laptop TUI | `speak.sh --play` → `paplay`/`aplay` on the laptop speakers | one small extension, later |
+| Laptop TUI | `speak.sh --play` → `pw-play` on the laptop speakers | existing: `agent/extensions/speech-reply.ts`, enabled per host by `PI_SPEECH_TUI=1` |
 | Home server | same as VPS: Telegram voice notes | none — run `setup-host.sh` |
 
 Corollary: adding a *paid* voice (OpenAI TTS, ElevenLabs, Cartesia) touches `speak.sh` only.
@@ -74,10 +74,24 @@ Reading is the bottleneck, so reply *shape* matters as much as delivery:
 
 | Step | Why | Cost |
 | --- | --- | --- |
-| Laptop TUI speech extension | laptop sessions currently go unspoken | one extension calling `speak.sh --play` |
+| ~~Laptop TUI speech extension~~ — done 2026-11-25 | laptop sessions went unspoken | `agent/extensions/speech-reply.ts`, off unless `PI_SPEECH_TUI=1` |
 | Voice *input* on Telegram | typing will get hard too; the bridge already supports transcription providers | local Whisper (`sherpa-onnx-node` or `whisper.cpp`), no cloud |
 | Better voice (paid) | naturalness, once there is income | one branch in `speak.sh`; OpenAI `gpt-4o-mini-tts` ≈ $0.015/1k chars |
 | Desktop screen reader (Orca + speech-dispatcher) | reading *anything else* on the laptop, not just pi | `spd-say` baseline; no Piper module for speech-dispatcher exists |
+
+## 5b. The laptop TUI extension
+
+`agent/extensions/speech-reply.ts` is inert unless the machine says otherwise. To turn it on
+on the laptop:
+
+```bash
+printf 'PI_SPEECH_TUI=1\n' >> ~/.config/pi-speech.env
+```
+
+It speaks on `turn_end`, only for a response that used no tools (the final answer, not the
+thinking in between), queues one note at a time, and renders a warning in the TUI when the
+speech command fails — so a silent laptop is a visible error, not a mystery. The VPS keeps it
+off: it has no audio device, and its speech goes out as Telegram voice notes.
 
 ## 6. Durability checklist
 

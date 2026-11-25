@@ -409,9 +409,10 @@ file-dedupe work.
 
 ## Voice-first access (from 2026-11-25)
 
-- [ ] Laptop TUI speech: one extension that pipes each assistant reply through
-      `~/.pi/agent/scripts/speech/speak.sh --play` (laptop speakers). Telegram and the VPS are
-      already wired. Runbook: `agent/docs/runbooks/voice-first-accessibility.md`.
+- [x] ~~Laptop TUI speech: one extension that pipes each assistant reply through
+      `~/.pi/agent/scripts/speech/speak.sh --play` (laptop speakers).~~ Shipped 2026-11-25:
+      `agent/extensions/speech-reply.ts`, enabled on the laptop by `PI_SPEECH_TUI=1` in
+      `~/.config/pi-speech.env`. Runbook: `agent/docs/runbooks/voice-first-accessibility.md`.
 - [ ] Voice *input* on Telegram: the bridge already exposes transcription providers, so this is
       a local Whisper provider, no cloud, no key (`sherpa-onnx-node` or `whisper.cpp`).
 - [ ] Paid voice once there is income: one branch in `speak.sh` (OpenAI `gpt-4o-mini-tts`,
