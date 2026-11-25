@@ -5,6 +5,7 @@
 #   gpu-image.sh "a lighthouse on a cliff at dusk, photograph"
 #   gpu-image.sh --out ~/Pictures/fox.png "a red fox in snow"
 #   gpu-image.sh --size 1024 --steps 8 --seed 42 "prompt"
+#   gpu-image.sh --exact 600 "prompt"        # render 1024, deliver exactly 600x600
 #
 # The prompt is read from the first positional argument (or stdin with -).
 # Rendering runs on the home server (192.168.1.60) through its local ComfyUI
@@ -28,6 +29,7 @@ STEPS=8
 SEED=""
 CFG=1.0
 NEG="blurry, low quality, watermark, text"
+EXACT=""
 PROMPT=""
 
 while [ $# -gt 0 ]; do
@@ -38,6 +40,7 @@ while [ $# -gt 0 ]; do
         --seed) SEED="$2"; shift 2 ;;
         --cfg) CFG="$2"; shift 2 ;;
         --negative) NEG="$2"; shift 2 ;;
+        --exact) EXACT="$2"; shift 2 ;;
         -h | --help) sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -) PROMPT="$(cat)"; shift ;;
         -*) echo "gpu-image.sh: unknown flag $1" >&2; exit 1 ;;
@@ -45,6 +48,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+case "$EXACT" in [0-9]*) ;; "") ;; *) echo "gpu-image.sh: --exact takes pixels (e.g. 600)" >&2; exit 1 ;; esac
 case "$SIZE$STEPS$CFG${SEED:-0}" in
     *[!0-9.]*) echo "gpu-image.sh: --size/--steps/--cfg/--seed must be numeric" >&2; exit 1 ;;
 esac
@@ -66,5 +70,16 @@ if ! timeout 300 rsync -q -e "ssh -o BatchMode=yes" "$HOST:$remote_out" "$OUT"; 
     exit 2
 fi
 timeout 30 ssh -o BatchMode=yes "$HOST" "rm -f $remote_out" 2>/dev/null || true
+
+if [ -n "$EXACT" ]; then
+    python3 - "$OUT" "$EXACT" <<'PYPIX'
+import sys
+from PIL import Image
+path, px = sys.argv[1], int(sys.argv[2])
+im = Image.open(path).convert("RGB").resize((px, px), Image.LANCZOS)
+im.save(path, "PNG", optimize=True)
+print(f"{path} resized to {px}x{px}", file=sys.stderr)
+PYPIX
+fi
 
 printf '%s\n' "$OUT"
