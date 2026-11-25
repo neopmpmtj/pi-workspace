@@ -406,3 +406,16 @@ out. Two fixes: (A) admin console → Access controls, change that `ssh` rule `c
 (`ssh-ed25519 …IGUdz6ZZiVtTj9ansz1I0nCiXtflUIgeDjw1Ka3HSUyR`), bind to the Tailscale address,
 verify, then disable Tailscale SSH. Prefer B (key-based, never expires). Revisit after the
 file-dedupe work.
+
+## Voice-first access (from 2026-11-25)
+
+- [ ] Laptop TUI speech: one extension that pipes each assistant reply through
+      `~/.pi/agent/scripts/speech/speak.sh --play` (laptop speakers). Telegram and the VPS are
+      already wired. Runbook: `agent/docs/runbooks/voice-first-accessibility.md`.
+- [ ] Voice *input* on Telegram: the bridge already exposes transcription providers, so this is
+      a local Whisper provider, no cloud, no key (`sherpa-onnx-node` or `whisper.cpp`).
+- [ ] Paid voice once there is income: one branch in `speak.sh` (OpenAI `gpt-4o-mini-tts`,
+      ~$0.015/1k chars). The seam exists already; nothing else changes.
+- [ ] Home server: run `bash ~/.pi/agent/scripts/speech/setup-host.sh` when the box exists.
+- [ ] Desktop screen reader (Orca + speech-dispatcher, `spd-say` baseline) so the *laptop*
+      speaks everything, not only pi.

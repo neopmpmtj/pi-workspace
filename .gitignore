@@ -74,6 +74,7 @@ venv/
 # pi's own per-host files (the agent home)
 agent/auth.json
 agent/telegram.json
+agent/telegram.json.bak.*
 agent/model-rates.json
 agent/models-store.json
 agent/default-model.json

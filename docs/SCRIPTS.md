@@ -35,6 +35,9 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `downloads-inventory.sh` | lists what the downloads folder holds |
 | `downloads-reclaim.sh` | reclaims space from the downloads folder |
 | `fetch-publications.ts` | fetches publication lists (`npm run fetch:publications`) |
+| `speech/speak.sh` | **the one TTS seam**: text on stdin → `.ogg/.opus` (or `.wav`), engine `piper` → `espeak-ng`, `--play` for laptop speakers. Every surface calls this, nothing else calls piper directly |
+| `speech/clean.py` | markdown → speakable text (drops code fences, URLs, tables, emoji; caps length) |
+| `speech/setup-host.sh` | idempotent per-host setup: piper venv, voices, `~/.config/pi-speech.env`, Telegram `outboundHandlers` voice wiring, self-test |
 | `fruit_portrait_svg.py`, `photo_trace_svg.py` | SVG tracing helpers for the svg-photo-convert skill |
 
 ## 3. `~/.pi/apps-scripts/` — standalone projects

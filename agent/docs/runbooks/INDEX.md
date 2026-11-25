@@ -34,6 +34,7 @@ protected from `/archive` — see "Protecting or archiving a doc" at the bottom.
 | [gog-add-tasks-scope.md](gog-add-tasks-scope.md) | adding the Tasks scope |
 | [gog-token-keepalive.md](gog-token-keepalive.md) | keeping the gog token alive |
 | [google-keep-read-all.md](google-keep-read-all.md) | Keep read access |
+| [voice-first-accessibility.md](voice-first-accessibility.md) | the agent talks back: one speech seam (`scripts/speech/speak.sh`), per-surface wiring, what changes in reply shape when the user cannot read |
 | [lan-python-venv-hotword-cnn.md](lan-python-venv-hotword-cnn.md) | hotword CNN venv on the LAN server |
 | [svg-rendering.md](svg-rendering.md) | SVG rendering pipeline |
 | [file-dedupe-plan.md](file-dedupe-plan.md) | **active task brief** — content-based duplicate cleaner for the 1 TB USB drive and the two NTFS data disks; plan, decisions, measured disk facts |
