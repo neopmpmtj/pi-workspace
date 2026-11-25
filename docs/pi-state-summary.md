@@ -134,7 +134,7 @@ Git submodules under `agent/skills/`: `agent-replica-adapt`, `pi-prompt-dump`, `
 - Laptop runs `sshd` bound to its Tailscale address only (100.85.248.6:22, key-only), so
   the VPS can fingerprint it live for the nightly parity alert
 - Three machines, one tailnet (`tailbb6905.ts.net`): laptop 100.85.248.6, VPS 100.85.79.17,
-  home server `home-server` at 192.168.1.60 (RTX 3060). The VPS reaches the home server as
+  home server `home-server` = 100.127.199.126 at 192.168.1.60 (RTX 3060, Ollama). The VPS reaches the home server as
   `ssh home-server` with `~/.ssh/id_ed25519_home`; the laptop uses `lan-pmpmt`. Home public IP
   is 37.189.126.15 behind router NAT, with no inbound port — Tailscale is the only path.
   Runbook: `agent/docs/runbooks/lan-server-192.168.1.60/tailscale-home-server-vps-access.md`

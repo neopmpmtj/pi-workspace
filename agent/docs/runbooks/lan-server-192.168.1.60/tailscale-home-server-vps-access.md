@@ -4,11 +4,10 @@ How the VPS reaches the home server at `192.168.1.60` so GPU and long-running jo
 there from a Telegram turn (VPS) or from the laptop. Written 2026-11-25, after the 2026-11-23
 reinstall wiped the old Tailscale node.
 
-> **State 2026-11-25:** Tailscale 1.104.7 is installed on the home server, the VPS key
-> `vps->home-server` is in its `authorized_keys`, and the `home-server` node is **awaiting the
-> one-click login approval** — `tailscale status` still says `Logged out.` until then. The
-> `tailscale up` process holds a live URL for 30 minutes; if it dies, re-run the detached
-> command below and use the new URL.
+> **State 2026-11-25: working.** Joined as `home-server` = `100.127.199.126`. The VPS reaches it
+> with `ssh home-server` and ran a real GPU job through it (Ollama `qwen3.5:9b`, 100% GPU,
+> 6.5 GB VRAM). The old `pmpmt-b550-aorus-elite-v2` node (100.106.153.120) is still listed
+> offline and can be deleted in the admin console.
 
 ## Current facts
 
@@ -64,7 +63,7 @@ DNS client there), so the name below is an alias for the numeric tailnet IP:
 
 ```
 Host home-server
-    HostName 100.x.y.z          # home-server's tailnet IPv4
+    HostName 100.127.199.126    # home-server's tailnet IPv4
     User pmpmt
     IdentityFile ~/.ssh/id_ed25519_home
     IdentitiesOnly yes

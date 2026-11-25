@@ -15,7 +15,7 @@ One folder per machine/topic cluster. Everything here documents the desktop at
 | `server-git-github-access.md` | git/gh on the server for an RTX repo: keys, identity, `insteadOf` rewrite, `gh` token invalid, `pmpmtj` read-only on `neopmpmtj/*`, three ways to get push access | done 2025-11-08 |
 | `disk-wipe-and-reinstall.md` | Wiping the SSD and reinstalling Ubuntu from the live USB — why GRUB cannot format anything, what each tool is for, `blkdiscard`/`nvme format`, manual `wipefs`+`sgdisk`+`mkfs`, reinstalling GRUB by hand, traps | done 2026-11-22 |
 | `omarchy-install-from-usb.md` | Writing the Omarchy 4.5.0 ISO to the Kingston stick (`/dev/sda`) and installing it over the whole NVMe on `192.168.1.60`: wipe from the live VT, the installer wizard screens read out of the ISO, NVIDIA note | done 2026-11-22 |
-| `tailscale-home-server-vps-access.md` | **current path**: Tailscale on all three machines, `home-server` node, VPS key + `~/.ssh/config` alias, verification and GPU smoke test, traps | install + key done 2026-11-25; **join awaits the login approval** |
+| `tailscale-home-server-vps-access.md` | **current path**: Tailscale on all three machines, `home-server` node, VPS key + `~/.ssh/config` alias, verification and GPU smoke test, traps | done 2026-11-25 — verified: VPS ran Ollama on the RTX 3060 over it |
 
 Related machine facts live in `/home/pmpmt/AGENTS.md` (untracked, host-only).
 
