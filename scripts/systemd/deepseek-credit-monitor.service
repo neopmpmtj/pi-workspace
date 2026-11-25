@@ -1,0 +1,26 @@
+# DeepSeek credit monitor — one shot, started by deepseek-credit-monitor.timer.
+#
+# Install:
+#   cp ~/.pi/scripts/systemd/deepseek-credit-monitor.{service,timer} ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now deepseek-credit-monitor.timer
+#
+# Try once by hand (sends nothing above the threshold):
+#   systemctl --user start deepseek-credit-monitor.service
+#   ~/.pi/agent/scripts/deepseek-credit-monitor.sh --dry-run
+#
+# Uninstall:
+#   systemctl --user disable --now deepseek-credit-monitor.timer
+#   rm ~/.config/systemd/user/deepseek-credit-monitor.{service,timer}
+#
+# Runs whether or not the pi agent is up: the alert path is the Telegram Bot API
+# directly, so a stopped agent still warns about the credit that will run out.
+# No StandardOutput/StandardError override on purpose — the log goes to journald.
+
+[Unit]
+Description=DeepSeek credit monitor (Telegram alert below USD 2.00)
+Documentation=file:///home/pmpmt/.pi/agent/scripts/deepseek-credit-monitor.sh
+
+[Service]
+Type=oneshot
+ExecStart=/home/pmpmt/.pi/agent/scripts/deepseek-credit-monitor.sh

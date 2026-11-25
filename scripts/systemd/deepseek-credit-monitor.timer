@@ -1,0 +1,18 @@
+# Every 30 minutes, on the half hour. Persistent=true replays a run missed while
+# the machine was off: a missed balance check is exactly the silent gap this
+# monitor exists to close. The check itself is free (account endpoint, not a
+# model call), so the cadence costs nothing.
+#
+# Verify the schedule without installing:
+#   systemd-analyze calendar '*:0/30'
+
+[Unit]
+Description=Run the DeepSeek credit monitor every 30 minutes
+
+[Timer]
+OnCalendar=*:0/30
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

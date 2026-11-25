@@ -103,6 +103,7 @@ agent-template-new-agent/template-new-agent/settings.json
 agent/tmp/
 agent/pi-web-access/
 agent/state/prompt-capture/
+agent/state/deepseek-credit.json
 agent/observability/
 #
 # control-plane store (which mode/phrase is on differs per host)

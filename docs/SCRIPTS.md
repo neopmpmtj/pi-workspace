@@ -22,6 +22,8 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `env.sh` | single source for the nvm node path and `PI_REPO` | sourced by every script above |
 | `systemd/pi-host-backup.service` + `.timer` | nightly backup unit (03:30, both hosts) | copied to `~/.config/systemd/user` |
 | `systemd/pi-parity-check.service` + `.timer` | nightly drift check unit (09:00, VPS) | copied to `~/.config/systemd/user` |
+| `systemd/deepseek-credit-monitor.service` | oneshot DeepSeek credit check (free endpoint, Telegram alert on threshold) | `deepseek-credit-monitor.timer` |
+| `systemd/deepseek-credit-monitor.timer` | every 30 min (`*:0/30`, Persistent) | copied to `~/.config/systemd/user` (VPS, enabled) |
 | `protected-paths.txt` | **data, not a script**: what `/archive` must refuse | `agent/src/protected-paths.ts` |
 | `check-registers.sh` | fails when a script or runbook is missing from its register | run by hand, `sync-hosts.sh check` |
 | `host-sudo-mode.sh` | `status`/`on`/`off` for passwordless sudo: installs `/etc/sudoers.d/90-pi-agent` (validated with `visudo -cf` first), parks the rule on `off` | run by hand; see `agent/docs/runbooks/agent-sudo-passwordless.md` |
@@ -36,6 +38,7 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `downloads-reclaim.sh` | reclaims space from the downloads folder |
 | `fetch-publications.ts` | fetches publication lists (`npm run fetch:publications`) |
 | `deepseek-balance.sh` | DeepSeek credit: one-line balance, `--json`, `--min N` (exit 4 below threshold), `--quiet`; key from `$DEEPSEEK_API_KEY` or the agent `.env`, never printed |
+| `deepseek-credit-monitor.sh` | 30-minute alarm with hysteresis: warn < USD 2.50 once, repeat < USD 2.00 every run, recovery line, error once; sends via Bot API (no model, no tokens); `--dry-run`, `--force`, `--self-test` |
 | `speech/speak.sh` | **the one TTS seam**: text on stdin → `.ogg/.opus` (or `.wav`), engine `piper` → `espeak-ng`, `--play` for laptop speakers, exit 5 without audio when a one-shot text-only flag is armed. Every surface calls this, nothing else calls piper directly |
 | `speech/print-to-screen.sh` | arms exactly one text-only reply (`tmp/voice-textonly.flag`, epoch seconds): `speak.sh` then exits 5, so Telegram sends the visible text instead of the voice note. Run it in the same turn when the user asks to print/show on screen |
 | `speech/clean.py` | markdown → speakable text (drops code fences, URLs, tables, emoji; caps length) |
