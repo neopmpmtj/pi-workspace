@@ -29,10 +29,15 @@ Models in `~/ComfyUI/models` (~20 GB):
 
 ## 2. Measured on this card (1024², single image)
 
-| Model | Steps | Cold | Warm |
-| --- | --- | --- | --- |
-| SDXL-Turbo | 4 | 6–8 s | **1–3 s** |
-| Qwen-Image-2.1 turbo int8 | 8 | 13–17 s | **10 s** |
+| Model | Size | Steps | Time | Notes |
+| --- | --- | --- | --- | --- |
+| SDXL-Turbo | 1024² | 4 | **1–3 s** | drafts |
+| Qwen-Image-2.1 turbo int8 | 1024² | 8 | **10 s** | normal default |
+| Qwen-Image-2.1 turbo int8 | 2048² | 8 | 53 s | 11.7 GB VRAM |
+| Qwen-Image-2.1 base int8 | 2048² | 30 | **9 min** | 100 % util for 174 samples, 70 °C, fans 52 %, 149 W |
+
+The heavy setting (`--model base --size 2048 --steps 30 --cfg 3.5`) is the one that actually heats
+the card; it is the quality ceiling on this hardware.
 
 Quality: Qwen-Image-2.1 is clearly the better image (photoreal, follows the prompt); SDXL-Turbo
 is the fast drafting tool.
