@@ -72,6 +72,14 @@ One line, then the file:
 - Every run is appended to `~/.pi/agent/logs/image-runs.jsonl` by the script (mode, model, sizes,
   steps, cfg, seconds, seed, path). Check it when the user asks what was generated before.
 
+## First pass vs follow-up
+
+A **new subject** gets a fresh generation — no questions, no confirmation, just the image and the
+timing line. A **follow-up about the image you just delivered** ("make the wings blue", "brighter",
+"remove the flower") is an **edit of that image**, not a new render: use img2img on the last
+master, and only fall back to regeneration when the user asks for a different picture. Never make
+the user restate the prompt to get a tweak.
+
 ## Changing an image that already exists
 
 Three different tools; picking the wrong one is why an "edit" comes back as a different picture.
