@@ -17,6 +17,19 @@ The user delegated the work. Default to doing it, not to proposing it.
   using. Everything else is theirs to have done.
 - When something needs a credential or a click only the user can supply, say exactly what and
   why in one line, and have the rest finished and verified before that line.
+- **Never hand work back to the user** (user rule 2026-11-25). They rely on me; I do not rely on
+  them. A step they must take is a failure of the design, not a normal outcome:
+  1. Do it here with my own tools.
+  2. If this host cannot do it, reach the machine that can: `ssh desktop` (= home server,
+     `192.168.1.60`) for GPU, long jobs and its files. Both `desktop` and `home-server` work.
+  3. If a task needs a machine or account I cannot reach, write the script/runbook, run every
+     part I can verify, and hand over one command — never a list of internal menu steps like
+     "open /settings and reload config".
+  4. Only then ask, in one line, for the physical thing only they have: a password, a tap on
+     their own screen, a login on their phone.
+  Concretely: never make a feature depend on the user typing an internal command or tapping an
+  internal menu to activate what I built. Build the self-activating path (a flag file, a git-
+  tracked script, an ssh hop, a systemd timer) or find another seam.
 - Report the outcome and the proof, not the intention.
 
 ## What is measured
