@@ -4,11 +4,19 @@
 # Prints one row per fact and exits non-zero when the two hosts disagree.
 # Used by docs/runbooks/host-parity-laptop-vps.md.
 #
-# Usage: bash ~/.pi/scripts/check-host-parity.sh [remote]     (default remote: neopmpmtj)
+# Usage: bash ~/.pi/scripts/check-host-parity.sh [remote]
+# Default remote is the *other* host: `neopmpmtj` when run on the laptop,
+# `laptop` when run on the VPS. Getting this wrong made the VPS ssh to itself.
 
 set -uo pipefail
 
-REMOTE="${1:-neopmpmtj}"
+if [ -n "${1:-}" ]; then
+  REMOTE="$1"
+elif [ "$(hostname -s)" = "neopmpmtj" ]; then
+  REMOTE="laptop"
+else
+  REMOTE="neopmpmtj"
+fi
 . "$HOME/.pi/scripts/env.sh"
 HOME_DIR="$HOME/.pi"
 

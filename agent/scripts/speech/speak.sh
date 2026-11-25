@@ -12,7 +12,8 @@
 #     -l LANG     en (default) | pt   — voice choice, not text translation
 #     -e ENGINE   auto (default) | piper | espeak
 #     --play      also play through this host's speakers (laptops only;
-#                 a headless server has no audio device and skips it)
+#                 a headless server has no audio device and exits 6 instead
+#                 of pretending it spoke)
 #     -t TEXT     text as an argument instead of stdin
 #     --limit N   max characters spoken (default 1600, 0 = no limit)
 #
@@ -127,17 +128,30 @@ case "$OUT" in
 esac
 [ -s "$OUT" ] || { echo "speak.sh: produced empty file" >&2; exit 5; }
 
-# --- 6. optional local playback (never fatal) -----------------------
+# --- 6. optional local playback (loud on failure: silence is a bug here) ---
 if [ "$PLAY" = 1 ]; then
-    if command -v paplay >/dev/null 2>&1; then
-        paplay "$OUT" >/dev/null 2>&1 || true
-    elif command -v aplay >/dev/null 2>&1; then
-        aplay -q "$OUT" >/dev/null 2>&1 || true
-    elif command -v ffplay >/dev/null 2>&1; then
-        ffplay -nodisp -autoexit -loglevel quiet "$OUT" >/dev/null 2>&1 || true
-    else
-        echo "speak.sh: no audio player on this host (headless)" >&2
+    PLAYER="${PI_SPEECH_PLAYER:-}"
+    if [ -z "$PLAYER" ]; then
+        case "$OUT" in
+            *.ogg|*.opus)
+                # aplay cannot decode Opus; only these three can.
+                for cand in pw-play paplay ffplay; do
+                    command -v "$cand" >/dev/null 2>&1 && { PLAYER="$cand"; break; }
+                done ;;
+            *)
+                for cand in pw-play paplay aplay ffplay; do
+                    command -v "$cand" >/dev/null 2>&1 && { PLAYER="$cand"; break; }
+                done ;;
+        esac
     fi
+    if [ -z "$PLAYER" ]; then
+        echo "speak.sh: --play but no audio player on this host (headless?)" >&2
+        exit 6
+    fi
+    case "$PLAYER" in
+        ffplay) ffplay -nodisp -autoexit -loglevel quiet "$OUT" || { echo "speak.sh: ffplay failed" >&2; exit 6; } ;;
+        *) "$PLAYER" "$OUT" || { echo "speak.sh: $PLAYER failed" >&2; exit 6; } ;;
+    esac
 fi
 
 echo "$OUT"
