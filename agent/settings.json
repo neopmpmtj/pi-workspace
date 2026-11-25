@@ -1,7 +1,7 @@
 {
   "defaultProvider": "deepseek",
   "defaultModel": "deepseek-flash",
-  "defaultThinkingLevel": "high",
+  "defaultThinkingLevel": "max",
   "compaction": {
     "enabled": true
   },
