@@ -38,6 +38,7 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `downloads-reclaim.sh` | reclaims space from the downloads folder |
 | `fetch-publications.ts` | fetches publication lists (`npm run fetch:publications`) |
 | `deepseek-balance.sh` | DeepSeek credit: one-line balance, `--json`, `--min N` (exit 4 below threshold), `--quiet`; key from `$DEEPSEEK_API_KEY` or the agent `.env`, never printed |
+| `gpu-image.sh` | one image on the home server's RTX 3060: ssh + ComfyUI (`~/ComfyUI/gen.py`, Qwen-Image-2.1 turbo int8), PNG copied back, path printed; `--out --size --steps --seed`, prompt as arg or stdin |
 | `deepseek-credit-monitor.sh` | 30-minute alarm with hysteresis: warn < USD 2.50 once, repeat < USD 2.00 every run, recovery line, error once; sends via Bot API (no model, no tokens); `--dry-run`, `--force`, `--self-test` |
 | `speech/speak.sh` | **the one TTS seam**: text on stdin → `.ogg/.opus` (or `.wav`), engine `piper` → `espeak-ng`, `--play` for laptop speakers, exit 5 without audio when a one-shot text-only flag is armed. Every surface calls this, nothing else calls piper directly |
 | `speech/print-to-screen.sh` | arms exactly one text-only reply (`tmp/voice-textonly.flag`, epoch seconds): `speak.sh` then exits 5, so Telegram sends the visible text instead of the voice note. Run it in the same turn when the user asks to print/show on screen |
