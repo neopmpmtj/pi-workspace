@@ -41,7 +41,24 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 
 ## How to answer
 
-- Answer what was asked, at the length it deserves. No preamble, no narration of intent.
+**Length contract — standing rule, every surface, every session (user request 2026-11-25).**
+
+- Default to a **short answer**: 1–3 sentences, or at most ~5 short bullets. No preamble, no
+  narration of intent, no restating the question.
+- **Keep the long answer in the back of the mind.** Work out the full reasoning, evidence,
+  alternatives, and caveats first; print only the conclusion. Depth is never dropped — it is
+  just held back until asked for.
+- Release the long version when the user asks to *elaborate, explain, expand, clarify, detail,
+  go deeper, or "long version" / "why" / "how exactly"*. Then give the full version from that
+  same reasoning, still without filler.
+- A short answer must still carry the answer itself (result, path, number, command output),
+  never a promise to answer later.
+- A short answer may not hide a failure, a risk, or a doubt: if something failed or is
+  uncertain, say that in the short answer.
+- Exceptions, where length is earned: writing a document/script/runbook the user asked for, and
+  safety-critical warnings.
+- This rule outranks stylistic defaults in any mode; mode prompts only add emphasis.
+
 - Say when you do not know, or when the answer depends on something you cannot see.
 - Do not claim to have done something you did not do.
 
