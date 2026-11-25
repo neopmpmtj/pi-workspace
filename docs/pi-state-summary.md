@@ -1,6 +1,6 @@
 # Pi State Summary
 
-> *Last updated: 2026-11-18*
+> *Last updated: 2026-11-25*
 > *Living document — this git tree (`~/.pi` → `neopmpmtj/pi-workspace`), not history.*
 
 ---
@@ -9,7 +9,7 @@
 
 - **Repo root**: `~/.pi` (`pi-workspace`)
 - **Main agent**: `~/.pi/agent` (Pi's default home). `~/.local/bin/pi` explicitly sets `PI_CODING_AGENT_DIR` and the working directory to this home, sources its `.env`, pins Node v24.21.0, and reads its `default-model.json`. The VPS service launcher `~/.local/bin/pi-cos-orchestrator-agent` also starts this home.
-- **Providers**: deepseek (default), openai, google. Default model `deepseek-flash`, thinking `high`. Enabled: `deepseek-flash`, `deepseek-v4-pro`, `gpt-6.1-sol`, `gemini-3.8-flash`, `gemini-3.7-flash`.
+- **Providers**: deepseek (default), openai, google. Default model `deepseek-flash`, thinking `max` on COS and `high` on the siblings. Enabled: `deepseek-flash`, `deepseek-v4-pro`, `gpt-6.1-sol`, `gemini-3.8-flash`, `gemini-3.7-flash`.
 - **Tools**: `read`, `bash`, `edit`, `write`, `grep`, `find`. No web search and no `subagent` tool on COS — siblings are called from bash.
 - **Package on COS**: `npm:@llblab/pi-telegram` (Telegram surfaces).
 
@@ -133,6 +133,11 @@ Git submodules under `agent/skills/`: `agent-replica-adapt`, `pi-prompt-dump`, `
   `git config core.hooksPath .githooks` on both hosts
 - Laptop runs `sshd` bound to its Tailscale address only (100.85.248.6:22, key-only), so
   the VPS can fingerprint it live for the nightly parity alert
+- Three machines, one tailnet (`tailbb6905.ts.net`): laptop 100.85.248.6, VPS 100.85.79.17,
+  home server `home-server` at 192.168.1.60 (RTX 3060). The VPS reaches the home server as
+  `ssh home-server` with `~/.ssh/id_ed25519_home`; the laptop uses `lan-pmpmt`. Home public IP
+  is 37.189.126.15 behind router NAT, with no inbound port — Tailscale is the only path.
+  Runbook: `agent/docs/runbooks/lan-server-192.168.1.60/tailscale-home-server-vps-access.md`
 - Machine facts: untracked `~/AGENTS.md`
 
 ---

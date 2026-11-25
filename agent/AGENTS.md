@@ -106,7 +106,7 @@ ahead, else tomorrow — or tomorrow 06:00 when no time was stated. "I bought th
   repo root is the living map of this tree; if you change layout, ports, lists, or config
   files, update that file in the same change.
 
-## Two hosts, one workspace (laptop ↔ VPS)
+## Three machines, one workspace (laptop ↔ VPS ↔ home server)
 
 `~/.pi` is the same repo on this laptop and on the VPS (`neopmpmtj`). Work alternates
 between them; they must stay identical. Do not re-derive this — it is already built:
@@ -129,6 +129,16 @@ between them; they must stay identical. Do not re-derive this — it is already 
 - Before deleting anything, or when asked what is safe to remove: the tiered list is
   `agent/docs/runbooks/what-must-remain.md` (tier 0 = agent stops working, tier 1 = lose access
   or history, tier 2 = regenerable).
+
+- **Home server** (`192.168.1.60`, alias `home-server` over Tailscale from the VPS and
+  `lan-pmpmt` from the laptop; RTX 3060 12 GB, `NOPASSWD` sudo) is the GPU and long-job box.
+  From the VPS reach it with `ssh home-server '<cmd>'`; put GPU or multi-hour work there, not on
+  the laptop or the VPS. It has no pi home: a job there is an ssh command, not a chat turn.
+  All three machines share one tailnet, so this works from any network.
+  Runbook: `docs/runbooks/lan-server-192.168.1.60/tailscale-home-server-vps-access.md`.
+- **Telegram is the VPS, not this laptop.** The user talks over Telegram most of the time, so a
+  request that arrives there must be completable with the laptop off — never make the laptop a
+  dependency of a Telegram task. The laptop stays the direct TUI surface when it is on.
 
 When the user asks "are they the same?", run the parity script before answering.
 
