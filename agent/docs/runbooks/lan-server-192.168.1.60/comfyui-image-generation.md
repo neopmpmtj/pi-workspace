@@ -82,6 +82,20 @@ Qwen-Image-2.1 is a 2026 architecture and has exact requirements:
 SDXL-Turbo is the ordinary checkpoint graph: `CheckpointLoaderSimple` → `EmptyLatentImage`
 1024² → KSampler 4 steps, cfg 1.0, euler_ancestral → VAEDecode.
 
+## 4b. Editing an existing image
+
+Measured 2026-11-25 on the same bee, base model:
+
+| Technique | Flag | What it preserves | Time |
+| --- | --- | --- | --- |
+| img2img, denoise 0.45 | `--from src.png --denoise 0.45` | pose, framing, background — only the named detail changes | 17 s @ 600² |
+| Qwen reference mode | `gen.py --edit src.png` | subject identity, but **re-composes** pose/scene | 60 s @ 1024² |
+| inpaint | not wired | everything outside the mask | — |
+
+`--from` uploads the source to `ComfyUI/input`, runs `VAEEncode` → `KSampler(denoise)`, and
+deletes both temporary files afterwards. Use the reference mode only when the scene should
+change, not for a tweak. Seeds reproduce an image only for an identical prompt.
+
 ## 5. Operate
 
 ```bash

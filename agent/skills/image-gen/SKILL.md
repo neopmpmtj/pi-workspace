@@ -72,6 +72,44 @@ One line, then the file:
 - Every run is appended to `~/.pi/agent/logs/image-runs.jsonl` by the script (mode, model, sizes,
   steps, cfg, seconds, seed, path). Check it when the user asks what was generated before.
 
+## Changing an image that already exists
+
+Three different tools; picking the wrong one is why an "edit" comes back as a different picture.
+All three are measured on the bee from 2026-11-25.
+
+1. **img2img — the default for a slight change.** Keeps pose, framing and background; changes
+   only what the prompt names.
+
+   ```bash
+   ~/.pi/agent/scripts/gpu-image.sh --from /path/to/source.png --denoise 0.45 \
+       "the same honeybee with iridescent blue wings"
+   ```
+
+   - `0.30–0.40`: colour, texture, light. `0.45–0.55`: a clear change to one element.
+     `0.65+`: composition starts to move; that is a remix, not an edit.
+   - 20 steps, cfg 3.5, base model; ~17 s for a 600² source.
+   - Output size follows the source (rounded down to a multiple of 16, e.g. 600 → 592).
+
+2. **Inpaint — for one region** (remove an object, add a hat). Needs a mask, so ask the user to
+   mark it, or derive a rough mask from a bounding box. Not wired into `gpu-image.sh` yet; say so
+   rather than pretending.
+
+3. **Qwen-Image-2.1 reference mode — for "same subject, new scene".** `--edit` splices the source
+   into the DiT as a vision reference; it follows the instruction strongly but **re-synthesises
+   pose and background** (measured: a perched bee became a bee on a yellow flower). Use only when
+   the user wants the subject kept and the scene changed.
+
+Rules:
+
+- **Seed reuse does not make an edit.** Same seed + changed prompt = a new image; it only
+  reproduces an image from an identical prompt on the same model build.
+- Keep the source file path in the reply and the run log; "make its wings blue" refers to the
+  last delivered master unless the user names another file.
+- Deliver the edited image and state the technique: `edited img2img, denoise 0.45, 17 s,
+  from /tmp/m1.png`. Never imply it is a fresh generation.
+- If the user gives no source and asks for a change, use the most recent image from
+  `~/.pi/agent/logs/image-runs.jsonl`.
+
 ## When it fails
 
 - The script exits 2 with a reason. Report it plainly: server unreachable, ComfyUI down, model

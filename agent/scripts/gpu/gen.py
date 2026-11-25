@@ -87,6 +87,9 @@ def main():
     ap.add_argument("--cfg", type=float, default=1.0)
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--model", choices=["sdxl", "turbo", "base"], default="base")
+    ap.add_argument("--edit", default="", help="image filename in ComfyUI/input: Qwen 2.1 reference/edit mode")
+    ap.add_argument("--from", dest="from_img", default="", help="image filename in ComfyUI/input: img2img base")
+    ap.add_argument("--denoise", type=float, default=0.5)
     ap.add_argument("--negative", default="blurry, low quality, watermark, text")
     ap.add_argument("--timeout", type=int, default=1800)
     a = ap.parse_args()
@@ -97,8 +100,43 @@ def main():
 
     seed = a.seed if a.seed is not None else random.randint(1, 2**31 - 1)
     out = a.out or f"/tmp/gpu-image-{int(time.time())}.png"
-    wf = (sdxl_workflow if a.model == "sdxl" else
-          lambda *x: qwen_workflow(*x, model=a.model))(prompt, a.negative, a.size, a.steps, a.cfg, seed)
+    if a.from_img:
+        if a.model == "sdxl":
+            sys.exit("gen.py: --from needs model base or turbo")
+        wf = {
+            "10": {"class_type": "LoadImage", "inputs": {"image": a.from_img}},
+            "1": {"class_type": "UNETLoader", "inputs": {"unet_name": MODEL_FILES[a.model], "weight_dtype": "default"}},
+            "2": {"class_type": "CLIPLoader", "inputs": {"clip_name": "qwen3vl_8b_w4a8.safetensors", "type": "qwen_image", "device": "default"}},
+            "3": {"class_type": "VAELoader", "inputs": {"vae_name": "qwen_image_2.1_vae_bf16.safetensors"}},
+            "8": {"class_type": "VAEEncode", "inputs": {"pixels": ["10", 0], "vae": ["3", 0]}},
+            "4": {"class_type": "TextEncodeQwenImage21", "inputs": {"clip": ["2", 0], "prompt": prompt,
+                  "negative_prompt": a.negative, "resolution": a.size}},
+            "5": {"class_type": "KSampler", "inputs": {"seed": seed, "steps": a.steps, "cfg": a.cfg,
+                  "sampler_name": "euler", "scheduler": "simple", "denoise": a.denoise, "model": ["1", 0],
+                  "positive": ["4", 0], "negative": ["4", 1], "latent_image": ["8", 0]}},
+            "6": {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0], "vae": ["3", 0]}},
+            "7": {"class_type": "SaveImage", "inputs": {"images": ["6", 0], "filename_prefix": "gen"}},
+        }
+    elif a.edit:
+        if a.model == "sdxl":
+            sys.exit("gen.py: --edit needs model base or turbo")
+        wf = {
+            "10": {"class_type": "LoadImage", "inputs": {"image": a.edit}},
+            "1": {"class_type": "UNETLoader", "inputs": {"unet_name": MODEL_FILES[a.model], "weight_dtype": "default"}},
+            "2": {"class_type": "CLIPLoader", "inputs": {"clip_name": "qwen3vl_8b_w4a8.safetensors", "type": "qwen_image", "device": "default"}},
+            "3": {"class_type": "VAELoader", "inputs": {"vae_name": "qwen_image_2.1_vae_bf16.safetensors"}},
+            "4": {"class_type": "TextEncodeQwenImage21", "inputs": {"clip": ["2", 0], "prompt": prompt,
+                  "negative_prompt": a.negative, "vae": ["3", 0], "resolution": a.size,
+                  "images": {"image_1": ["10", 0]}}},
+            "5": {"class_type": "KSampler", "inputs": {"seed": seed, "steps": a.steps, "cfg": a.cfg,
+                  "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0, "model": ["1", 0],
+                  "positive": ["4", 0], "negative": ["4", 1], "latent_image": ["4", 2]}},
+            "6": {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0], "vae": ["3", 0]}},
+            "7": {"class_type": "SaveImage", "inputs": {"images": ["6", 0], "filename_prefix": "gen"}},
+        }
+    else:
+        wf = (sdxl_workflow if a.model == "sdxl" else
+              lambda *x: qwen_workflow(*x, model=a.model))(prompt, a.negative, a.size, a.steps, a.cfg, seed)
 
     t0 = time.time()
     hist = wait(post(wf), a.timeout)

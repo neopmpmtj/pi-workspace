@@ -5,6 +5,7 @@
 #   gpu-image.sh "a lighthouse on a cliff at dusk, photograph"
 #   gpu-image.sh --mode quick "a fox"
 #   gpu-image.sh --mode max --size 1200 "a bee"
+#   gpu-image.sh --from ~/Pictures/bee.png --denoise 0.45 "its wings are now blue"
 #
 # Modes (the mode picks model, render size, steps, cfg):
 #   quick   SDXL-Turbo                       1024²   4 steps   ~3 s
@@ -36,6 +37,8 @@ STEPS_OVERRIDE=""
 CFG_OVERRIDE=""
 SEED=""
 NEG="blurry, low quality, watermark, text"
+FROM=""
+DENOISE="0.45"
 PROMPT=""
 
 while [ $# -gt 0 ]; do
@@ -47,6 +50,8 @@ while [ $# -gt 0 ]; do
         --cfg) CFG_OVERRIDE="$2"; shift 2 ;;
         --seed) SEED="$2"; shift 2 ;;
         --negative) NEG="$2"; shift 2 ;;
+        --from) FROM="$2"; shift 2 ;;
+        --denoise) DENOISE="$2"; shift 2 ;;
         -h | --help) sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -) PROMPT="$(cat)"; shift ;;
         -*) echo "gpu-image.sh: unknown flag $1" >&2; exit 1 ;;
@@ -67,12 +72,28 @@ case "${REQ_SIZE:-0}${SEED:-0}$STEPS$CFG" in
     *[!0-9.]*) echo "gpu-image.sh: size/seed/steps/cfg must be numeric" >&2; exit 1 ;;
 esac
 
+remote_from=""
+if [ -n "$FROM" ]; then
+    [ -f "$FROM" ] || { echo "gpu-image.sh: --from file not found: $FROM" >&2; exit 2; }
+    remote_from="edit-$(date +%s)-$$.png"
+    if ! timeout 120 scp -q -o BatchMode=yes "$FROM" "$HOST:ComfyUI/input/$remote_from"; then
+        echo "gpu-image.sh: could not upload $FROM to $HOST" >&2; exit 2
+    fi
+    if ! python3 -c "import sys; from PIL import Image; w,h=Image.open(sys.argv[1]).size; print(max(w,h))" "$FROM" >/dev/null; then
+        echo "gpu-image.sh: $FROM is not a readable image" >&2; exit 2
+    fi
+fi
 if [ -n "$REQ_SIZE" ] && [ "$REQ_SIZE" -gt "$RENDER" ]; then RENDER="$REQ_SIZE"; fi
 [ -n "$PROMPT" ] || { echo "gpu-image.sh: empty prompt" >&2; exit 2; }
 OUT="${OUT:-/tmp/pi-image-$(date +%s).png}"
 
 remote_out="/tmp/gpu-$(date +%s)-$$.png"
 args="--out $remote_out --size $RENDER --steps $STEPS --cfg $CFG --model $MODEL --negative $(printf '%q' "$NEG")"
+if [ -n "$remote_from" ]; then
+    args="$args --from $remote_from --denoise $DENOISE"
+    RENDER="$(python3 -c "import sys; from PIL import Image; w,h=Image.open(sys.argv[1]).size; print(max(w,h))" "$FROM")"
+    args="$args --size $RENDER"
+fi
 [ -n "$SEED" ] && args="$args --seed $SEED"
 
 mkdir -p "$(dirname "$OUT")"
@@ -90,7 +111,7 @@ if ! timeout 300 rsync -q -e "ssh -o BatchMode=yes" "$HOST:$remote_out" "$OUT"; 
     echo "gpu-image.sh: generated but could not copy $remote_out back" >&2
     exit 2
 fi
-timeout 30 ssh -o BatchMode=yes "$HOST" "rm -f $remote_out" 2>/dev/null || true
+timeout 30 ssh -o BatchMode=yes "$HOST" "rm -f $remote_out $([[ -n "$remote_from" ]] && echo "ComfyUI/input/$remote_from")" 2>/dev/null || true
 
 OUT_PX="$RENDER"
 if [ -n "$REQ_SIZE" ] && [ "$REQ_SIZE" -ne "$RENDER" ]; then
@@ -105,10 +126,12 @@ PYPIX
 fi
 
 mkdir -p "$(dirname "$LOG")"
-printf '{"ts":"%s","mode":"%s","model":"%s","render":%s,"output":%s,"steps":%s,"cfg":%s,"seconds":%s,"seed":%s,"path":"%s"}\n' \
-    "$(date -Is)" "$MODE" "$MODEL" "$RENDER" "$OUT_PX" "$STEPS" "$CFG" \
-    "${secs:-null}" "${seed:-null}" "$OUT" >>"$LOG"
+MODE_LABEL="$MODE"; [ -n "$FROM" ] && MODE_LABEL="edit:$MODE"
+DENOISE_FIELD="null"; [ -n "$FROM" ] && DENOISE_FIELD="$DENOISE"
+printf '{"ts":"%s","mode":"%s","model":"%s","render":%s,"output":%s,"steps":%s,"cfg":%s,"denoise":%s,"source":"%s","seconds":%s,"seed":%s,"path":"%s"}\n' \
+    "$(date -Is)" "$MODE_LABEL" "$MODEL" "$RENDER" "$OUT_PX" "$STEPS" "$CFG" \
+    "$DENOISE_FIELD" "$FROM" "${secs:-null}" "${seed:-null}" "$OUT" >>"$LOG"
 
 printf 'gpu-image: mode=%s model=%s render=%s output=%s time=%ss seed=%s path=%s\n' \
-    "$MODE" "$MODEL" "$RENDER" "$OUT_PX" "${secs:-?}" "${seed:-?}" "$OUT" >&2
+    "$MODE_LABEL" "$MODEL" "$RENDER" "$OUT_PX" "${secs:-?}" "${seed:-?}" "$OUT" >&2
 printf '%s\n' "$OUT"
