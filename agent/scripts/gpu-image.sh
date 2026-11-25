@@ -3,67 +3,88 @@
 # gpu-image.sh — make an image on the home server's RTX 3060.
 #
 #   gpu-image.sh "a lighthouse on a cliff at dusk, photograph"
-#   gpu-image.sh --out ~/Pictures/fox.png "a red fox in snow"
-#   gpu-image.sh --size 1024 --steps 8 --seed 42 "prompt"
-#   gpu-image.sh --exact 600 "prompt"        # render 1024, deliver exactly 600x600
+#   gpu-image.sh --mode quick "a fox"
+#   gpu-image.sh --mode max --size 1200 "a bee"
 #
-# The prompt is read from the first positional argument (or stdin with -).
-# Rendering runs on the home server (192.168.1.60) through its local ComfyUI
-# service (127.0.0.1:8188) with Qwen-Image-2.1 turbo int8: ~10 s per 1024^2
-# image on the 3060, free and local. The PNG is copied back to --out
-# (default: /tmp/pi-image-<epoch>.png) and that path is printed on stdout.
+# Modes (the mode picks model, render size, steps, cfg):
+#   quick   SDXL-Turbo                       1024²   4 steps   ~3 s
+#   medium  Qwen-Image-2.1 base int8  ←default 1024²  20 steps  ~90 s
+#   max     Qwen-Image-2.1 base int8         2048²  30 steps  ~9 min
+#
+# --size N asks for an N x N deliverable. If N is smaller than the mode's render
+# size the image is rendered at the mode size and downsampled (crisp); if N is
+# larger, it is rendered at N.
+#
+# Prints the PNG path on stdout and one machine line on stderr:
+#   gpu-image: mode=medium model=base render=1024 output=1024 time=91.2s seed=1234 path=/tmp/x.png
+# Every run is appended to ~/.pi/agent/logs/image-runs.jsonl (per host, free).
 #
 # Exit: 0 image written | 1 usage | 2 server unreachable or generation failed
-#
-# Runbook: agent/docs/runbooks/lan-server-192.168.1.60/comfyui-image-generation.md
+# Skill: agent/skills/image-gen/SKILL.md
 # ============================================================
 set -euo pipefail
 
 HOST="${GPU_IMAGE_HOST:-desktop}"
 REMOTE_PY="${GPU_IMAGE_PY:-/home/pmpmt/venvs/comfy/bin/python}"
 REMOTE_GEN="${GPU_IMAGE_GEN:-/home/pmpmt/ComfyUI/gen.py}"
+LOG="${GPU_IMAGE_LOG:-$HOME/.pi/agent/logs/image-runs.jsonl}"
 
-OUT="/tmp/pi-image-$(date +%s).png"
-SIZE=1024
-STEPS=8
+MODE="medium"
+OUT=""
+REQ_SIZE=""
+STEPS_OVERRIDE=""
+CFG_OVERRIDE=""
 SEED=""
-CFG=1.0
 NEG="blurry, low quality, watermark, text"
-EXACT=""
 PROMPT=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
+        --mode) MODE="$2"; shift 2 ;;
         --out) OUT="$2"; shift 2 ;;
-        --size) SIZE="$2"; shift 2 ;;
-        --steps) STEPS="$2"; shift 2 ;;
+        --size | --exact) REQ_SIZE="$2"; shift 2 ;;
+        --steps) STEPS_OVERRIDE="$2"; shift 2 ;;
+        --cfg) CFG_OVERRIDE="$2"; shift 2 ;;
         --seed) SEED="$2"; shift 2 ;;
-        --cfg) CFG="$2"; shift 2 ;;
         --negative) NEG="$2"; shift 2 ;;
-        --exact) EXACT="$2"; shift 2 ;;
-        -h | --help) sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h | --help) sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -) PROMPT="$(cat)"; shift ;;
         -*) echo "gpu-image.sh: unknown flag $1" >&2; exit 1 ;;
         *) PROMPT="$*"; break ;;
     esac
 done
 
-case "$EXACT" in [0-9]*) ;; "") ;; *) echo "gpu-image.sh: --exact takes pixels (e.g. 600)" >&2; exit 1 ;; esac
-case "$SIZE$STEPS$CFG${SEED:-0}" in
-    *[!0-9.]*) echo "gpu-image.sh: --size/--steps/--cfg/--seed must be numeric" >&2; exit 1 ;;
+case "$MODE" in
+    quick) MODEL="sdxl"; RENDER=1024; STEPS=4; CFG=1.0 ;;
+    medium) MODEL="base"; RENDER=1024; STEPS=20; CFG=3.5 ;;
+    max) MODEL="base"; RENDER=2048; STEPS=30; CFG=3.5 ;;
+    *) echo "gpu-image.sh: --mode must be quick, medium or max" >&2; exit 1 ;;
 esac
+[ -n "$STEPS_OVERRIDE" ] && STEPS="$STEPS_OVERRIDE"
+[ -n "$CFG_OVERRIDE" ] && CFG="$CFG_OVERRIDE"
+
+case "${REQ_SIZE:-0}${SEED:-0}$STEPS$CFG" in
+    *[!0-9.]*) echo "gpu-image.sh: size/seed/steps/cfg must be numeric" >&2; exit 1 ;;
+esac
+
+if [ -n "$REQ_SIZE" ] && [ "$REQ_SIZE" -gt "$RENDER" ]; then RENDER="$REQ_SIZE"; fi
 [ -n "$PROMPT" ] || { echo "gpu-image.sh: empty prompt" >&2; exit 2; }
+OUT="${OUT:-/tmp/pi-image-$(date +%s).png}"
 
 remote_out="/tmp/gpu-$(date +%s)-$$.png"
-args="--out $remote_out --size $SIZE --steps $STEPS --cfg $CFG --negative $(printf '%q' "$NEG")"
+args="--out $remote_out --size $RENDER --steps $STEPS --cfg $CFG --model $MODEL --negative $(printf '%q' "$NEG")"
 [ -n "$SEED" ] && args="$args --seed $SEED"
 
 mkdir -p "$(dirname "$OUT")"
-if ! printf '%s' "$PROMPT" | timeout 900 ssh -o BatchMode=yes -o ConnectTimeout=10 "$HOST" \
-        "$REMOTE_PY $REMOTE_GEN $args" >/dev/null; then
-    echo "gpu-image.sh: generation failed on $HOST (ComfyUI down, model missing, or prompt rejected)" >&2
+resp=""
+if ! resp="$(printf '%s' "$PROMPT" | timeout 1800 ssh -o BatchMode=yes -o ConnectTimeout=10 "$HOST" \
+        "$REMOTE_PY $REMOTE_GEN $args" 2>&1)"; then
+    echo "gpu-image.sh: generation failed on $HOST — $(printf '%s' "$resp" | tail -n 1)" >&2
     exit 2
 fi
+meta="$(printf '%s\n' "$resp" | grep -E '^seed=[0-9]+ time=' | tail -n 1 || true)"
+secs="$(printf '%s' "$meta" | sed -n 's/.*time=\([0-9.]*\)s.*/\1/p')"
+seed="$(printf '%s' "$meta" | sed -n 's/.*seed=\([0-9]*\).*/\1/p')"
 
 if ! timeout 300 rsync -q -e "ssh -o BatchMode=yes" "$HOST:$remote_out" "$OUT"; then
     echo "gpu-image.sh: generated but could not copy $remote_out back" >&2
@@ -71,15 +92,23 @@ if ! timeout 300 rsync -q -e "ssh -o BatchMode=yes" "$HOST:$remote_out" "$OUT"; 
 fi
 timeout 30 ssh -o BatchMode=yes "$HOST" "rm -f $remote_out" 2>/dev/null || true
 
-if [ -n "$EXACT" ]; then
-    python3 - "$OUT" "$EXACT" <<'PYPIX'
+OUT_PX="$RENDER"
+if [ -n "$REQ_SIZE" ] && [ "$REQ_SIZE" -ne "$RENDER" ]; then
+    python3 - "$OUT" "$REQ_SIZE" <<'PYPIX'
 import sys
 from PIL import Image
 path, px = sys.argv[1], int(sys.argv[2])
 im = Image.open(path).convert("RGB").resize((px, px), Image.LANCZOS)
 im.save(path, "PNG", optimize=True)
-print(f"{path} resized to {px}x{px}", file=sys.stderr)
 PYPIX
+    OUT_PX="$REQ_SIZE"
 fi
 
+mkdir -p "$(dirname "$LOG")"
+printf '{"ts":"%s","mode":"%s","model":"%s","render":%s,"output":%s,"steps":%s,"cfg":%s,"seconds":%s,"seed":%s,"path":"%s"}\n' \
+    "$(date -Is)" "$MODE" "$MODEL" "$RENDER" "$OUT_PX" "$STEPS" "$CFG" \
+    "${secs:-null}" "${seed:-null}" "$OUT" >>"$LOG"
+
+printf 'gpu-image: mode=%s model=%s render=%s output=%s time=%ss seed=%s path=%s\n' \
+    "$MODE" "$MODEL" "$RENDER" "$OUT_PX" "${secs:-?}" "${seed:-?}" "$OUT" >&2
 printf '%s\n' "$OUT"

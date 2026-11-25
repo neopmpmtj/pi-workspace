@@ -32,7 +32,8 @@ Models in `~/ComfyUI/models` (~20 GB):
 | Model | Size | Steps | Time | Notes |
 | --- | --- | --- | --- | --- |
 | SDXL-Turbo | 1024² | 4 | **1–3 s** | drafts |
-| Qwen-Image-2.1 turbo int8 | 1024² | 8 | **10 s** | normal default |
+| Qwen-Image-2.1 turbo int8 | 1024² | 8 | **10 s** | fast quality |
+| Qwen-Image-2.1 base int8 | 1024² | 20 | **54 s** | the `medium` default in `image-gen` |
 | Qwen-Image-2.1 turbo int8 | 2048² | 8 | 53 s | 11.7 GB VRAM |
 | Qwen-Image-2.1 base int8 | 2048² | 30 | **9 min** | 100 % util for 174 samples, 70 °C, fans 52 %, 149 W |
 
@@ -41,6 +42,9 @@ the card; it is the quality ceiling on this hardware.
 
 Quality: Qwen-Image-2.1 is clearly the better image (photoreal, follows the prompt); SDXL-Turbo
 is the fast drafting tool.
+
+The **`image-gen` skill** (`agent/skills/image-gen/SKILL.md`) wraps all of this: quick / medium /
+max, exact sizes, the seconds in the reply, and a run log.
 
 ## 3. Use it
 

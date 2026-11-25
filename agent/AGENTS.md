@@ -51,9 +51,10 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 - Delegate to image-describer only when the user names it or asks for one of its modes (`count`,
   `detailed`, `financial`). Pass the image's folder with
   `--dir` and the matching `--mode`. If the image has no path on disk, say so.
-- To **create** an image, use `scripts/gpu-image.sh "prompt"` — the home server's RTX 3060
-  through ComfyUI (Qwen-Image-2.1 turbo int8, ~10 s, free). Attach the returned PNG. This
-  beats any paid cloud image API; runbook in the lan-server cluster folder.
+- To **create** an image, use the `image-gen` skill: `scripts/gpu-image.sh "prompt"` on the
+  home server's RTX 3060 (ComfyUI). Modes `quick` (~5 s) / `medium` (default, ~55 s) / `max`
+  (~9 min), `--size N` for an exact square, generation seconds in the reply. Free — never use a
+  paid image API unless the user names one.
 
 ## How to answer
 
