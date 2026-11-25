@@ -70,7 +70,7 @@ Reading is the bottleneck, so reply *shape* matters as much as delivery:
 - **But when the user asks to see it** — "print it", "print to screen", "show on screen",
   "show on Telegram" — the same turn must be text, not speech. Run
   `agent/scripts/speech/print-to-screen.sh` **before** the final answer; it arms a one-shot
-  flag that `voice-reply.sh` consumes, the bridge finds no voice handler, and it delivers the
+  flag that `speak.sh` consumes, the bridge finds no voice handler, and it delivers the
   planned text reply instead. See § 4b.
 - Anything genuinely important gets written to a file **and** said, because the file survives
   and the speech is how the user receives it.
@@ -79,30 +79,30 @@ Reading is the bottleneck, so reply *shape* matters as much as delivery:
 
 The bridge has no per-turn "text instead of voice" switch: with
 `voice.replyMode: always` every Telegram answer is intercepted into a voice note. The
-trigger phrases are therefore handled by a **one-shot file gate** around the TTS handler:
+trigger phrases are therefore handled by a **one-shot file gate inside `speak.sh`**, the
+single TTS seam every surface already calls:
 
 ```
-telegram.json  voice handler -> scripts/speech/voice-reply.sh -o {ogg}
+telegram.json  voice handler -> scripts/speech/speak.sh -o {ogg}
                                   | flag fresh?  yes -> rm flag, exit 5, no audio
-                                  | no          -> exec speak.sh (unchanged)
+                                  | no          -> synthesise as usual
 scripts/speech/print-to-screen.sh -> tmp/voice-textonly.flag   (epoch seconds)
 ```
 
 When the user says print/show on screen, print to Telegram, "print it", or "text only",
-the agent runs `print-to-screen.sh` in that same turn, before the answer. `voice-reply.sh`
+the agent runs `print-to-screen.sh` in that same turn, before the answer. `speak.sh`
 consumes the flag, the bridge records a voice-handler failure, finds no other provider, and
-delivers the planned **text** reply (its documented fallback path).
+delivers the planned **text** reply (its documented fallback path). The TUI extension sees
+the same exit 5 and stays quiet.
 
 Properties worth keeping:
 
+- **No config change and no reload.** The Telegram handler keeps pointing at `speak.sh`, so
+  there is nothing to reload and no restart; the gate ships by `git pull`.
 - **One shot.** The flag is deleted on use; a normal answer is never silenced twice.
 - **Self-healing.** A flag older than 20 min is ignored, so a turn that ended without a voice
   step (abort, empty answer) cannot mute the next one. `PI_SPEECH_TEXTONLY_FLAG` and
   `PI_SPEECH_TEXTONLY_TTL` override path and window.
-- **Config reload, no restart.** `telegram.json` is read into memory at startup, but opening
-  **`/settings`** (or any Settings refresh) calls `configStore.load()`; the new handler then
-  applies to the next turn. Verify with `/telegram-status --debug` if a voice note still
-  arrives after the change.
 - **A "voice failed" runtime event is expected** on text-only turns (phase
   `voice-artifacts`). It is the fallback working, not a broken engine.
 
@@ -110,9 +110,9 @@ Self-test without Telegram:
 
 ```bash
 cd ~/.pi/agent
-printf 'spoken test' | scripts/speech/voice-reply.sh -o /tmp/v.ogg; echo $?   # 0 + file
+printf 'spoken test' | scripts/speech/speak.sh -o /tmp/v.ogg; echo $?   # 0 + file
 scripts/speech/print-to-screen.sh
-printf 'text test'  | scripts/speech/voice-reply.sh -o /tmp/v.ogg; echo $?   # 5, no file
+printf 'text test'  | scripts/speech/speak.sh -o /tmp/v.ogg; echo $?   # 5, no file
 ```
 
 ## 5. Roadmap (agreed, not built)

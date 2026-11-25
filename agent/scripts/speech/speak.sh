@@ -18,7 +18,9 @@
 #     --limit N   max characters spoken (default 1600, 0 = no limit)
 #
 # Prints the absolute path of the produced file on stdout, one line.
-# Exit 0 = file exists and is playable. Anything else = nothing produced.
+# Exit 0 = file exists and is playable. Exit 5 = a text-only reply was armed
+# (print-to-screen.sh) and this turn must stay silent, no file produced.
+# Anything else = nothing produced.
 #
 # Why it exists: three surfaces (Telegram on the VPS, the laptop TUI, the
 # home server later) must share ONE synthesis path, so swapping the engine
@@ -56,6 +58,27 @@ while [ $# -gt 0 ]; do
         *) echo "speak.sh: unknown argument: $1" >&2; exit 2 ;;
     esac
 done
+
+# --- 0. one-shot text-only request ("print it", "show on screen") ---------
+# print-to-screen.sh arms a flag in the same turn as the answer. Consume it
+# here so every surface stays silent: the Telegram bridge sees a failed voice
+# handler and sends the planned text reply instead, and the TUI extension does
+# not speak. One shot, and a stale flag (>20 min) is ignored so an aborted turn
+# can never mute a later answer.
+FLAG="${PI_SPEECH_TEXTONLY_FLAG:-$HOME/.pi/agent/tmp/voice-textonly.flag}"
+MAX_AGE="${PI_SPEECH_TEXTONLY_TTL:-1200}"
+if [ -f "$FLAG" ]; then
+    armed="$(head -n1 "$FLAG" 2>/dev/null || true)"
+    now="$(date +%s)"
+    case "$armed" in
+        '' | *[!0-9]*) age=$((MAX_AGE + 1)) ;;
+        *) age=$((now - armed)) ;;
+    esac
+    rm -f "$FLAG"
+    if [ "$age" -ge 0 ] && [ "$age" -lt "$MAX_AGE" ]; then
+        exit 5
+    fi
+fi
 
 # --- 1. gather text -------------------------------------------------
 if [ -z "$TEXT" ]; then TEXT="$(cat)"; fi

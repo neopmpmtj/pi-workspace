@@ -96,7 +96,7 @@ if [ "$WIRE" = 1 ]; then
 import json, shutil, sys, time, pathlib
 path = pathlib.Path(sys.argv[1])
 cfg = json.loads(path.read_text())
-template = "~/.pi/agent/scripts/speech/voice-reply.sh -o {ogg}"
+template = "~/.pi/agent/scripts/speech/speak.sh -o {ogg}"
 changed = False
 
 handlers = [h for h in (cfg.get("outboundHandlers") or [])

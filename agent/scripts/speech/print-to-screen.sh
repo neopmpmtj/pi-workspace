@@ -6,13 +6,13 @@
 # runs `voice.replyMode: always`, turns the whole answer into a voice note, and
 # sends no text. When the user wants the answer readable on the phone instead
 # ("print it", "show on screen", "print to telegram"), this script arms a flag
-# that scripts/speech/voice-reply.sh consumes once:
+# that scripts/speech/speak.sh consumes once:
 #
 #     print-to-screen.sh   ->  tmp/voice-textonly.flag   (epoch seconds)
-#     voice-reply.sh       ->  sees it, removes it, exits 5, emits no audio
+#     speak.sh             ->  sees it, removes it, exits 5, emits no audio
 #     bridge               ->  no voice handler succeeded -> sends the text
 #
-# The flag is one-shot and expires (voice-reply.sh ignores it after 20 min),
+# The flag is one-shot and expires (speak.sh ignores it after 20 min),
 # so a turn that never reaches the voice step cannot silence a later answer.
 #
 # Run this in the SAME turn as the answer it applies to, before the final text.

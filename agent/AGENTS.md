@@ -67,7 +67,7 @@ record them. The ledger feeds the dashboard and the `/usage` command.
   Telegram, or says text only / no voice*, the SAME turn must arrive as text:
   run `~/.pi/agent/scripts/speech/print-to-screen.sh` **before** writing the final answer,
   then answer in plain Markdown (no `telegram_voice` markup). The script arms a one-shot flag
-  that `voice-reply.sh` consumes, so the bridge skips speech and sends the text reply.
+  that `speak.sh` consumes, so the bridge skips speech and sends the text reply.
 - Never arm that flag on a normal turn, and never arm it more than once per answer. If a
   print request and a normal request share a turn, the print request wins.
 - If the user asks to print *and* the answer is only a file, attach the file and keep the
