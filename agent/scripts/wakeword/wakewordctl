@@ -1,0 +1,231 @@
+#!/usr/bin/env bash
+# The one control seam for the live "Hey Pamela" listener.
+#
+#   wakewordctl on|enable|resume     persist enabled + start now
+#   wakewordctl off|disable|pause    persist disabled + stop now
+#   wakewordctl start                start only if enabled (used at session start)
+#   wakewordctl stop                 stop the running listener
+#   wakewordctl stop-if-owner        stop only if this pi process started it
+#   wakewordctl restart              stop then start (re-reads the config)
+#   wakewordctl status               enabled / running / pid / threshold / last trigger
+#   wakewordctl test                 play the tone once, no microphone
+#
+# The extension `/wakeword` command, the `wakeword` tool the agent calls, and a
+# terminal all run this same script, so there is one behaviour to debug.
+#
+# State:  ~/.config/pi-wakeword.json   (machine-local, survives sessions)
+# Log:    ~/.pi/agent/logs/wakeword.log
+# Pid:    ~/.pi/agent/logs/wakeword.pid
+#
+# Only a process whose cmdline is this listener can be stopped: a stale pidfile
+# never kills an unrelated pid.
+
+set -euo pipefail
+
+AGENT_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+CONFIG="${PI_WAKEWORD_CONFIG:-$HOME/.config/pi-wakeword.json}"
+LISTENER="$AGENT_HOME/scripts/wakeword/listen.py"
+LOG_DIR="$AGENT_HOME/logs"
+LOG="$LOG_DIR/wakeword.log"
+PIDFILE="$LOG_DIR/wakeword.pid"
+
+die() {
+  printf 'ERROR %s\n' "$*" >&2
+  exit 1
+}
+
+have_config() { [[ -f "$CONFIG" ]]; }
+
+cfg_get() {
+  [[ -f "$CONFIG" ]] || return 0
+  jq -r --arg k "$1" 'if has($k) then .[$k] | tostring else empty end' "$CONFIG" 2>/dev/null
+}
+
+cfg_set_enabled() {
+  have_config || die "no config at $CONFIG"
+  local tmp
+  tmp="$(mktemp "$CONFIG.XXXXXX")"
+  jq --argjson v "$1" '.enabled = $v' "$CONFIG" >"$tmp"
+  chmod 600 "$tmp"
+  mv "$tmp" "$CONFIG"
+}
+
+running_pid() {
+  [[ -f "$PIDFILE" ]] || return 1
+  local pid
+  pid="$(sed -n 's/^pid=//p' "$PIDFILE" 2>/dev/null | head -n 1)"
+  [[ -n "$pid" ]] || pid="$(tr -d '[:space:]' <"$PIDFILE" 2>/dev/null || true)"
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null | grep -q 'wakeword/listen.py' || return 1
+  printf '%s\n' "$pid"
+}
+
+play_tone() {
+  local tone
+  tone="$(cfg_get tone)"
+  [[ -n "$tone" ]] || die "no tone in $CONFIG"
+  [[ -f "$tone" ]] || die "tone not found: $tone"
+  if command -v aplay >/dev/null 2>&1 && aplay -q "$tone" 2>/dev/null; then
+    return 0
+  fi
+  if command -v pw-play >/dev/null 2>&1 && pw-play "$tone" >/dev/null 2>&1; then
+    return 0
+  fi
+  die "no working audio player for $tone"
+}
+
+start() {
+  have_config || die "no config at $CONFIG"
+  if [[ "$(cfg_get enabled)" != "true" ]]; then
+    printf 'disabled; not starting (turn it on with: %s on)\n' "$(basename "$0")"
+    return 0
+  fi
+
+  local pid
+  if pid="$(running_pid)"; then
+    printf 'already running pid=%s\n' "$pid"
+    return 0
+  fi
+
+  local python model threshold consecutive cooldown
+  python="$(cfg_get python)"
+  model="$(cfg_get model)"
+  threshold="$(cfg_get threshold)"
+  consecutive="$(cfg_get consecutive)"
+  cooldown="$(cfg_get cooldown_ms)"
+
+  [[ -n "$python" ]] || die "no python in $CONFIG"
+  [[ -x "$python" ]] || die "python not executable: $python"
+  [[ -n "$model" ]] || die "no model in $CONFIG"
+  [[ -f "$model" ]] || die "model not found: $model"
+
+  mkdir -p "$LOG_DIR"
+  if [[ -f "$LOG" ]] && (( $(stat -c %s "$LOG") > 2000000 )); then
+    mv -f "$LOG" "$LOG.1"
+  fi
+
+  local args=(--config "$CONFIG")
+  [[ -n "$threshold" ]] && args+=(--threshold "$threshold")
+  [[ -n "$consecutive" ]] && args+=(--consecutive "$consecutive")
+  [[ -n "$cooldown" ]] && args+=(--cooldown-ms "$cooldown")
+
+  nohup "$python" "$LISTENER" "${args[@]}" >>"$LOG" 2>&1 </dev/null &
+  pid=$!
+  printf 'pid=%s\nowner=%s\n' "$pid" "${PI_WAKEWORD_OWNER:-0}" >"$PIDFILE"
+
+  # The model load takes about a second; a crash before READY is reported here.
+  local i
+  for i in $(seq 1 40); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      rm -f "$PIDFILE"
+      tail -n 5 "$LOG" >&2 || true
+      die "listener exited during startup (see $LOG)"
+    fi
+    grep -q '^READY' "$LOG" && break
+    sleep 0.1
+  done
+
+  if running_pid >/dev/null; then
+    printf 'started pid=%s\n' "$pid"
+  else
+    die "could not confirm a listener process (see $LOG)"
+  fi
+}
+
+stop() {
+  local pid
+  if ! pid="$(running_pid)"; then
+    rm -f "$PIDFILE"
+    printf 'not running\n'
+    return 0
+  fi
+
+  kill -TERM "$pid" 2>/dev/null || true
+  local i
+  for i in $(seq 1 30); do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 0.1
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+  rm -f "$PIDFILE"
+  printf 'stopped pid=%s\n' "$pid"
+}
+
+status() {
+  local enabled=false running=false pid="" phrase="" tone="" model="" threshold="" last="" owner="-"
+
+  if [[ -f "$CONFIG" ]]; then
+    enabled="$(cfg_get enabled)"
+    phrase="$(cfg_get phrase)"
+    threshold="$(cfg_get threshold)"
+    model="$(cfg_get model)"
+    tone="$(cfg_get tone)"
+  fi
+  [[ "$enabled" == "true" ]] || enabled=false
+
+  if pid="$(running_pid)"; then
+    running=true
+    owner="$(sed -n 's/^owner=//p' "$PIDFILE" 2>/dev/null | head -n 1)"
+    owner="${owner:-0}"
+  else
+    pid="-"
+  fi
+
+  last="$(grep '^TRIGGER' "$LOG" 2>/dev/null | tail -n 1 || true)"
+
+  printf 'enabled=%s running=%s pid=%s phrase=%s threshold=%s\n' \
+    "$enabled" "$running" "$pid" "${phrase:-?}" "${threshold:-?}"
+  printf 'owner=%s\n' "$owner"
+  printf 'config=%s\n' "$CONFIG"
+  printf 'model=%s\n' "${model:-?}"
+  printf 'tone=%s\n' "${tone:-?}"
+  printf 'log=%s\n' "$LOG"
+  [[ -n "$last" ]] && printf 'last=%s\n' "$last"
+  return 0
+}
+
+case "${1:-status}" in
+  on|enable|resume|true)
+    cfg_set_enabled true
+    start
+    ;;
+  off|disable|pause|false)
+    cfg_set_enabled false
+    stop
+    ;;
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  stop-if-owner)
+    if [[ -n "${PI_WAKEWORD_OWNER:-}" ]] && [[ "$(sed -n 's/^owner=//p' "$PIDFILE" 2>/dev/null | head -n 1)" == "$PI_WAKEWORD_OWNER" ]]; then
+      stop
+    else
+      printf 'not owned by this session; left running\n'
+    fi
+    ;;
+  restart)
+    if [[ "$(cfg_get enabled)" != "true" ]]; then
+      printf 'disabled; restart skipped (turn it on with: %s on)\n' "$(basename "$0")"
+      exit 0
+    fi
+    stop
+    start
+    ;;
+  status)
+    status
+    ;;
+  test)
+    play_tone
+    printf 'tone played\n'
+    ;;
+  *)
+    sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    exit 2
+    ;;
+esac

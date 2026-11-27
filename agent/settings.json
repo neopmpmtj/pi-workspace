@@ -45,7 +45,8 @@
     "+extensions/less-than-input-words/index.ts",
     "+extensions/input-phrase/index.ts",
     "+extensions/prompt-build/index.ts",
-    "+extensions/secret-scrubber.ts"
+    "+extensions/secret-scrubber.ts",
+    "+extensions/wakeword.ts"
   ],
   "enabledModels": [
     "deepseek-flash",

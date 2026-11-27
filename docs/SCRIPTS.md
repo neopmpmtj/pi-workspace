@@ -45,6 +45,9 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `speech/print-to-screen.sh` | arms exactly one text-only reply (`tmp/voice-textonly.flag`, epoch seconds): `speak.sh` then exits 5, so Telegram sends the visible text instead of the voice note. Run it in the same turn when the user asks to print/show on screen |
 | `speech/clean.py` | markdown → speakable text (drops code fences, URLs, tables, emoji; caps length) |
 | `speech/setup-host.sh` | idempotent per-host setup: piper venv, voices, `~/.config/pi-speech.env`, Telegram `outboundHandlers` voice wiring, self-test |
+| `wakeword/listen.py` | live "Hey Pamela" detector for the TUI: openWakeWord ONNX, 80 ms frames, prints `READY` / `TRIGGER` / `STOPPED`; no audio written (model + venv stay in `~/python/261114-VAD-openWakeWord/vad-openwakeword`) |
+| `wakeword/wakewordctl` | **the one control seam** for the listener: `on`/`off` (persist `enabled`) · `start`/`stop` · `stop-if-owner` · `restart` · `status` · `test`; owns the pidfile and log |
+| `wakeword/tone1.wav` | the detection cue played by `/wakeword test` and by `extensions/wakeword.ts` |
 | `fruit_portrait_svg.py`, `photo_trace_svg.py` | SVG tracing helpers for the svg-photo-convert skill |
 
 ## 3. `~/.pi/apps-scripts/` — standalone projects

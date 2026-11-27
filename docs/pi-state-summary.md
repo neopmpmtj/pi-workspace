@@ -71,7 +71,7 @@ Each sibling container has its own `.env`, `PI_CODING_AGENT_DIR`, and `logs/ledg
 
 Pi **auto-discovers** `extensions/*.ts` and `extensions/*/index.ts`. Default is on. The `+` list in `settings.json` is intent, not an off switch. `git-commit.ts` is unlisted and still provides `/commit`. Disable with `-path`, or a non-`.ts` name (`pi-prompt-capture.ts.disabled`).
 
-Listed (and discovered): mode-switch, cron, auto-sync, chat (`/ask` `/usage`), archive, calendar-node, reminder-node, reminder-commands, jev-feedback, input-contains-*, less-than-input-words, input-phrase, prompt-build, secret-scrubber. Also `/commit`.
+Listed (and discovered): mode-switch, cron, auto-sync, chat (`/ask` `/usage`), archive, calendar-node, reminder-node, reminder-commands, jev-feedback, input-contains-*, less-than-input-words, input-phrase, prompt-build, secret-scrubber, wakeword (`/wakeword`, tool `wakeword`; per-host, needs `~/.config/pi-wakeword.json`). Also `/commit`.
 
 Project-local (when cwd is `~/.pi`): `.pi/extensions/pi-event-tracer`, `.pi/extensions/session-memory`.
 
