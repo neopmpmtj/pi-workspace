@@ -4,6 +4,7 @@ import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { readInputContainsEmail } from "../../src/global-config.ts";
 import { isModeAck } from "../../src/mode-ack.ts";
+import { isVoiceInput, stripVoiceMarker } from "../../src/voice-input.ts";
 import { inputContainsEmail, inputContainsEmailLines } from "../../src/input-contains-email.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
@@ -13,10 +14,11 @@ function show(ctx: ExtensionContext, answer: string): void {
 
 export default function registerInputContainsEmail(pi: ExtensionAPI): void {
   pi.on("input", async (event, ctx) => {
-    if (event.source === "extension") return { action: "continue" };
-    if (isModeAck(event.text)) return { action: "continue" };
+    if (event.source === "extension" && !isVoiceInput(event.text)) return { action: "continue" };
+    const text = stripVoiceMarker(event.text);
+    if (isModeAck(text)) return { action: "continue" };
     const setting = await readInputContainsEmail();
-    if (setting?.print) show(ctx, inputContainsEmail(event.text).length > 0 ? "true" : "false");
+    if (setting?.print) show(ctx, inputContainsEmail(text).length > 0 ? "true" : "false");
     return { action: "continue" };
   });
 

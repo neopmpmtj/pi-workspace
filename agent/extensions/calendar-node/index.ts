@@ -30,6 +30,8 @@ import {
 } from "../../src/calendar-node.ts";
 import { claimAnnouncement, classifyPrompt, type JevClassification, winnerLine } from "../../src/jev-classify.ts";
 import { sendTelegram, TELEGRAM } from "../../src/telegram-delivery.ts";
+import { isVoiceInput, stripVoiceMarker } from "../../src/voice-input.ts";
+import { speakText } from "../../src/voice-reply.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
   if (ctx.hasUI) ctx.ui.notify(answer);
@@ -51,9 +53,10 @@ export default function registerCalendarNode(pi: ExtensionAPI): void {
   let last: { text: string; verdict: CalendarVerdict | null; shown: boolean } | null = null;
 
   pi.on("input", async (event, ctx) => {
-    if (event.source === "extension") return { action: "continue" };
+    if (event.source === "extension" && !isVoiceInput(event.text)) return { action: "continue" };
+    const voice = isVoiceInput(event.text);
 
-    const text = event.text.trim();
+    const text = stripVoiceMarker(event.text).trim();
     if (!text || text.startsWith("/")) return { action: "continue" };
 
     const setting = await readCalendarNode();
@@ -81,7 +84,11 @@ export default function registerCalendarNode(pi: ExtensionAPI): void {
     }
     if (!executed) return { action: "continue" };
 
-    show(ctx, outcomeLines(verdict).join("\n"));
+    const outcome = outcomeLines(verdict).join("\n");
+    show(ctx, outcome);
+    // A spoken request gets a spoken confirmation: this turn never reaches the model,
+    // so speech-reply.ts has no final answer to read.
+    if (voice) speakText(outcome);
     return { action: "handled" };
   });
 

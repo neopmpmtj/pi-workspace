@@ -15,9 +15,12 @@ export interface InputPhrase {
   conflict: string | null;
 }
 
-/** False for extension-sent prompts and slash commands. Those inputs stay unchanged. */
+import { isVoiceInput } from "./voice-input.ts";
+
+/** False for extension-sent prompts and slash commands. Those inputs stay unchanged.
+ *  A voice prompt is the user speaking: it applies exactly like typed input. */
 export function inputPhraseApplies(text: string, source: string): boolean {
-  if (source === "extension") return false;
+  if (source === "extension" && !isVoiceInput(text)) return false;
   if (text.startsWith("/")) return false;
   return true;
 }

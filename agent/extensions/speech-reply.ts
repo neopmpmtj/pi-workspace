@@ -21,6 +21,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { speechFinished, speechStarted } from "../src/speech-activity.ts";
 
 const SPEECH_ENV = join(homedir(), ".config", "pi-speech.env");
 const SPEAK = join(homedir(), ".pi", "agent", "scripts", "speech", "speak.sh");
@@ -79,9 +80,12 @@ export default function (pi: ExtensionAPI) {
 
     queue = queue.then(async () => {
       const out = join(homedir(), ".pi", "agent", "tmp", `spoken-${Date.now()}.ogg`);
+      // Tells the wakeword extension to mute the microphone for the whole playback.
+      speechStarted();
       const result = await pi
         .exec(SPEAK, ["-t", text, "-o", out, "--play", "--limit", LIMIT], { timeout: 180_000 })
-        .catch(() => undefined);
+        .catch(() => undefined)
+        .finally(() => speechFinished());
       // Silence must never be silent: a real failure shows up in the TUI.
       if (result && result.code !== 0) {
         const detail = (result.stderr || result.stdout || "").trim().split("\n")[0];

@@ -35,6 +35,8 @@ import {
   runReminderNode,
 } from "../../src/reminder-node.ts";
 import { sendTelegram, TELEGRAM } from "../../src/telegram-delivery.ts";
+import { isVoiceInput, stripVoiceMarker } from "../../src/voice-input.ts";
+import { speakText } from "../../src/voice-reply.ts";
 
 const CLASSES = new Set(["reminder", "reminder_done"]);
 
@@ -54,9 +56,10 @@ export default function registerReminderNode(pi: ExtensionAPI): void {
   let last: { text: string; verdict: ReminderVerdict | null; shown: boolean } | null = null;
 
   pi.on("input", async (event, ctx) => {
-    if (event.source === "extension") return { action: "continue" };
+    if (event.source === "extension" && !isVoiceInput(event.text)) return { action: "continue" };
+    const voice = isVoiceInput(event.text);
 
-    const text = event.text.trim();
+    const text = stripVoiceMarker(event.text).trim();
     if (!text || text.startsWith("/")) return { action: "continue" };
 
     const setting = await readReminderNode();
@@ -85,7 +88,10 @@ export default function registerReminderNode(pi: ExtensionAPI): void {
     }
     if (!executed) return { action: "continue" };
 
-    show(ctx, reminderOutcomeLines(verdict).join("\n"));
+    const outcome = reminderOutcomeLines(verdict).join("\n");
+    show(ctx, outcome);
+    // A spoken request gets a spoken confirmation; this turn is handled without a model.
+    if (voice) speakText(outcome);
     return { action: "handled" };
   });
 

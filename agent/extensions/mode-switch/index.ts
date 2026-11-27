@@ -26,6 +26,7 @@ import { readModeSwitch } from "../../src/global-config.ts";
 import { markModeAck } from "../../src/mode-ack.ts";
 import { detectModeRequest, runModeRequest } from "../../src/mode-switch.ts";
 import { sendTelegram, TELEGRAM } from "../../src/telegram-delivery.ts";
+import { isVoiceInput, stripVoiceMarker } from "../../src/voice-input.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
   if (ctx.hasUI) ctx.ui.notify(answer);
@@ -34,9 +35,9 @@ function show(ctx: ExtensionContext, answer: string): void {
 
 export default function registerModeSwitch(pi: ExtensionAPI): void {
   pi.on("input", async (event, ctx) => {
-    if (event.source === "extension") return { action: "continue" };
+    if (event.source === "extension" && !isVoiceInput(event.text)) return { action: "continue" };
 
-    const text = event.text;
+    const text = stripVoiceMarker(event.text);
     if (!text.trim() || text.trim().startsWith("/")) return { action: "continue" };
     // Pure and cheap: only a request reaches the config read and the CLI.
     if (!detectModeRequest(text)) return { action: "continue" };

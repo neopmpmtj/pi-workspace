@@ -6,6 +6,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { readInputPhrase } from "../../src/global-config.ts";
 import { isModeAck } from "../../src/mode-ack.ts";
 import { appendInputPhrase, inputPhraseApplies } from "../../src/input-phrase.ts";
+import { stripVoiceMarker } from "../../src/voice-input.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
   if (ctx.hasUI) ctx.ui.notify(answer);
@@ -15,7 +16,8 @@ function show(ctx: ExtensionContext, answer: string): void {
 export default function registerInputPhrase(pi: ExtensionAPI): void {
   pi.on("input", async (event, ctx) => {
     if (!inputPhraseApplies(event.text, event.source)) return { action: "continue" };
-    if (isModeAck(event.text)) return { action: "continue" };
+    const text = stripVoiceMarker(event.text);
+    if (isModeAck(text)) return { action: "continue" };
     const setting = await readInputPhrase();
     if (!setting) return { action: "continue" };
     if (setting.conflict) {
@@ -23,6 +25,6 @@ export default function registerInputPhrase(pi: ExtensionAPI): void {
       return { action: "continue" };
     }
     if (setting.lines.length === 0) return { action: "continue" };
-    return { action: "transform", text: appendInputPhrase(event.text, setting.lines) };
+    return { action: "transform", text: appendInputPhrase(text, setting.lines) };
   });
 }

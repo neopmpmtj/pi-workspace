@@ -4,6 +4,7 @@ import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { readInputContainsUrl } from "../../src/global-config.ts";
 import { isModeAck } from "../../src/mode-ack.ts";
+import { isVoiceInput, stripVoiceMarker } from "../../src/voice-input.ts";
 import { inputContainsUrl, inputContainsUrlLines } from "../../src/input-contains-url.ts";
 
 function show(ctx: ExtensionContext, answer: string): void {
@@ -13,10 +14,11 @@ function show(ctx: ExtensionContext, answer: string): void {
 
 export default function registerInputContainsUrl(pi: ExtensionAPI): void {
   pi.on("input", async (event, ctx) => {
-    if (event.source === "extension") return { action: "continue" };
-    if (isModeAck(event.text)) return { action: "continue" };
+    if (event.source === "extension" && !isVoiceInput(event.text)) return { action: "continue" };
+    const text = stripVoiceMarker(event.text);
+    if (isModeAck(text)) return { action: "continue" };
     const setting = await readInputContainsUrl();
-    if (setting?.print) show(ctx, inputContainsUrl(event.text) ? "true" : "false");
+    if (setting?.print) show(ctx, inputContainsUrl(text) ? "true" : "false");
     return { action: "continue" };
   });
 
