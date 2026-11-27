@@ -179,6 +179,12 @@ z.old/
 # Tracked here only until 2026-11-03; the nested repo would otherwise be
 # picked up as an untracked directory by every status call.
 agent-lan-agent/
+# vad-code is the listener checkout (own remote: vad-pi-harness-ready).
+# Ignored so shutdown auto-sync cannot commit its source or recordings here.
+# It is meant to become a submodule, same as jev-classifier. Remove this
+# line in the commit that adds the gitlink. Until that commit, the index
+# still has vad-code/testfile.txt and the worktree deletion of that file.
+vad-code/
 # explore-discover-pi is a separate checkout, not part of this repo
 explore-discover-pi/
 # removed agents kept for reference (004-style copies)

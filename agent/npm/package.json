@@ -2,6 +2,6 @@
   "name": "pi-extensions",
   "private": true,
   "dependencies": {
-    "@llblab/pi-telegram": "0.59.2"
+    "@llblab/pi-telegram": "^0.60.1"
   }
 }
