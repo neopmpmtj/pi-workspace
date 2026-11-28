@@ -9,8 +9,10 @@ through when it ships, with the date; do not delete it, so the history stays rea
       recent documents, unread from one sender, Drive search by name. Each one is a fixed
       `gog` call in `src/gog.ts` plus a command registration, so it costs no tokens.
       Home: `~/.pi/agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace`.
-- [ ] `--limit N` on the list-shaped canned commands (start with `/inbox-new`), so a busy inbox
-      does not print forty rows. Same place.
+- [x] ~~`--limit N` on the list-shaped canned commands (start with `/inbox-new`), so a busy inbox
+      does not print forty rows. Same place.~~ Shipped 2026-11-28: `/inbox-new [--hours N] [--limit N]`
+      and `/gdrive-root [--limit N]`; default 20 rows, `--limit 0` prints all, and one trailing line
+      counts the rows held back. Covered by `test/gog.test.ts`, 120/120 tests pass.
 - [x] ~~Confirm the keyring passphrase in that repo's `.env` is the current one; it was carried
       over from `~/archived-pi-agents-experts/gog-worksapce-agents/sm-google-workspace/.env`.~~
       Confirmed 2026-11-01: the repo keeps its own `.env` (mode 600, gitignored) with

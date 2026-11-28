@@ -14,11 +14,11 @@
     },
     {
       "name": "/gdrive-root",
-      "description": "Root of Google Drive: name, folder|file, id, modified — one tab-separated row per item. No model turn, no tokens."
+      "description": "Root of Google Drive: name, folder|file, id, modified — one tab-separated row per item, 20 rows by default (--limit N). No model turn, no tokens."
     },
     {
       "name": "/inbox-new",
-      "description": "Unread mail newer than N hours (default 24): date, from, subject, id. No model turn, no tokens."
+      "description": "Unread mail newer than N hours (default 24): date, from, subject, id, 20 rows by default (--limit N). No model turn, no tokens."
     },
     {
       "name": "/ask",

@@ -27,8 +27,14 @@ cd ~/.pi/agent-gog-workspace-agents/sm-google-workspace && pi-sm-google-workspac
 
 # /inbox-new
 <date>\t<from>\t<subject>\t<id>
+
+# trailing line, only when rows are held back
++<held> more rows not shown (<total> total); run with --limit 0 to see all of them.
 ```
 
+- Both canned commands print 20 rows unless told otherwise: `--limit N` changes that,
+  `--limit 0` prints every row. When rows are held back, the last line says how many and
+  points at `--limit 0`. The trailing line is not a record and does not start with a tab-separated row.
 - `nothing found` when `gog` returns an empty list.
 - A failure prints `[FAIL] <reason>` on stderr, records nothing, and exits non-zero:
 
@@ -78,32 +84,35 @@ Prints this text and does not read the ledger.
 
 ### /gdrive-root
 
-Root of Google Drive: name, folder|file, id, modified — one tab-separated row per item. No model turn, no tokens.
+Root of Google Drive: name, folder|file, id, modified — one tab-separated row per item, 20 rows by default (--limit N). No model turn, no tokens.
 
 ```text
-/gdrive-root
+/gdrive-root [--limit N]
 
 Lists what sits in the root of Google Drive, one tab-separated row per item:
 
   <name>	<folder|file>	<id>	<modifiedTime>
 
-Takes no arguments. Runs `gog drive ls --json --results-only`, so there is no model turn and no tokens.
+--limit N   Rows to print, 0 or more. Default 20. 0 prints all.
+
+Runs `gog drive ls --json --results-only`, so there is no model turn and no tokens. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`.
 ```
 
 ### /inbox-new
 
-Unread mail newer than N hours (default 24): date, from, subject, id. No model turn, no tokens.
+Unread mail newer than N hours (default 24): date, from, subject, id, 20 rows by default (--limit N). No model turn, no tokens.
 
 ```text
-/inbox-new [--hours N]
+/inbox-new [--hours N] [--limit N]
 
 Lists unread mail newer than N hours, one tab-separated row per message:
 
   <date>	<from>	<subject>	<id>
 
 --hours N   1 to 720. Default 24.
+--limit N   Rows to print, 0 or more. Default 20. 0 prints all.
 
-Runs `gog gmail search 'is:unread newer_than:Nh' --json --results-only`, so there is no model turn and no tokens. An empty result prints `nothing found`.
+Runs `gog gmail search 'is:unread newer_than:Nh' --json --results-only`, so there is no model turn and no tokens. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`.
 ```
 
 ### /ask
