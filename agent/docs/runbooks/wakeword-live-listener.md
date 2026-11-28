@@ -28,7 +28,7 @@ mic → openWakeWord (hey_pamela.onnx) → TRIGGER
 | `agent/src/speech-activity.ts` + `voice-reply.ts` | Who is speaking right now; spoken routing confirmations. |
 | `~/.pi/vad-code` (own repo) | The voice session: VAD → `gpt-transcribe` → phrase match → JEV → `SUBMIT`/`END`. `python -m vad --session`. |
 | `~/.config/pi-wakeword.json` | Machine-local opt-in + tuning. **No file = no listener.** |
-| `agent/logs/wakeword.log`, `.pid` | Runtime state (gitignored). Lines from the extension start with `pi:`. While a voice session is live, `/wakeword status` shows `running=false`: the wakeword listener is released and the vad process owns the microphone. |
+| `agent/logs/wakeword.log`, `.pid` | Runtime state (gitignored). Lines from the extension start with `pi:`; the vad's own transcript, phrase-match and JEV lines are logged as `vad: ...`. While a voice session is live, `/wakeword status` shows `running=false`: the wakeword listener is released and the vad process owns the microphone. |
 
 Model + venv stay in the training repo: `~/python/261114-VAD-openWakeWord/vad-openwakeword`
 (`models/hey_pamela.onnx`, `.venv`). The voice session uses `~/.pi/vad-code/.venv`.
@@ -74,14 +74,16 @@ skips transcription. `sessionIdleS` ends a silent session. Restart after editing
 | Phrase result | Action |
 | --- | --- |
 | `Pamela off` / `Power off` **as the whole utterance** | submit any buffered text, then end; the wakeword re-arms. `power off the lights` stays a request (buffered). |
-| `okay go` / `OK Go` / `OK Vai` | submit the buffer; the command words are not sent |
+| `okay go` / `go ahead` / `OK Go` / `OK Vai` | submit the buffer; the command words are not sent |
 | JEV says **yes** (exactly one request) | submit buffer + this phrase immediately |
 | JEV says **no** | append to the buffer and keep listening |
 | short / empty / transcription error | nothing, log only |
 | 120 s without a phrase | end, re-arm |
 
-Phrases are in `~/.pi/vad-code/src/phrase_match/config.py`. Add a mishearing as a new phrase
-(e.g. the transcriber heard "Pavlov" once from synthetic speech). The short-clip gate cutoff is
+Phrases are in `~/.pi/vad-code/src/phrase_match/config.py`. Every listed phrase except the end
+phrases flushes the buffer, so a new flush word is a one-line change; the end phrases are
+`_END_PHRASES` in `src/vad/__main__.py`. Add a mishearing as a new phrase (e.g. the transcriber
+heard "Pavlov" once from synthetic speech). The short-clip gate cutoff is
 `min_content_s = 0.5` in `src/short_clip_gate/config.py`.
 
 ## Mute while the agent answers

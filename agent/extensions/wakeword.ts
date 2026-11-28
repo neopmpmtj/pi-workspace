@@ -239,7 +239,15 @@ function onVadLine(active: VoiceSession, line: string): void {
 		void endSession("vad");
 		return;
 	}
-	if (line.startsWith("BUFFER ")) log(line);
+	if (line.startsWith("BUFFER ")) {
+		log(line);
+		const held = line.slice("BUFFER ".length).trim();
+		if (ctxRef?.hasUI) ctxRef.ui.notify(`voice: buffered ${held} phrase(s) — say "go ahead" to send`, "info");
+		return;
+	}
+	// Everything else is a human line from the vad: the transcript, a phrase match,
+	// or the JEV answer. Keep it in the log; it is the only record of what was heard.
+	if (line.trim()) log(`vad: ${line}`);
 }
 
 /** The tone marks "speak now": mute across it so the beep is not transcribed. */
