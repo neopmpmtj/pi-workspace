@@ -14,11 +14,14 @@ import { readHostSpeech, readHostTelegram, readWakeword, requireOn, writeHostSpe
 import { readVpsSpeech, writeVpsNotes } from "./remote-host.ts";
 import { listRuns, openAgent, startAgent, startAll, stopAgent, stopAll } from "./processes.ts";
 import { shellNavAnchors } from "./shell-nav.ts";
+import { decideGate, loginPage, siteToken } from "./token-gate.ts";
 import { readControlPlane, SettingsError, writeAgentSettings, writeGate, writeInputPhrase, writePromptBuild, type ControlPlane } from "./store.ts";
 
 const PUBLIC_DIR = path.join(import.meta.dirname, "public");
 const MAX_BODY = 256_000;
 const HOST = process.env.PI_SITE_BIND?.trim() || "127.0.0.1";
+// Empty = open, which is the laptop (127.0.0.1). The VPS sets PI_SITE_TOKEN.
+const TOKEN = siteToken();
 
 const FILES: Record<string, string> = {
   "/": "index.html",
@@ -44,6 +47,22 @@ const server = createServer((request, response) => {
 async function route(request: IncomingMessage, response: ServerResponse): Promise<void> {
   const url = new URL(request.url ?? "/", `http://${HOST}`);
   const method = request.method ?? "GET";
+
+  const access = decideGate({ token: TOKEN, url, cookie: request.headers.cookie });
+  if (access.kind === "deny") {
+    sendDenied(response, url.pathname);
+    return;
+  }
+  if (access.kind === "login") {
+    response.writeHead(302, {
+      location: access.location,
+      "set-cookie": access.cookie,
+      "cache-control": "no-store",
+    });
+    response.end();
+    return;
+  }
+
   if (method === "GET" && FILES[url.pathname]) {
     await sendFile(response, FILES[url.pathname], url.pathname);
     return;
@@ -165,6 +184,16 @@ async function sendFile(response: ServerResponse, name: string, pathname = ""): 
   response.end(body);
 }
 
+/** API callers get JSON; a browser gets the one-field token prompt. */
+function sendDenied(response: ServerResponse, pathname: string): void {
+  if (pathname.startsWith("/api/")) {
+    sendJson(response, 401, { error: "Missing or wrong token. Open the page with ?k=<PI_SITE_TOKEN> once per browser." });
+    return;
+  }
+  response.writeHead(401, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+  response.end(loginPage(pathname));
+}
+
 function sendJson(response: ServerResponse, status: number, body: unknown): void {
   if (response.headersSent) return;
   response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
@@ -189,5 +218,5 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
 }
 
 server.listen(PROJECT_PORT, HOST, () => {
-  process.stderr.write(`project dashboard on http://${HOST}:${PROJECT_PORT}\n`);
+  process.stderr.write(`project dashboard on http://${HOST}:${PROJECT_PORT}${TOKEN ? " (token required)" : ""}\n`);
 });

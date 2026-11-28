@@ -10,6 +10,7 @@ import { injectShellBar } from "./shell-nav.ts";
 import { parseWakewordStatus, runWakeword, writeWakeword } from "./host-switches.ts";
 import { parseSnapshot, readVpsSpeech, toggleCommand, VPS_AGENT_UNIT, writeVpsNotes, type Exec, type ExecResult } from "./remote-host.ts";
 import { SettingsError } from "./store.ts";
+import { COOKIE_NAME, cookieToken, decideGate, loginPage, sameToken, tokenCookie } from "./token-gate.ts";
 
 function tempDir(): string {
   return mkdtempSync(join(tmpdir(), "pi-site-"));
@@ -204,5 +205,49 @@ describe("the VPS card", () => {
     const state = await writeVpsNotes(true, { host: "neopmpmtj", exec });
     assert.equal(state.reachable, false);
     assert.match(state.detail ?? "", /resolve hostname|could not write/);
+  });
+});
+
+describe("shared-token gate", () => {
+  const TOKEN = "s3cret-token";
+  const at = (path: string) => new URL(path, "http://127.0.0.1:8786");
+
+  it("stays open when no token is configured, which is the laptop", () => {
+    assert.deepEqual(decideGate({ token: "", url: at("/settings") }), { kind: "allow" });
+    assert.deepEqual(decideGate({ token: "", url: at("/api/host/speech"), cookie: "" }), { kind: "allow" });
+  });
+
+  it("counts the right cookie as access and the wrong one as a denial", () => {
+    assert.deepEqual(decideGate({ token: TOKEN, url: at("/settings"), cookie: `${COOKIE_NAME}=${TOKEN}` }), { kind: "allow" });
+    assert.deepEqual(decideGate({ token: TOKEN, url: at("/settings"), cookie: `${COOKIE_NAME}=nope` }), { kind: "deny" });
+    assert.deepEqual(decideGate({ token: TOKEN, url: at("/settings") }), { kind: "deny" });
+    assert.deepEqual(decideGate({ token: TOKEN, url: at("/settings?k=wrong"), cookie: "" }), { kind: "deny" });
+  });
+
+  it("trades a right ?k= for a cookie and drops the secret from the URL", () => {
+    const decision = decideGate({ token: TOKEN, url: at("/settings?k=s3cret-token&tab=2"), cookie: "" });
+    assert.equal(decision.kind, "login");
+    if (decision.kind !== "login") return;
+    assert.equal(decision.location, "/settings?tab=2");
+    assert.match(decision.cookie, new RegExp(`^${COOKIE_NAME}=s3cret-token; Path=/; HttpOnly; SameSite=Lax`));
+    assert.deepEqual(decideGate({ token: TOKEN, url: at("/settings"), cookie: decision.cookie.split(";")[0] }), { kind: "allow" });
+  });
+
+  it("finds its cookie among others, and never matches on an empty token", () => {
+    assert.equal(cookieToken("theme=dark; pi_site=abc123; other=1"), "abc123");
+    assert.equal(cookieToken("theme=dark"), "");
+    assert.equal(cookieToken(undefined), "");
+    assert.equal(cookieToken("pi_site=a%20b"), "a b");
+    assert.equal(sameToken("", ""), false);
+    assert.equal(sameToken("abc", "abc"), true);
+    assert.equal(sameToken("abc", "abcd"), false);
+  });
+
+  it("prompts for the token on a form that cannot leak it in the page source", () => {
+    const page = loginPage("/settings");
+    assert.match(page, /<form class="card" method="get" action="\/settings">/);
+    assert.match(page, /type="password" name="k"/);
+    assert.doesNotMatch(page, new RegExp(TOKEN));
+    assert.match(tokenCookie(TOKEN), /Max-Age=31536000/);
   });
 });

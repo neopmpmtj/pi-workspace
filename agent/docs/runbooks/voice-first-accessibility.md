@@ -203,6 +203,9 @@ consumes its one-shot flag first, then this durable gate.
 - **From the phone:** the VPS site binds its tailnet address (`PI_SITE_BIND` in
   `~/.config/pi-site.env`, default `127.0.0.1`), so `http://100.85.79.17:8786/settings` works with
   no tunnel and its cards read the VPS's own files locally. The laptop stays localhost-only.
+  The same file holds `PI_SITE_TOKEN`; with it set, the first visit must be
+  `…/?k=<token>`, which sets the `pi_site` cookie. Wrong or missing token is 401 on every path,
+  `/api/` included. Rotate the line and restart the unit to revoke every browser.
 
 ## 6. Durability checklist
 

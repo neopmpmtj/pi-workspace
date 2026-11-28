@@ -105,6 +105,8 @@ JEV details: `docs/pi-state-of-jev.md`.
 
 8786 is localhost-on-the-laptop and tailnet-on-the-VPS. `PI_SITE_BIND` in the optional machine-local `~/.config/pi-site.env` decides the bind, so one tracked unit serves both: the laptop keeps `127.0.0.1`, the VPS binds `100.85.79.17` and the phone opens `http://100.85.79.17:8786/settings` with no tunnel. That exposure is the tailnet only — the VPS's own `127.0.0.1:8786` is closed.
 
+When `PI_SITE_TOKEN` is set (the VPS), every path needs that token: open `…/?k=<token>` once per browser and the site sets an HttpOnly `pi_site` cookie; anything else gets 401, with a one-field prompt for a browser and JSON for `/api/`. One shared secret, no accounts — rotate the line in `~/.config/pi-site.env` and restart `pi-site.service` to revoke every browser at once. No token configured (the laptop) means an open localhost page, deliberately.
+
 The three usage pages use relative asset and API URLs, so the same files work on their own port and under 8786.
 
 Host switches on `/settings` are not gates. They are split by host:
