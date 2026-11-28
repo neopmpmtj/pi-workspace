@@ -200,6 +200,9 @@ consumes its one-shot flag first, then this durable gate.
   live; a control that needs a restart would be a lie on a page about immediacy.
 - **Proof:** `PI_SPEECH_TELEGRAM=0 bash ~/.pi/agent/scripts/speech/speak.sh -t hi -o /tmp/x.ogg`
   exits 5 and writes nothing; with `--play` it proceeds.
+- **From the phone:** the VPS site binds its tailnet address (`PI_SITE_BIND` in
+  `~/.config/pi-site.env`, default `127.0.0.1`), so `http://100.85.79.17:8786/settings` works with
+  no tunnel and its cards read the VPS's own files locally. The laptop stays localhost-only.
 
 ## 6. Durability checklist
 

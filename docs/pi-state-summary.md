@@ -103,7 +103,9 @@ JEV details: `docs/pi-state-of-jev.md`.
 | 8790 | unused | keep-agent was removed 2026-11-07; do not restore a dashboard here |
 | 8791 | tasks-agent usage | `npm run dashboard` or `:8786` Start. Also at `:8786/tasks/` |
 
-8786 stays on `127.0.0.1` on both hosts; from another machine reach it with an ssh tunnel, not a wider bind. The three usage pages use relative asset and API URLs, so the same files work on their own port and under 8786.
+8786 is localhost-on-the-laptop and tailnet-on-the-VPS. `PI_SITE_BIND` in the optional machine-local `~/.config/pi-site.env` decides the bind, so one tracked unit serves both: the laptop keeps `127.0.0.1`, the VPS binds `100.85.79.17` and the phone opens `http://100.85.79.17:8786/settings` with no tunnel. That exposure is the tailnet only — the VPS's own `127.0.0.1:8786` is closed.
+
+The three usage pages use relative asset and API URLs, so the same files work on their own port and under 8786.
 
 Host switches on `/settings` are not gates. They are split by host:
 
