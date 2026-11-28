@@ -26,11 +26,11 @@ through when it ships, with the date; do not delete it, so the history stays rea
 
 ## VPS `neopmpmtj`
 
-- [ ] `~/.pi/agent/.env` on the VPS holds a dead `GEMINI_API_KEY` (`AQ.Ab8…`, 53 chars): a live
-      Gemini call returns 401 "The bound service account is deleted or disabled". The working
-      key is the `AIza…` one from the CoS replica's `.env`, which is what the four sibling
-      `.env` files now use. User will replace it later; the VPS `~/.pi/agent` identity's Gemini
-      models fail until then.
+- [x] ~~`~/.pi/agent/.env` on the VPS: the `AQ.…` key is gone (now `AIza…`), but **that** key is
+      rejected too — same failure as the laptop and the server, see the GEMINI item under
+      "Home flattened into `~/.pi/agent`". Nothing to fix locally; it needs a new key.~~
+      Closed by decision 2026-11-28: no key anywhere works, so the two `gemini-*` models were
+      removed from `enabledModels` instead (see the next item). Nothing can fail now.
 - [ ] Decide the Telegram ownership on the VPS: the CoS replica's `telegram.json` was left out
       on purpose (its token is identical to `~/.pi/agent/.env`'s, one polling owner). Retired
       copy sits at `~/retired-pi-cos-orchestrator-agent-20261102/`.
@@ -382,8 +382,17 @@ Both are the same three-line wrapper plus different jobs; the two defects below 
       `docs/migrate_cos-orchestrator-agent-to-agent/`.
 - [ ] Verify the first live Telegram turn and `/usage` after the service restart.
 - [ ] Delete the owner's `~/.pi/agent#copy/` safeguard when satisfied.
-- [ ] Fix the two invalid `GEMINI_API_KEY`s (separate task; both were already dead
-      before the migration).
+- [x] ~~Fix the invalid `GEMINI_API_KEY`s (separate task; dead before the migration).
+      **Checked 2026-11-28:** all three copies answer `400 API key not valid` to
+      `GET /v1beta/models` — laptop `~/.pi/agent/.env`, VPS `~/.pi/agent/.env`, and the
+      server's `~/.pi/agent-cloud/.env`. All are `AIza…`, 39 chars, so the format is right
+      and the key itself is revoked (or its project is disabled). Until a working key is
+      supplied by the owner, every `gemini-*` model fails on all three hosts.~~
+      Closed 2026-11-28 by removing the failure instead of the key: `gemini-3.8-flash`,
+      `gemini-3.7-flash` (and web-master's `gemini-3.6-flash`) are out of `enabledModels` in
+      `agent/settings.json` and `agent-web-master/web-master/settings.json`, on both hosts, so
+      no launch can offer a model that can only 400. Bring Gemini back only with a key minted
+      in AI Studio; the dead line stays in the `.env` files until then.
 
 - [x] Renamed the systemd unit `pi-cos.service` → `pi-vps-agent` (2026-11-18).
       The supervisor, tmux socket/session (`-L pi-cos`) and launcher keep their names.
