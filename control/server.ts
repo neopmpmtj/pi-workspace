@@ -1,5 +1,10 @@
-// Project dashboard. Localhost only. It starts agent dashboards and edits the
-// control-plane JSON files. It is not itself one of those agents.
+// Project dashboard. It starts agent dashboards and edits the control-plane
+// JSON files. It is not itself one of those agents.
+//
+// Bound to 127.0.0.1 unless PI_SITE_BIND says otherwise. The VPS sets it to its
+// tailnet address (~/.config/pi-site.env) so the page is reachable from the
+// phone over Tailscale; the laptop stays localhost-only, which is why the page
+// asks the VPS over ssh instead of serving it.
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -13,7 +18,7 @@ import { readControlPlane, SettingsError, writeAgentSettings, writeGate, writeIn
 
 const PUBLIC_DIR = path.join(import.meta.dirname, "public");
 const MAX_BODY = 256_000;
-const HOST = "127.0.0.1";
+const HOST = process.env.PI_SITE_BIND?.trim() || "127.0.0.1";
 
 const FILES: Record<string, string> = {
   "/": "index.html",

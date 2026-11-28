@@ -7,6 +7,9 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStart=%h/.pi/scripts/serve-site.sh
+# Per-host bind: PI_SITE_BIND=127.0.0.1 (default) or the tailnet address.
+# The file is optional and machine-local, so the unit itself never differs.
+EnvironmentFile=-%h/.config/pi-site.env
 Restart=on-failure
 RestartSec=2
 # The VPS is the Telegram side; the page reaches it over ssh, never the reverse.
