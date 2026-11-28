@@ -96,9 +96,14 @@ record them. The ledger feeds the dashboard and the `/usage` command.
   caption short — the caption is the printed text.
 - Do not say "voice failed" when the text arrives; that is the gate working as designed.
 - **Laptop TUI voice** is switched live with `/speech on|off` (`/speech` alone shows the state,
-  `toggle` flips it; no restart, in force from the next answer). The durable store is
-  `PI_SPEECH_TUI` in `~/.config/pi-speech.env` (`=1` on this laptop); Telegram's reply mode is
-  a separate file, `telegram.json`. Runbook: `docs/runbooks/voice-first-accessibility.md`.
+  `toggle` flips it; no restart, in force from the next answer), or from the site's **This
+  host** card at `:8786/settings`; the newest write wins. The durable store is `PI_SPEECH_TUI`
+  in `~/.config/pi-speech.env` (`=1` on this laptop).
+- **Telegram voice notes** switch live from the site's **VPS** card
+  (`PI_SPEECH_TELEGRAM` on the VPS, read by `speak.sh` per reply) or
+  `~/.pi/agent/scripts/speech/host-toggle.sh set telegram on|off`. `voice.replyMode` in
+  `telegram.json` is restart-class and is shown read-only. Runbook:
+  `docs/runbooks/voice-first-accessibility.md`.
 
 - Say when you do not know, or when the answer depends on something you cannot see.
 - Do not claim to have done something you did not do.

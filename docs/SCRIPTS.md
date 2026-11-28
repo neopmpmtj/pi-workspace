@@ -20,6 +20,8 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `backup-host-state.sh` | nightly archive of per-host state into `~/pi-host-backups` | `pi-host-backup.timer` (both hosts, 03:30) |
 | `update-pi-both-hosts.sh` | `pi update` on both, reinstall pinned packages, restart VPS agent, verify | run by hand |
 | `env.sh` | single source for the nvm node path and `PI_REPO` | sourced by every script above |
+| `serve-site.sh` | runs the project site (`control/server.ts`, 127.0.0.1:8786) with the same node the launcher uses; needed because a systemd unit has no nvm | `pi-site.service`, or by hand |
+| `systemd/pi-site.service` | the site as a user unit (both hosts, `WantedBy=default.target`) | copied to `~/.config/systemd/user`, `enable --now` |
 | `systemd/pi-host-backup.service` + `.timer` | nightly backup unit (03:30, both hosts) | copied to `~/.config/systemd/user` |
 | `systemd/pi-parity-check.service` + `.timer` | nightly drift check unit (09:00, VPS) | copied to `~/.config/systemd/user` |
 | `systemd/deepseek-credit-monitor.service` | oneshot DeepSeek credit check (free endpoint, Telegram alert on threshold) | `deepseek-credit-monitor.timer` |
@@ -38,6 +40,7 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `downloads-reclaim.sh` | reclaims space from the downloads folder |
 | `fetch-publications.ts` | fetches publication lists (`npm run fetch:publications`) |
 | `deepseek-balance.sh` | DeepSeek credit: one-line balance, `--json`, `--min N` (exit 4 below threshold), `--quiet`; key from `$DEEPSEEK_API_KEY` or the agent `.env`, never printed |
+| `speech/host-toggle.sh` | `status` / `set tui\|telegram on\|off`: this host's speech switches as one JSON line, with the rules from `agent/src/speech-switch.ts`; the project site calls it locally and over ssh |
 | `gpu/gen.py` | server side of `gpu-image.sh`: builds the ComfyUI graph (turbo or base Qwen-Image-2.1), posts it, moves the PNG to `--out`; deployed to `~/ComfyUI/gen.py` on the home server |
 | `gpu-image.sh` | one image on the home server's RTX 3060: `--mode quick\|medium\|max` (SDXL-Turbo 4 steps / Qwen-Image-2.1 base 1024²·20 steps / 2048²·30 steps), `--size N` exact square, prints path + `time= seed=` line, logs to `agent/logs/image-runs.jsonl` |
 | `deepseek-credit-monitor.sh` | 30-minute alarm with hysteresis: warn < USD 2.50 once, repeat < USD 2.00 every run, recovery line, error once; sends via Bot API (no model, no tokens); `--dry-run`, `--force`, `--self-test` |

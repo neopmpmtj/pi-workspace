@@ -157,18 +157,49 @@ Properties worth keeping:
 - **Precedence:** a `/speech` answer for this session → `$PI_SPEECH_TUI` → the env file. A
   stale shell variable can therefore not undo a `/speech off`, and the next session starts
   from the file again.
+- **The newest write wins.** `/speech` remembers the env file's mtime when it answers; if the
+  file is written afterwards by the site or by `host-toggle.sh`, the file's value takes over
+  on the next turn. That is what keeps a page toggle from being masked by an older `/speech`.
 - **The project site writes the same file.** Settings at `http://127.0.0.1:8786/settings` calls
-  `agent/src/speech-switch.ts`, the writer `/speech` uses. It does not set the in-process
-  session choice, so a session that already ran `/speech` keeps that choice until it restarts.
+  `agent/src/speech-switch.ts`, the writer `/speech` uses — there is no second rewrite to rot.
 - **The file is the durable store, and it is written surgically:** only the `PI_SPEECH_TUI`
   line changes; comments, the voice and rate lines, and a duplicate line (dropped, because
   only the first would be read) are handled atomically via temp-file rename, mode 600.
 - **A failed write is not a silent lie.** The switch still works for the session and
   `/speech` prints `[warn] … could not write ~/.config/pi-speech.env: <err>`.
-- **Telegram is untouched** by this command: it is the TUI surface only. The VPS reply mode
-  stays in `telegram.json`.
+- **Telegram is untouched** by this command: it is the TUI surface only. The Telegram switch is
+  the next section.
 - **Tested** by `agent/test/speech-toggle.test.ts` (parse, replace, append, duplicate, create,
-  private mode) and `control/site.test.ts` (the same writer from the project site).
+  private mode, newest-writer mtime), `agent/test/speech-command.test.ts` (the command wires up
+  and the file follows), `agent/test/speech-host.test.ts` (`host-toggle.sh` and the gate) and
+  `control/site.test.ts` (the same writer from the project site, and the VPS card).
+
+### The Telegram switch (VPS) — live, without a bridge restart
+
+`voice.replyMode` in `~/.pi/agent/telegram.json` is read when the bridge starts, so changing it
+is restart-class. The bridge has a second seam that is not: it spawns
+`scripts/speech/speak.sh` for every voice artifact, and that script re-reads
+`~/.config/pi-speech.env` on every call.
+
+| Key | Read by | Effect of `0` |
+| --- | --- | --- |
+| `PI_SPEECH_TELEGRAM=0` | `speak.sh`, when `--play` is absent | exit 5, no artifact — the bridge's documented text fallback sends the reply as text |
+| `PI_SPEECH_TELEGRAM` absent or `1` | same | voice notes as usual |
+
+`--play` marks the laptop TUI, which has its own key, so the Telegram gate can never silence a
+laptop answer. Exit 5 is the same answer "print it" already uses: `print-to-screen.sh`
+consumes its one-shot flag first, then this durable gate.
+
+- **Writes:** `agent/scripts/speech/host-toggle.sh status|set tui|telegram on|off`, one JSON line,
+  rules from `agent/src/speech-switch.ts` (never re-implemented in bash).
+  `node --experimental-strip-types agent/src/speech-env-cli.ts` is what it execs.
+- **Site:** `/settings` → **VPS** card. The site calls the script locally when this host owns
+  the bot (its `telegram.json` exists) and over `ssh neopmpmtj` otherwise, with a fixed
+  allowlist, `BatchMode=yes`, a 4s timeout. Unreachable renders the ssh reason, never a fake off.
+- **The page shows `replyMode` read-only** (`always`) precisely because it cannot change it
+  live; a control that needs a restart would be a lie on a page about immediacy.
+- **Proof:** `PI_SPEECH_TELEGRAM=0 bash ~/.pi/agent/scripts/speech/speak.sh -t hi -o /tmp/x.ogg`
+  exits 5 and writes nothing; with `--play` it proceeds.
 
 ## 6. Durability checklist
 
