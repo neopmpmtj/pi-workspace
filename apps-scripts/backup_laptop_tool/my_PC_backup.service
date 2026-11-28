@@ -5,9 +5,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-User=pmpmt
-Group=pmpmt
-
+# A *user* unit: User=/Group= are ignored here and the account is implied.
 WorkingDirectory=/home/pmpmt/.pi
 
 Environment=BACKUP_INTERACTIVE=0
@@ -24,4 +22,4 @@ ReadWritePaths=/home/pmpmt
 TimeoutStartSec=60min
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

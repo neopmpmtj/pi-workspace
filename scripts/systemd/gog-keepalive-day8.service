@@ -1,0 +1,11 @@
+[Unit]
+Description=gog OAuth token — day-8 verdict, then switch off the daily probe
+Documentation=file:%h/.pi/agent/docs/runbooks/gog-oauth-consent-screen.md
+# One shot, for the date the runbook names. Tracked so it can be recreated exactly;
+# copy it to ~/.config/systemd/user/ only when a fresh consent needs the check, and
+# set the timer's OnCalendar to that date first. The script is idempotent and reports
+# the token's age, so a late run still answers the question.
+
+[Service]
+Type=oneshot
+ExecStart=%h/.pi/agent/scripts/gog-keepalive-day8.sh

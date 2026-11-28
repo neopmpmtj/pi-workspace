@@ -1,0 +1,11 @@
+[Unit]
+Description=Fire the gog day-8 verdict once (edit the date per re-consent)
+
+[Timer]
+# Day 8 after the consent the runbook records. Change this line for each new token;
+# a date in the past fires once on the next boot (Persistent=true) and reports late.
+OnCalendar=2026-11-26 08:30:00 Europe/Lisbon
+Persistent=true
+
+[Install]
+WantedBy=timers.target

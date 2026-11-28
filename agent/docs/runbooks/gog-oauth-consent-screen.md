@@ -193,8 +193,15 @@ issued 2026-11-18T11:50:37Z). It runs `scripts/gog-keepalive-day8.sh`, which:
    stop once the production token is proven); a FAIL leaves it armed;
 4. disables its own timer, so it cannot fire again.
 
-Files: `~/.config/systemd/user/gog-keepalive-day8.{service,timer}` (machine-local, untracked —
-recreate from the headers) and `scripts/gog-keepalive-day8.sh` (tracked).
+Files: `scripts/systemd/gog-keepalive-day8.{service,timer}` (tracked, copied to
+`~/.config/systemd/user/` when needed) and `agent/scripts/gog-keepalive-day8.sh` (tracked).
+
+**2026-11-28 — the timer was never installed**, so the verdict never fired. It was run by hand on
+the VPS instead (`bash agent/scripts/gog-keepalive-day8.sh`, after a `--dry-run`): verdict **OK**,
+token 9 days old, probe healthy, message delivered to Telegram, and
+`gog-token-keepalive.timer` disabled there as designed. The laptop's daily probe stays armed
+(it has no bot token, so a verdict there could not be delivered). A late run is safe: the script
+reports the token's real age.
 
 ```bash
 systemctl --user list-timers 'gog-*' --no-pager   # both timers and their next elapse

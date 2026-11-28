@@ -101,8 +101,9 @@ Plan: `docs/runbooks/lan-server-192.168.1.60/lan-server-full-access-and-local-ag
       folder was renamed and the remote was not.~~ Renamed on GitHub 2026-11-01. The `url` in
       `~/pi-agents-experts-grouped/.gitmodules`, the parent's `.git/config` and the submodule's
       own `origin` all point at `gog-workspace-agents.git` now.
-- [ ] `~/archived-pi-agents-experts/gog-worksapce-agents` keeps the old spelling: it is a
-      separate archived tree and was not part of this rename.
+- [x] ~~`~/archived-pi-agents-experts/gog-worksapce-agents` keeps the old spelling: it is a
+      separate archived tree and was not part of this rename.~~ Renamed 2026-11-28 to
+      `gog-workspace-agents`; no tracked file points at the old path (only this entry did).
 
 ## LAN server `pmpmt` home, downloads and videos (started 2026-11-03)
 
@@ -321,7 +322,18 @@ Removed 2026-11-07 with keep-agent. Do not restore. The checked items record wha
       `recomputeAllNextRuns()` writes the next *future* occurrence — `computeNextRunAtMs` verified
       at 16:41 local returning 2026-11-07T08:20Z — so overdue jobs never catch up, and both only
       ever ran while pi happened to be open. The backup job was then removed (next item).
-- [ ] **Parked: the laptop backup.** The `Daily Laptop Backup` Pi cron job
+- [ ] **Parked: the laptop backup — now with a measured reason.** Checked 2026-11-28:
+      the system unit `/etc/systemd/system/my_PC_backup.{service,timer}` is installed and the
+      timer is enabled, but **all 15 runs since 2026-10-27 failed**, every one with
+      `GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set in ~/.pi/agent/.env`. No live file
+      holds that pair (the archived session copies are scrubbed from tool output) and
+      `gdrive_token.json` does not exist, so the tool also lacks its refresh token. Its two
+      unit defects are fixed in the tracked copy (`WantedBy=default.target`, no `User=`), but
+      installing it today would only add a second timer that fails. Two ways forward, owner's
+      choice: (a) mint a Google OAuth client (drive.file scope) + one browser consent, then I
+      install the user unit and prove an archive appears; or (b) drop the Drive copy and keep
+      the working local archive (`pi-host-backup.timer`). The original note follows:
+      the `Daily Laptop Backup` Pi cron job
       (`cron-mrolh92n-gwmn6q`) was removed from `~/.pi/cron/jobs.json` on 2026-11-06, completely;
       that store now holds only `gog-token-keepalive`. Removed definition, for recreating it:
       `{"name":"Daily Laptop Backup","schedule":{"kind":"cron","expr":"20 8 * * *","tz":"Europe/Lisbon"},"payload":{"kind":"agentTurn","message":"Run the backup script: cd /home/pmpmt/.pi/apps-scripts/backup_laptop_tool/src/backup_PC_tool && python main.py. Report the result - whether it succeeded or failed and any relevant output."},"delivery":{"mode":"log"},"enabled":true}`.
@@ -334,11 +346,13 @@ Removed 2026-11-07 with keep-agent. Do not restore. The checked items record wha
       runs while pi is open.
 - [ ] `~/.pi/z.old` is 226 MB across two archive runs. Everything tracked is in git and the
       runtime state was recovered, so it can be pruned — on request only.
-- [ ] **2026-11-26**: confirm the gog day-8 verdict ping actually arrived. The one-shot
-      `gog-keepalive-day8.timer` fires at 08:30 Lisbon, messages Telegram, and disables the
-      daily `gog-token-keepalive.timer` on an OK verdict. If the timer or the send failed, no
-      one is told — check `tail ~/.pi/agent/logs/gog-keepalive-day8.log` and
-      `systemctl --user list-timers 'gog-*'`. Runbook: `docs/runbooks/gog-oauth-consent-screen.md`.
+- [x] ~~**2026-11-26**: confirm the gog day-8 verdict ping actually arrived.~~
+      Closed 2026-11-28: it never arrived because the timer was never installed (no log, no
+      unit). Ran the script by hand on the VPS after a dry-run: verdict **OK**, token 9 days
+      old, probe healthy, **message delivered**, and the VPS's `gog-token-keepalive.timer`
+      disabled as designed. The laptop keeps its daily probe (no bot token to report with).
+      The units are now tracked at `scripts/systemd/gog-keepalive-day8.{service,timer}` so the
+      next re-consent schedules it in one copy. Runbook records the whole thing.
 
 ## Launcher audit (2026-11-18)
 

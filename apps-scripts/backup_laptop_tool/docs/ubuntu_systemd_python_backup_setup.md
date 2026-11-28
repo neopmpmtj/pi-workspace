@@ -18,31 +18,33 @@ See `README.md` for the full architecture.
   `backup_config.json.example.json`). Must include `node_modules`, `.venv`,
   `.git`, `__pycache__`, `.backup_PC_cache`, etc.
 
-**Logs:** journald (`journalctl -u my_PC_backup.service`) and the file
+**Logs:** journald (`journalctl --user -u my_PC_backup.service`) and the file
 `src/backup_PC_tool/backup.log`.
 
 ## Install
 
+The units are **user** units (no sudo, and `User=`/`Group=` are ignored there):
+
 ```bash
-sudo cp /home/pmpmt/.pi/apps-scripts/backup_laptop_tool/my_PC_backup.service \
-        /home/pmpmt/.pi/apps-scripts/backup_laptop_tool/my_PC_backup.timer \
-        /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now my_PC_backup.timer
+cp ~/.pi/apps-scripts/backup_laptop_tool/my_PC_backup.service \
+   ~/.pi/apps-scripts/backup_laptop_tool/my_PC_backup.timer \
+   ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now my_PC_backup.timer
 ```
 
 Manual one-shot:
 
 ```bash
-sudo systemctl start my_PC_backup.service
+systemctl --user start my_PC_backup.service
 ```
 
 Status:
 
 ```bash
-systemctl status my_PC_backup.service
-systemctl status my_PC_backup.timer
-journalctl -u my_PC_backup.service -n 200 --no-pager
+systemctl --user status my_PC_backup.service
+systemctl --user status my_PC_backup.timer
+journalctl --user -u my_PC_backup.service -n 200 --no-pager
 ```
 
 ## The unit files
