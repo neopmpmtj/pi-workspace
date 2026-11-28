@@ -22,6 +22,7 @@ put shared helpers in `scripts/lib/`, and never leave a helper executable-by-acc
 | `env.sh` | single source for the nvm node path and `PI_REPO` | sourced by every script above |
 | `serve-site.sh` | runs the project site (`control/server.ts`, 127.0.0.1:8786) with the same node the launcher uses; needed because a systemd unit has no nvm | `pi-site.service`, or by hand |
 | `systemd/pi-site.service` | the site as a user unit (both hosts, `WantedBy=default.target`) | copied to `~/.config/systemd/user`, `enable --now` |
+| `systemd/gog-keepalive-day8.service`, `systemd/gog-keepalive-day8.timer` | the one-shot day-8 gog verdict (script in `agent/scripts/`); edit `OnCalendar` per re-consent | copied to `~/.config/systemd/user` only when a fresh consent needs the check |
 | `systemd/pi-host-backup.service` + `.timer` | nightly backup unit (03:30, both hosts) | copied to `~/.config/systemd/user` |
 | `systemd/pi-parity-check.service` + `.timer` | nightly drift check unit (09:00, VPS) | copied to `~/.config/systemd/user` |
 | `systemd/deepseek-credit-monitor.service` | oneshot DeepSeek credit check (free endpoint, Telegram alert on threshold) | `deepseek-credit-monitor.timer` |
