@@ -6,6 +6,7 @@
 #   gpu-image.sh --mode quick "a fox"
 #   gpu-image.sh --mode max --size 1200 "a bee"
 #   gpu-image.sh --from ~/Pictures/bee.png --denoise 0.45 "its wings are now blue"
+#   gpu-image.sh --reference ~/Pictures/x.png "same subject, new pose or scene"
 #
 # Modes (the mode picks model, render size, steps, cfg):
 #   quick   SDXL-Turbo                       1024²   4 steps   ~3 s
@@ -38,6 +39,7 @@ CFG_OVERRIDE=""
 SEED=""
 NEG="blurry, low quality, watermark, text"
 FROM=""
+REFERENCE=""
 DENOISE="0.45"
 PROMPT=""
 
@@ -51,6 +53,7 @@ while [ $# -gt 0 ]; do
         --seed) SEED="$2"; shift 2 ;;
         --negative) NEG="$2"; shift 2 ;;
         --from) FROM="$2"; shift 2 ;;
+        --reference) REFERENCE="$2"; shift 2 ;;
         --denoise) DENOISE="$2"; shift 2 ;;
         -h | --help) sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -) PROMPT="$(cat)"; shift ;;
@@ -73,6 +76,14 @@ case "${REQ_SIZE:-0}${SEED:-0}$STEPS$CFG" in
 esac
 
 remote_from=""
+if [ -n "$REFERENCE" ]; then FROM="" ; fi
+if [ -n "$REFERENCE" ]; then
+    [ -f "$REFERENCE" ] || { echo "gpu-image.sh: --reference file not found: $REFERENCE" >&2; exit 2; }
+    remote_from="ref-$(date +%s)-$$.png"
+    timeout 120 scp -q -o BatchMode=yes "$REFERENCE" "$HOST:ComfyUI/input/$remote_from" || {
+        echo "gpu-image.sh: could not upload $REFERENCE" >&2; exit 2; }
+    RENDER="$(python3 -c "import sys; from PIL import Image; w,h=Image.open(sys.argv[1]).size; print(max(w,h))" "$REFERENCE")"
+fi
 if [ -n "$FROM" ]; then
     [ -f "$FROM" ] || { echo "gpu-image.sh: --from file not found: $FROM" >&2; exit 2; }
     remote_from="edit-$(date +%s)-$$.png"
@@ -89,7 +100,9 @@ OUT="${OUT:-/tmp/pi-image-$(date +%s).png}"
 
 remote_out="/tmp/gpu-$(date +%s)-$$.png"
 args="--out $remote_out --size $RENDER --steps $STEPS --cfg $CFG --model $MODEL --negative $(printf '%q' "$NEG")"
-if [ -n "$remote_from" ]; then
+if [ -n "$REFERENCE" ]; then
+    args="$args --edit $remote_from --size $RENDER"
+elif [ -n "$remote_from" ]; then
     args="$args --from $remote_from --denoise $DENOISE"
     RENDER="$(python3 -c "import sys; from PIL import Image; w,h=Image.open(sys.argv[1]).size; print(max(w,h))" "$FROM")"
     args="$args --size $RENDER"
