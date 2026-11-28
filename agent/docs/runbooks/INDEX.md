@@ -52,7 +52,8 @@ protected from `/archive` — see "Protecting or archiving a doc" at the bottom.
 | Doc | What it answers |
 | --- | --- |
 | [CHEATSHEET.md](../CHEATSHEET.md) | operator commands for this agent, one screen |
-| [INBOX.md](../INBOX.md) | agreed future work; read when asked "what is next" |
+| [INBOX.md](../INBOX.md) | **open** future work only; read when asked "what is next" |
+| [INBOX-DONE.md](../INBOX-DONE.md) | every closed item, one line each with date and proof; read when asked what we finished |
 | [NOTES.md](../NOTES.md) | loose notes that have not earned a runbook yet |
 
 Scripts have their own map: `docs/SCRIPTS.md` at the repo root.

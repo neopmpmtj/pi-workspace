@@ -270,4 +270,9 @@ These were real bugs in this tree. Do not put them back.
 
 ## Open work
 
-Agreed future work lives in `docs/INBOX.md` in this home. Read it when the user asks what is next, and add an item whenever something is agreed but not done immediately but instead asked to get back to later; another time; ...
+Agreed future work lives in `docs/INBOX.md` in this home, and **only open work does**. Read it
+when the user asks what is next, and add an item whenever something is agreed but not done
+immediately. When an item ships, move it in the same edit: delete it from `INBOX.md` and add one
+compressed line to `docs/INBOX-DONE.md` (date, what, closing fact, proof path or commit). Nothing
+closed, ticked or struck stays in `INBOX.md` — it is read on almost every turn and history costs
+context there; the full wording is always recoverable from the git history of `INBOX.md`.
