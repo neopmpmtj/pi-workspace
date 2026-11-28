@@ -3,7 +3,7 @@
   "launcher": "pi-sm-google-workspace",
   "defaultPrompt": "/inbox-new",
   "call": "<task in plain language> (e.g. List all folders in the root of my Google Drive)",
-  "purpose": "Section manager for Google Workspace: Gmail, Drive, Sheets, Docs, Calendar, Chat, Contacts, Tasks, and the rest of `gog`'s apps. It runs `gog` itself from bash, so the default call is a plain-language task in a chat turn — that chat turn is what gives it tools. `/ask` is the exception: it starts no chat turn, so it answers from the model's memory and cannot reach Google; use it only for text work. For two frequent questions, `/gdrive-root` and `/inbox-new` run `gog` directly with no model turn and no tokens.",
+  "purpose": "Section manager for Google Workspace: Gmail, Drive, Sheets, Docs, Calendar, Chat, Contacts, Tasks, and the rest of `gog`'s apps. It runs `gog` itself from bash, so the default call is a plain-language task in a chat turn — that chat turn is what gives it tools. `/ask` is the exception: it starts no chat turn, so it answers from the model's memory and cannot reach Google; use it only for text work. For the questions asked most often — `/gdrive-root`, `/inbox-new`, `/agenda`, `/from <sender>`, `/find <name>` — it runs `gog` directly with no model turn and no tokens.",
   "account": "neopmpmtj@gmail.com",
   "contract": "~/.pi/agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace/docs/CALLING.md",
   "tools": [],
@@ -19,6 +19,18 @@
     {
       "name": "/inbox-new",
       "description": "Unread mail newer than N hours (default 24): date, from, subject, id, 20 rows by default (--limit N). No model turn, no tokens."
+    },
+    {
+      "name": "/agenda",
+      "description": "Today's events on the primary calendar: start, end, summary, id — 20 rows by default (--limit N). No model turn, no tokens."
+    },
+    {
+      "name": "/from",
+      "description": "Unread mail from one sender: date, from, subject, id — /from <sender> [--limit N], 20 rows by default. No sender, no search. No model turn, no tokens."
+    },
+    {
+      "name": "/find",
+      "description": "Drive files whose name contains a term: name, folder|file, id, modified — /find <name> [--limit N], 20 rows by default. No model turn, no tokens."
     },
     {
       "name": "/ask",

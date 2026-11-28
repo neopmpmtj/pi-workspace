@@ -13,7 +13,7 @@ cd ~/.pi/agent-gog-workspace-agents/sm-google-workspace && pi-sm-google-workspac
 - Two kinds of call, and the difference is whether the agent gets tools:
   - **plain language** starts a chat turn. That agent has `bash`, so it can run `gog` and actually read Gmail, Drive, Sheets, Calendar. Costs a model turn.
   - **`/ask <question>`** starts no chat turn and has no tools. It answers from the model's own memory. Never use it for anything about the account.
-  - **`/gdrive-root` and `/inbox-new`** run one fixed `gog` command, shape the JSON, and print it. No model turn, no tokens, about a second.
+  - **`/gdrive-root`, `/inbox-new`, `/agenda`, `/from <sender>`, `/find <name>`** run one fixed `gog` command, shape the JSON, and print it. No model turn, no tokens, about a second.
 
 ## Output
 
@@ -28,14 +28,26 @@ cd ~/.pi/agent-gog-workspace-agents/sm-google-workspace && pi-sm-google-workspac
 # /inbox-new
 <date>\t<from>\t<subject>\t<id>
 
+# /agenda
+<start>\t<end>\t<summary>\t<id>
+
+# /from <sender>
+<date>\t<from>\t<subject>\t<id>
+
+# /find <name>
+<name>\t<folder|file>\t<id>\t<modifiedTime>
+
 # trailing line, only when rows are held back
 +<held> more rows not shown (<total> total); run with --limit 0 to see all of them.
 ```
 
-- Both canned commands print 20 rows unless told otherwise: `--limit N` changes that,
+- Every canned command prints 20 rows unless told otherwise: `--limit N` changes that,
   `--limit 0` prints every row. When rows are held back, the last line says how many and
   points at `--limit 0`. The trailing line is not a record and does not start with a tab-separated row.
-- `nothing found` when `gog` returns an empty list.
+- `/from <sender>` and `/find <name>` need their argument. With none they print `Usage: ...`
+  and call nothing, so a bare `/from` can never list the whole mailbox. A sender or name with
+  spaces needs no quoting: everything that is not `--limit` is the term.
+- `nothing found` when `gog` returns an empty list (`/agenda` with no events today included).
 - A failure prints `[FAIL] <reason>` on stderr, records nothing, and exits non-zero:
 
 ```bash
@@ -113,6 +125,60 @@ Lists unread mail newer than N hours, one tab-separated row per message:
 --limit N   Rows to print, 0 or more. Default 20. 0 prints all.
 
 Runs `gog gmail search 'is:unread newer_than:Nh' --json --results-only`, so there is no model turn and no tokens. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`.
+```
+
+### /agenda
+
+Today's events on the primary calendar: start, end, summary, id — 20 rows by default (--limit N). No model turn, no tokens.
+
+```text
+/agenda [--limit N]
+
+Lists today's events on the primary calendar, one tab-separated row per event:
+
+  <start>	<end>	<summary>	<id>
+
+--limit N   Rows to print, 0 or more. Default 20. 0 prints all.
+
+Runs `gog calendar events primary --today --all-pages --json --results-only` in this machine's timezone, so there is no model turn and no tokens. Times are what Google returns (RFC3339); an all-day event prints its date instead. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`, which means no events today, not a failure.
+```
+
+### /from
+
+Unread mail from one sender: date, from, subject, id — /from <sender> [--limit N], 20 rows by default. No sender, no search. No model turn, no tokens.
+
+```text
+/from <sender> [--limit N]
+
+Lists unread mail from one sender, one tab-separated row per message:
+
+  <date>	<from>	<subject>	<id>
+
+<sender>    An email address or a name. Everything that is not --limit is the sender.
+--limit N   Rows to print, 0 or more. Default 20. 0 prints all.
+
+The sender is required. Without it the command prints this usage and searches nothing, so a bare /from can never turn into a whole-mailbox listing.
+
+Runs `gog gmail list 'is:unread from:"<sender>"' --all --json --results-only`, so there is no model turn and no tokens. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`.
+```
+
+### /find
+
+Drive files whose name contains a term: name, folder|file, id, modified — /find <name> [--limit N], 20 rows by default. No model turn, no tokens.
+
+```text
+/find <name> [--limit N]
+
+Lists Drive files whose name contains a term, one tab-separated row per file:
+
+  <name>	<folder|file>	<id>	<modifiedTime>
+
+<name>      Words to look for in the file name. Everything that is not --limit is the name.
+--limit N   Rows to print, 0 or more. Default 20. 0 prints all.
+
+The name is required. Without it the command prints this usage and searches nothing.
+
+Runs `gog drive ls --query "name contains '<name>'" --all --max 1000 --json --results-only`, across every file the account can see, so there is no model turn and no tokens. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`.
 ```
 
 ### /ask

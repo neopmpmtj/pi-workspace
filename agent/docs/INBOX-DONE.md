@@ -10,6 +10,7 @@ item died with a change elsewhere — record it and move on, do not reopen it.
 ## sm-google-workspace
 
 - 2026-11-28 — `--limit N` on the list-shaped canned commands → `/inbox-new [--hours N] [--limit N]` and `/gdrive-root [--limit N]`; default 20 rows, `--limit 0` prints all, one trailing line counts the rest. Proof: sibling `test/gog.test.ts` 120/120, commit `40cb588`.
+- 2026-11-28 — Three more canned commands `/agenda`, `/from <sender>`, `/find <name>` → shipped in the Google sibling: fixed `gog` calls, each honouring `--limit` (default 20, 0 = all) with a trailing count line, empty result says "nothing found", `/from` and `/find` refuse to run without their argument. Proof: sibling `test/gog.test.ts` 135/135, typecheck clean, `agent.json` + `CALLING.md` regenerated, live smoke: `/from github --limit 2` 2 rows + "+1 more", `/find report --limit 2` 2 rows + "+20 more", `/agenda` empty because `gog calendar events primary --today` answers "No events". Commit (sibling tree) in the same push.
 - 2026-11-01 — Keyring passphrase is current → that repo keeps its own `.env` (mode 600) with `GOG_ACCOUNT` and `GOG_KEYRING_PASSWORD`; `gog` answers through the launcher.
 
 ## This agent

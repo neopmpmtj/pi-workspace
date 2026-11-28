@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { CANNED, CANNED_DESCRIPTION, DEFAULT_LIMIT, GOG_HELP, parseDriveLimit, parseHours, parseInboxArgs, plan, runCanned } from "../src/gog.ts";
+import { CANNED, CANNED_DESCRIPTION, DEFAULT_LIMIT, GOG_HELP, parseAgendaLimit, parseDriveLimit, parseFindArgs, parseFromArgs, parseHours, parseInboxArgs, plan, runCanned } from "../src/gog.ts";
 import type { GogResult } from "../src/gog.ts";
 
 describe("parseHours", () => {
@@ -173,5 +173,176 @@ describe("publication shape", () => {
       assert.ok(CANNED_DESCRIPTION[name].length > 20, `${name} needs a description`);
       assert.match(GOG_HELP[name], new RegExp(`^/${name}`));
     }
+  });
+
+  it("carries the three newer commands", () => {
+    assert.deepEqual([...CANNED], ["gdrive-root", "inbox-new", "agenda", "from", "find"]);
+  });
+});
+
+/** A fake `gog` that records the argv it was handed and answers with a fixed list. */
+function recording(rows: Record<string, unknown>[]): { runner: (argv: string[]) => Promise<GogResult>; calls: string[][] } {
+  const calls: string[][] = [];
+  return {
+    calls,
+    runner: async (argv) => {
+      calls.push(argv);
+      return { ok: true, text: JSON.stringify(rows) };
+    },
+  };
+}
+
+const AGENDA_ARGV = ["calendar", "events", "primary", "--today", "--all-pages", "--no-input", "--json", "--results-only"];
+const FIND_ARGV = ["drive", "ls", "--query", "name contains 'report'", "--all", "--max", "1000", "--no-input", "--json", "--results-only"];
+
+function events(count: number): Record<string, unknown>[] {
+  return Array.from({ length: count }, (_, index) => ({
+    start: { dateTime: `2026-11-28T09:${String(index).padStart(2, "0")}:00Z` },
+    end: { dateTime: `2026-11-28T09:${String(index).padStart(2, "0")}:30Z` },
+    summary: `Event ${index}`,
+    id: `ev${index}`,
+  }));
+}
+
+function files(count: number): Record<string, unknown>[] {
+  return Array.from({ length: count }, (_, index) => ({
+    name: `Report ${index}`,
+    mimeType: index === 0 ? "application/vnd.google-apps.folder" : "application/pdf",
+    id: `f${index}`,
+    modifiedTime: "2026-11-27T00:00:00.000Z",
+  }));
+}
+
+describe("/agenda", () => {
+  it("asks gog for today on the primary calendar", () => {
+    assert.deepEqual(plan("agenda", "").argv, AGENDA_ARGV);
+    assert.equal(plan("agenda", "").limit, DEFAULT_LIMIT);
+    assert.equal(parseAgendaLimit("--limit 0"), 0);
+  });
+
+  it("flattens a timed and an all-day event", () => {
+    const rows = plan("agenda", "").rows([
+      { start: { dateTime: "2026-11-28T09:00:00Z" }, end: { dateTime: "2026-11-28T10:00:00Z" }, summary: "Standup", id: "e1" },
+      { start: { date: "2026-11-28" }, end: { date: "2026-11-29" }, summary: "Holiday\nDay", id: "e2" },
+    ]);
+    assert.equal(rows[0], "2026-11-28T09:00:00Z\t2026-11-28T10:00:00Z\tStandup\te1");
+    assert.equal(rows[1], "2026-11-28\t2026-11-29\tHoliday Day\te2");
+  });
+
+  it("refuses anything but --limit", () => {
+    assert.throws(() => plan("agenda", "--days 3"), /takes no arguments except --limit/);
+    assert.throws(() => plan("agenda", "--limit lots"), /whole number/);
+  });
+
+  it("prints 20 rows, counts the rest, and shows all with --limit 0", async () => {
+    const { runner, calls } = recording(events(24));
+    const outcome = await runCanned("agenda", "", 30_000, runner);
+    assert.deepEqual(calls[0], AGENDA_ARGV);
+    const lines = outcome.text.split("\n");
+    assert.equal(lines.length, 21);
+    assert.match(lines[19], /\tEvent 19\tev19$/);
+    assert.match(lines[20], /^\+4 more rows not shown \(24 total\); run with --limit 0/);
+
+    const all = await runCanned("agenda", "--limit 0", 30_000, recording(events(24)).runner);
+    assert.equal(all.text.split("\n").length, 24);
+    assert.doesNotMatch(all.text, /more row/);
+  });
+
+  it("says nothing found on an empty day", async () => {
+    const outcome = await runCanned("agenda", "", 30_000, recording([]).runner);
+    assert.deepEqual(outcome, { ok: true, text: "nothing found" });
+  });
+});
+
+describe("/from", () => {
+  it("builds the is:unread from: query from the argument", () => {
+    assert.deepEqual(parseFromArgs("github"), { sender: "github", limit: DEFAULT_LIMIT });
+    assert.deepEqual(
+      plan("from", "github").argv,
+      ["gmail", "list", 'is:unread from:"github"', "--all", "--no-input", "--json", "--results-only"],
+    );
+  });
+
+  it("keeps a sender with spaces as one quoted term and reads --limit either side", () => {
+    assert.equal(plan("from", "John Smith").argv[2], 'is:unread from:"John Smith"');
+    assert.equal(plan("from", "--limit 3 John Smith").argv[2], 'is:unread from:"John Smith"');
+    assert.equal(parseFromArgs("John Smith --limit 3").limit, 3);
+    assert.equal(plan("from", 'O"Brien').argv[2], 'is:unread from:"O\\"Brien"');
+  });
+
+  it("prints usage and runs nothing without a sender", async () => {
+    for (const args of ["", "   ", "--limit 5"]) {
+      const { runner, calls } = recording(files(1));
+      const outcome = await runCanned("from", args, 30_000, runner);
+      assert.equal(outcome.ok, false);
+      assert.match(outcome.text, /nothing was searched/);
+      assert.match(outcome.text, /Usage: \/from <sender> \[--limit N\]/);
+      assert.equal(calls.length, 0, "no gog call may run without a sender");
+    }
+  });
+
+  it("refuses unknown flags rather than treating them as a sender", async () => {
+    const outcome = await runCanned("from", "--hours 3 github", 30_000, recording([]).runner);
+    assert.equal(outcome.ok, false);
+    assert.match(outcome.text, /Unknown argument --hours/);
+  });
+
+  it("shapes rows, honours --limit, and reports an empty result", async () => {
+    const { runner } = recording(
+      Array.from({ length: 24 }, (_, index) => ({
+        date: `2026-11-01 10:${String(index).padStart(2, "0")}`,
+        from: `Sender ${index} <s${index}@example.com>`,
+        subject: `Subject ${index}`,
+        id: `id${index}`,
+      })),
+    );
+    const outcome = await runCanned("from", "sender --limit 2", 30_000, runner);
+    const lines = outcome.text.split("\n");
+    assert.equal(lines[0], "2026-11-01 10:00\tSender 0 <s0@example.com>\tSubject 0\tid0");
+    assert.equal(lines.length, 3);
+    assert.match(lines[2], /^\+22 more rows not shown \(24 total\)/);
+
+    const none = await runCanned("from", "nobody@example.com", 30_000, recording([]).runner);
+    assert.deepEqual(none, { ok: true, text: "nothing found" });
+  });
+});
+
+describe("/find", () => {
+  it("asks gog for files whose name contains the term", () => {
+    assert.deepEqual(parseFindArgs("report"), { name: "report", limit: DEFAULT_LIMIT });
+    assert.deepEqual(plan("find", "report").argv, FIND_ARGV);
+  });
+
+  it("escapes the term and keeps spaces", () => {
+    assert.equal(plan("find", "weekly report").argv[3], "name contains 'weekly report'");
+    assert.equal(plan("find", "Pedro's notes").argv[3], "name contains 'Pedro\\'s notes'");
+    assert.equal(parseFindArgs("weekly report --limit 0").limit, 0);
+  });
+
+  it("prints usage and runs nothing without a name", async () => {
+    for (const args of ["", "--limit 0"]) {
+      const { runner, calls } = recording(files(1));
+      const outcome = await runCanned("find", args, 30_000, runner);
+      assert.equal(outcome.ok, false);
+      assert.match(outcome.text, /Usage: \/find <name> \[--limit N\]/);
+      assert.equal(calls.length, 0, "no gog call may run without a name");
+    }
+  });
+
+  it("marks folders, honours --limit, and reports an empty result", async () => {
+    const { runner, calls } = recording(files(24));
+    const outcome = await runCanned("find", "report --limit 2", 30_000, runner);
+    assert.deepEqual(calls[0], FIND_ARGV);
+    const lines = outcome.text.split("\n");
+    assert.equal(lines[0], "Report 0\tfolder\tf0\t2026-11-27T00:00:00.000Z");
+    assert.equal(lines[1], "Report 1\tfile\tf1\t2026-11-27T00:00:00.000Z");
+    assert.equal(lines.length, 3);
+    assert.match(lines[2], /^\+22 more rows not shown \(24 total\)/);
+
+    const all = await runCanned("find", "report --limit 0", 30_000, recording(files(24)).runner);
+    assert.equal(all.text.split("\n").length, 24);
+
+    const none = await runCanned("find", "zzz-no-such-file", 30_000, recording([]).runner);
+    assert.deepEqual(none, { ok: true, text: "nothing found" });
   });
 });

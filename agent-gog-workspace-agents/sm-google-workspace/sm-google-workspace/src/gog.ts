@@ -7,12 +7,15 @@
 // answers exactly one question and takes no rewriting.
 import { spawn } from "node:child_process";
 
-export const CANNED = ["gdrive-root", "inbox-new"] as const;
+export const CANNED = ["gdrive-root", "inbox-new", "agenda", "from", "find"] as const;
 export type CannedCommand = (typeof CANNED)[number];
 
 export const CANNED_DESCRIPTION: Record<CannedCommand, string> = {
   "gdrive-root": "Root of Google Drive: name, folder|file, id, modified — one tab-separated row per item, 20 rows by default (--limit N). No model turn, no tokens.",
   "inbox-new": "Unread mail newer than N hours (default 24): date, from, subject, id, 20 rows by default (--limit N). No model turn, no tokens.",
+  agenda: "Today's events on the primary calendar: start, end, summary, id — 20 rows by default (--limit N). No model turn, no tokens.",
+  from: "Unread mail from one sender: date, from, subject, id — /from <sender> [--limit N], 20 rows by default. No sender, no search. No model turn, no tokens.",
+  find: "Drive files whose name contains a term: name, folder|file, id, modified — /find <name> [--limit N], 20 rows by default. No model turn, no tokens.",
 };
 
 /** Rows printed before the trailing "held back" line appears. `--limit 0` means all. */
@@ -42,6 +45,45 @@ export const GOG_HELP: Record<CannedCommand, string> = {
     "",
     "Runs `gog gmail search 'is:unread newer_than:Nh' --json --results-only`, so there is no model turn and no tokens. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`.",
   ].join("\n"),
+  agenda: [
+    "/agenda [--limit N]",
+    "",
+    "Lists today's events on the primary calendar, one tab-separated row per event:",
+    "",
+    "  <start>\t<end>\t<summary>\t<id>",
+    "",
+    "--limit N   Rows to print, 0 or more. Default 20. 0 prints all.",
+    "",
+    "Runs `gog calendar events primary --today --all-pages --json --results-only` in this machine's timezone, so there is no model turn and no tokens. Times are what Google returns (RFC3339); an all-day event prints its date instead. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`, which means no events today, not a failure.",
+  ].join("\n"),
+  from: [
+    "/from <sender> [--limit N]",
+    "",
+    "Lists unread mail from one sender, one tab-separated row per message:",
+    "",
+    "  <date>\t<from>\t<subject>\t<id>",
+    "",
+    "<sender>    An email address or a name. Everything that is not --limit is the sender.",
+    "--limit N   Rows to print, 0 or more. Default 20. 0 prints all.",
+    "",
+    "The sender is required. Without it the command prints this usage and searches nothing, so a bare /from can never turn into a whole-mailbox listing.",
+    "",
+    "Runs `gog gmail list 'is:unread from:\"<sender>\"' --all --json --results-only`, so there is no model turn and no tokens. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`.",
+  ].join("\n"),
+  find: [
+    "/find <name> [--limit N]",
+    "",
+    "Lists Drive files whose name contains a term, one tab-separated row per file:",
+    "",
+    "  <name>\t<folder|file>\t<id>\t<modifiedTime>",
+    "",
+    "<name>      Words to look for in the file name. Everything that is not --limit is the name.",
+    "--limit N   Rows to print, 0 or more. Default 20. 0 prints all.",
+    "",
+    "The name is required. Without it the command prints this usage and searches nothing.",
+    "",
+    "Runs `gog drive ls --query \"name contains '<name>'\" --all --max 1000 --json --results-only`, across every file the account can see, so there is no model turn and no tokens. When rows are held back, one trailing line says how many and how to see them. An empty result prints `nothing found`.",
+  ].join("\n"),
 };
 
 export interface CannedPlan {
@@ -62,6 +104,9 @@ const TIMEOUT_MS = 30_000;
 
 const INBOX_USAGE = "/inbox-new [--hours N] [--limit N]";
 const DRIVE_USAGE = "/gdrive-root [--limit N]";
+const AGENDA_USAGE = "/agenda [--limit N]";
+const FROM_USAGE = "/from <sender> [--limit N]";
+const FIND_USAGE = "/find <name> [--limit N]";
 
 export interface InboxArgs {
   hours: number;
@@ -97,14 +142,57 @@ export function parseHours(args: string): number {
 
 /** `--limit N` for /gdrive-root; `--limit` is its only argument. */
 export function parseDriveLimit(args: string): number {
+  return parseLimitOnly(args, DRIVE_USAGE);
+}
+
+/** `--limit N` for /agenda; `--limit` is its only argument. */
+export function parseAgendaLimit(args: string): number {
+  return parseLimitOnly(args, AGENDA_USAGE);
+}
+
+/** /from takes a sender and `--limit N`. No sender is an error: nothing may be searched by default. */
+export function parseFromArgs(args: string): { sender: string; limit: number } {
+  const { target, limit } = parseTargetAndLimit(args, FROM_USAGE);
+  if (target === "") throw new Error(`No sender given, so nothing was searched. Usage: ${FROM_USAGE}`);
+  return { sender: target, limit };
+}
+
+/** /find takes a name and `--limit N`. No name is an error, for the same reason as /from. */
+export function parseFindArgs(args: string): { name: string; limit: number } {
+  const { target, limit } = parseTargetAndLimit(args, FIND_USAGE);
+  if (target === "") throw new Error(`No name given, so nothing was searched. Usage: ${FIND_USAGE}`);
+  return { name: target, limit };
+}
+
+/** `--limit N` and nothing else. */
+function parseLimitOnly(args: string, usage: string): number {
   const tokens = args.trim().split(/\s+/).filter(Boolean);
   let limit = DEFAULT_LIMIT;
   for (let index = 0; index < tokens.length; index++) {
     if (tokens[index] !== "--limit")
-      throw new Error(`Unknown argument ${tokens[index]}. ${DRIVE_USAGE} takes no arguments except --limit N.`);
+      throw new Error(`Unknown argument ${tokens[index]}. ${usage} takes no arguments except --limit N.`);
     limit = limitValue(tokens[++index]);
   }
   return limit;
+}
+
+/**
+ * Splits `<words...> [--limit N]`: every word that is not a flag belongs to the
+ * target, so a sender or file name with spaces needs no quoting. Returns an
+ * empty target rather than inventing one, and the caller decides whether that
+ * is an error (it always is here — a default target would search too much).
+ */
+function parseTargetAndLimit(args: string, usage: string): { target: string; limit: number } {
+  const tokens = args.trim().split(/\s+/).filter(Boolean);
+  const words: string[] = [];
+  let limit = DEFAULT_LIMIT;
+  for (let index = 0; index < tokens.length; index++) {
+    const token = tokens[index];
+    if (token === "--limit") limit = limitValue(tokens[++index]);
+    else if (token.startsWith("--")) throw new Error(`Unknown argument ${token}. Usage: ${usage}`);
+    else words.push(token);
+  }
+  return { target: words.join(" ").trim(), limit };
 }
 
 function limitValue(value: string | undefined): number {
@@ -118,24 +206,76 @@ export function plan(command: CannedCommand, args: string): CannedPlan {
     return {
       argv: ["drive", "ls", "--no-input", "--json", "--results-only"],
       limit: parseDriveLimit(args),
-      rows: (items) =>
-        items.map((item) =>
-          [
-            oneLine(item.name),
-            String(item.mimeType ?? "").endsWith(".folder") ? "folder" : "file",
-            oneLine(item.id),
-            oneLine(item.modifiedTime),
-          ].join("\t"),
-        ),
+      rows: (items) => items.map(driveRow),
+    };
+  }
+  if (command === "agenda") {
+    return {
+      // --today is this machine's day, the same one the caller is living in.
+      argv: ["calendar", "events", "primary", "--today", "--all-pages", "--no-input", "--json", "--results-only"],
+      limit: parseAgendaLimit(args),
+      rows: (items) => items.map(agendaRow),
+    };
+  }
+  if (command === "from") {
+    const { sender, limit } = parseFromArgs(args);
+    return {
+      // --all fetches every unread message from this one sender; the query is what
+      // keeps it narrow, never the default page size.
+      argv: ["gmail", "list", `is:unread from:${gmailPhrase(sender)}`, "--all", "--no-input", "--json", "--results-only"],
+      limit,
+      rows: (items) => items.map(mailRow),
+    };
+  }
+  if (command === "find") {
+    const { name, limit } = parseFindArgs(args);
+    return {
+      // --all lifts `ls` out of the root folder; --max is gog's ceiling for one call.
+      argv: ["drive", "ls", "--query", driveNameContains(name), "--all", "--max", "1000", "--no-input", "--json", "--results-only"],
+      limit,
+      rows: (items) => items.map(driveRow),
     };
   }
   const { hours, limit } = parseInboxArgs(args);
   return {
     argv: ["gmail", "search", `is:unread newer_than:${hours}h`, "--no-input", "--json", "--results-only"],
     limit,
-    rows: (items) =>
-      items.map((item) => ["date", "from", "subject", "id"].map((key) => oneLine(item[key])).join("\t")),
+    rows: (items) => items.map(mailRow),
   };
+}
+
+function driveRow(item: Record<string, unknown>): string {
+  return [
+    oneLine(item.name),
+    String(item.mimeType ?? "").endsWith(".folder") ? "folder" : "file",
+    oneLine(item.id),
+    oneLine(item.modifiedTime),
+  ].join("\t");
+}
+
+function mailRow(item: Record<string, unknown>): string {
+  return ["date", "from", "subject", "id"].map((key) => oneLine(item[key])).join("\t");
+}
+
+function agendaRow(item: Record<string, unknown>): string {
+  return [eventTime(item.start), eventTime(item.end), oneLine(item.summary), oneLine(item.id)].join("\t");
+}
+
+/** An event time is `dateTime` for a timed event and `date` for an all-day one. */
+function eventTime(value: unknown): string {
+  if (value === null || typeof value !== "object") return "";
+  const node = value as Record<string, unknown>;
+  return oneLine(node.dateTime ?? node.date);
+}
+
+/** Gmail search syntax: quotes keep a name with spaces, or an operator, as one literal term. */
+function gmailPhrase(value: string): string {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+/** Drive query syntax: `name contains '<term>'`, with the term's quotes and backslashes escaped. */
+function driveNameContains(value: string): string {
+  return `name contains '${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 }
 
 /** Plans, runs, and shapes one canned command. Never throws: failures come back as `ok: false`. */

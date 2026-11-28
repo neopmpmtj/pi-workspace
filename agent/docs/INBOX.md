@@ -6,13 +6,6 @@ closing fact, proof path or commit) in the same edit. Nothing closed, ticked or 
 this file — it is read on almost every turn and history costs context. The full original wording
 is recoverable from the git history of this file.
 
-## sm-google-workspace
-
-- [ ] More canned commands, in the spirit of `/gdrive-root` and `/inbox-new` — today's calendar,
-      recent documents, unread from one sender, Drive search by name. Each one is a fixed
-      `gog` call in `src/gog.ts` plus a command registration, so it costs no tokens.
-      Home: `~/.pi/agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace`.
-
 ## lan-agent · server sshd
 
 - [ ] Flip the server's sshd to key-only. **Merged 2026-11-28** from the two `PasswordAuthentication yes`
