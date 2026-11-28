@@ -25,6 +25,27 @@ const money = (value) => (value === null || value === undefined ? "—" : `$${va
 const esc = (text) => String(text ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const day = (iso) => (Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleDateString("en-CA") : "?");
 const time = (iso) => (Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleTimeString("en-GB") : "?");
+const datetime = (iso) => (Number.isFinite(Date.parse(iso)) ? `${day(iso)} ${time(iso)}` : "?");
+
+function shortLabel(text) {
+  const value = String(text ?? "");
+  if (!value) return `<span class="muted">—</span>`;
+  const clipped = value.length > 70 ? `${value.slice(0, 70)}…` : value;
+  return `<span title="${esc(value)}">${esc(clipped)}</span>`;
+}
+
+function estCell(costEstimated, unrated) {
+  if (unrated > 0) {
+    return costEstimated > 0
+      ? `${money(costEstimated)} <span class="origin mixed">+${unrated} unrated</span>`
+      : `<span class="origin mixed">unrated</span>`;
+  }
+  return money(costEstimated);
+}
+
+function chartTitle() {
+  return state.mode === "cost" ? "Estimated cost per day" : "Tokens per day";
+}
 
 async function load() {
   const response = await fetch(pageUrl("api/data"));
@@ -39,14 +60,16 @@ function render() {
   const calls = data.calls;
   const tokenTotal = calls.reduce((sum, call) => sum + call.total, 0);
   const estTotal = calls.reduce((sum, call) => sum + (call.costEstimated ?? 0), 0);
-  const piTotal = calls.reduce((sum, call) => sum + (call.costPi ?? 0), 0);
+  const chatCalls = calls.filter((call) => call.costPi !== null);
+  const estChatTotal = chatCalls.reduce((sum, call) => sum + (call.costEstimated ?? 0), 0);
+  const piTotal = chatCalls.reduce((sum, call) => sum + (call.costPi ?? 0), 0);
   const unrated = calls.filter((call) => call.costEstimated === null).length;
 
   el("summary").innerHTML = [
     card("tokens", num(tokenTotal), `${calls.length} calls · ${data.runs.length} runs`),
     card("estimated", money(estTotal), unrated ? `${unrated} unrated calls` : "rate card applied"),
     card("pi figure", money(piTotal), piTotal ? "chat turns only" : "no chat turns yet"),
-    card("delta", money(Math.abs(estTotal - piTotal)), "est vs pi"),
+    card("delta", money(Math.abs(estChatTotal - piTotal)), "est vs pi (chat)"),
   ].join("");
 
   el("rate-source").textContent = `rate card: ${data.rates.source} · ${data.rates.version}${data.rates.error ? ` · ${data.rates.error}` : ""}`;
@@ -74,6 +97,8 @@ function series(calls, mode) {
 }
 
 function renderChart(calls) {
+  const heading = el("chart-heading");
+  if (heading) heading.textContent = chartTitle();
   const { days } = series(calls, state.mode);
   const keys = [...new Set(days.flatMap(([, bucket]) => [...bucket.keys()]))].sort();
   const colors = new Map(keys.map((key, index) => [key, PALETTE[index % PALETTE.length]]));
@@ -94,11 +119,11 @@ function renderChart(calls) {
   }
 
   const totalsPerDay = days.map(([, bucket]) => [...bucket.values()].reduce((sum, value) => sum + value, 0));
-  const max = Math.max(...totalsPerDay, 1);
+  const max = Math.max(...totalsPerDay, state.mode === "cost" ? 1e-6 : 1);
   const barWidth = Math.max(6, (chartWidth / days.length) * 0.62);
   const gap = chartWidth / days.length;
 
-  let svg = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">`;
+  let svg = `<svg viewBox="0 0 ${width} ${height}">`;
   for (let line = 0; line <= 4; line += 1) {
     const y = 8 + chartHeight - (chartHeight * line) / 4;
     const value = (max * line) / 4;
@@ -122,14 +147,14 @@ function renderChart(calls) {
 }
 
 function renderTotals(totals) {
-  const head = `<tr><th>model</th><th class="num">calls</th><th class="num">total</th><th class="num">input</th><th class="num">cached</th><th class="num">output</th><th class="num">est</th><th class="num">pi</th></tr>`;
+  const head = `<tr><th>model</th><th class="num">calls</th><th class="num">total</th><th class="num">input</th><th class="num">cached</th><th class="num">cache write</th><th class="num">output</th><th class="num">reasoning</th><th class="num">est</th><th class="num">pi</th></tr>`;
   const rows = totals
-    .map(
-      (row) =>
-        `<tr><td>${esc(row.provider)}/${esc(row.model)}</td><td class="num">${num(row.calls)}</td><td class="num">${num(row.tokens.total)}</td><td class="num">${num(row.tokens.input)}</td><td class="num">${num(row.tokens.cacheRead)}</td><td class="num">${num(row.tokens.output)}</td><td class="num">${money(row.costEstimated)}</td><td class="num">${money(row.costPi)}</td></tr>`,
-    )
+    .map((row) => {
+      const est = estCell(row.costEstimated, row.unrated ?? 0);
+      return `<tr><td>${esc(row.provider)}/${esc(row.model)}</td><td class="num">${num(row.calls)}</td><td class="num">${num(row.tokens.total)}</td><td class="num">${num(row.tokens.input)}</td><td class="num">${num(row.tokens.cacheRead)}</td><td class="num">${num(row.tokens.cacheWrite)}</td><td class="num">${num(row.tokens.output)}</td><td class="num">${num(row.tokens.reasoning)}</td><td class="num">${est}</td><td class="num">${money(row.costPi)}</td></tr>`;
+    })
     .join("");
-  el("totals").innerHTML = head + (rows || `<tr><td colspan="8" class="muted">No calls yet.</td></tr>`);
+  el("totals").innerHTML = head + (rows || `<tr><td colspan="10" class="muted">No calls yet.</td></tr>`);
 }
 
 function renderRuns(runs, calls) {
@@ -143,15 +168,16 @@ function renderRuns(runs, calls) {
     .reverse()
     .map((run) => {
       const open = state.open.has(run.runId);
-      const cells = `<tr class="run" data-run="${esc(run.runId)}"><td>${time(run.startedAt)}</td><td><span class="origin ${run.origin}">${run.origin}</span></td><td>${esc(run.label.slice(0, 70)) || "<span class='muted'>—</span>"}</td><td class="num">${run.calls}</td><td class="num">${num(run.totalTokens)}</td><td class="num">${money(run.costEstimated)}</td><td class="num">${money(run.costPi)}</td><td class="num">${num(run.durationMs)}</td></tr>`;
+      const origin = esc(run.origin);
+      const cells = `<tr class="run" data-run="${esc(run.runId)}"><td>${datetime(run.startedAt)}</td><td><span class="origin ${origin}">${origin}</span></td><td>${shortLabel(run.label)}</td><td class="num">${run.calls}</td><td class="num">${num(run.totalTokens)}</td><td class="num">${estCell(run.costEstimated, run.unrated ?? 0)}</td><td class="num">${money(run.costPi)}</td><td class="num">${num(run.durationMs)}</td></tr>`;
       if (!open) return cells;
       const detail = (byRun.get(run.runId) ?? [])
-        .map(
-          (call) =>
-            `<tr><td>${time(call.startedAt)}</td><td>${call.origin}</td><td>${esc(call.provider)}/${esc(call.model)}</td><td class="num">${num(call.input)}</td><td class="num">${num(call.cacheRead)}</td><td class="num">${num(call.output)}</td><td class="num">${num(call.reasoning)}</td><td class="num">${num(call.total)}</td><td class="num">${money(call.costEstimated)}</td><td class="num">${money(call.costPi)}</td><td class="num">${num(call.durationMs)}</td></tr>`,
-        )
+        .map((call) => {
+          const callOrigin = esc(call.origin);
+          return `<tr><td>${datetime(call.startedAt)}</td><td>${callOrigin}</td><td>${esc(call.provider)}/${esc(call.model)}</td><td class="num">${num(call.input)}</td><td class="num">${num(call.cacheRead)}</td><td class="num">${num(call.cacheWrite)}</td><td class="num">${num(call.output)}</td><td class="num">${num(call.reasoning)}</td><td class="num">${num(call.total)}</td><td class="num">${money(call.costEstimated)}</td><td class="num">${money(call.costPi)}</td><td class="num">${num(call.durationMs)}</td></tr>`;
+        })
         .join("");
-      return `${cells}<tr class="calls"><td colspan="8"><table><tr><th>when</th><th>origin</th><th>model</th><th class="num">in</th><th class="num">cached</th><th class="num">out</th><th class="num">reasoning</th><th class="num">total</th><th class="num">est</th><th class="num">pi</th><th class="num">ms</th></tr>${detail}</table></td></tr>`;
+      return `${cells}<tr class="calls"><td colspan="8"><table><tr><th>when</th><th>origin</th><th>model</th><th class="num">in</th><th class="num">cached</th><th class="num">cache write</th><th class="num">out</th><th class="num">reasoning</th><th class="num">total</th><th class="num">est</th><th class="num">pi</th><th class="num">ms</th></tr>${detail}</table></td></tr>`;
     })
     .join("");
   el("runs").innerHTML = head + (rows || `<tr><td colspan="8" class="muted">No runs yet.</td></tr>`);
@@ -167,6 +193,7 @@ function renderRuns(runs, calls) {
 
 async function loadSettings() {
   const response = await fetch(pageUrl("api/settings"));
+  if (!response.ok) throw new Error((await response.json()).error ?? "request failed");
   state.settings = await response.json();
   const { current, models, thinkingLevels } = state.settings;
   const provider = el("provider");
@@ -177,8 +204,9 @@ async function loadSettings() {
   fillModels();
   el("thinking").innerHTML = thinkingLevels.map((level) => `<option>${level}</option>`).join("");
   if (current?.thinking) el("thinking").value = current.thinking;
+  const sourceNote = state.settings.source === "settings" ? " (from settings.json)" : "";
   el("default-model").textContent = current
-    ? `next launch: ${current.provider}/${current.model} · effort ${current.thinking}`
+    ? `next launch: ${current.provider}/${current.model} · thinking ${current.thinking}${sourceNote}`
     : "next launch: no default saved";
 }
 
@@ -255,16 +283,35 @@ for (const button of document.querySelectorAll("#series-mode button")) {
 
 const events = new EventSource(pageUrl("api/events"));
 let timer = null;
-events.addEventListener("update", () => {
+let loaded = false;
+events.addEventListener("update", (event) => {
   clearTimeout(timer);
-  timer = setTimeout(() => void load(), 250);
+  let reason = "data";
+  try {
+    reason = JSON.parse(event.data)?.reason ?? "data";
+  } catch {
+    reason = "data";
+  }
+  timer = setTimeout(() => {
+    if (reason === "settings") void loadSettings().catch(() => {});
+    else void load();
+  }, 250);
 });
-events.addEventListener("ready", () => void load());
+events.addEventListener("ready", () => {
+  if (!loaded) return;
+  void load();
+});
 
 window.addEventListener("hashchange", show);
 show();
 
-void loadSettings();
-void load().catch((error) => {
-  el("status").textContent = error instanceof Error ? error.message : "dashboard unavailable";
+void loadSettings().catch((error) => {
+  el("save-state").textContent = error instanceof Error ? error.message : "Could not load settings.";
 });
+void load()
+  .then(() => {
+    loaded = true;
+  })
+  .catch((error) => {
+    el("status").textContent = error instanceof Error ? error.message : "dashboard unavailable";
+  });

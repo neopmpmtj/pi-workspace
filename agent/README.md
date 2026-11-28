@@ -120,16 +120,19 @@ cd ~/.pi/agent && npm run dashboard     # http://127.0.0.1:8787
 ```
 
 Port 8787 is this dashboard. The image describer API uses 8788.
-One process serves both the API and the page: no Vite, no second install, no CORS setup.
+One process serves both the API and the page: no Vite, no second install.
+Same-origin requests need no CORS header; a browser on another origin must be listed in
+`DASHBOARD_ORIGIN` (default: this process's host and port, plus `localhost` when bound
+to `127.0.0.1`).
 The agent home is the folder above `dashboard/`, so an unrelated `PI_CODING_AGENT_DIR` in the
-shell cannot point it at the wrong ledger; `DASHBOARD_ROOT`, `DASHBOARD_PORT` and
-`DASHBOARD_HOST` override that.
+shell cannot point it at the wrong ledger; `DASHBOARD_ROOT`, `DASHBOARD_PORT`,
+`DASHBOARD_HOST` and `DASHBOARD_ORIGIN` override that.
 
 - **#metrics** (the default view): tokens or estimated cost per day, stacked by provider and
   model, then totals per model, then one row per run. Click a run to see every call it paid
   for. It refreshes itself over server-sent events when the ledger changes.
-- **settings**: provider, model and effort, written to `default-model.json`. Changing
-  model or effort saves immediately. Changing provider waits until a model is chosen.
+- **settings**: provider, model and thinking, written to `default-model.json`. Changing
+  model or thinking saves immediately. Changing provider waits until a model is chosen.
   The launcher passes them to Pi on the next launch; without the file, `settings.json`
   decides (`deepseek` / `deepseek-flash`). Models come from Pi's cached catalog, so a
   value the catalog does not know cannot be saved.

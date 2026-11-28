@@ -1,18 +1,26 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
+import type { AddressInfo } from "node:net";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { ledgerPath, modelsStorePath, sessionsRoot } from "../ledger/env.ts";
 import { readRates } from "../ledger/rates.ts";
 import type { RatesSnapshot } from "../ledger/rate-table.ts";
 import { syncSessions } from "../ledger/ingest.ts";
-import { openLedger, readCalls, type Ledger } from "../ledger/store.ts";
+import { openLedger, type Ledger } from "../ledger/store.ts";
 import { summarizeRuns, tokensOfCall, totalsByModel, type RunSummary } from "../ledger/runs.ts";
 import { estimateCost } from "../ledger/tokens.ts";
-import { readDefaultModel, THINKING_LEVELS, writeDefaultModel } from "../src/default-model.ts";
+import { readDefaultModel, readStandingModel, THINKING_LEVELS, writeDefaultModel } from "../src/default-model.ts";
 
-const DEFAULT_ORIGINS = ["http://127.0.0.1:8792", "http://localhost:8792"];
 const PUBLIC_DIR = path.join(import.meta.dirname, "public");
 const MAX_BODY = 8_192;
+
+function defaultOrigins(host: string, port: number): string[] {
+  const origins = [`http://${host}:${port}`];
+  if (host === "127.0.0.1") origins.push(`http://localhost:${port}`);
+  if (host === "localhost") origins.push(`http://127.0.0.1:${port}`);
+  return origins;
+}
 
 export interface DashboardOptions {
   /**
@@ -38,7 +46,8 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
   const env: NodeJS.ProcessEnv = { ...process.env, PI_CODING_AGENT_DIR: root };
   const host = options.host ?? process.env.DASHBOARD_HOST ?? "127.0.0.1";
   const port = options.port ?? Number(process.env.DASHBOARD_PORT ?? 8792);
-  const origins = options.origins ?? (process.env.DASHBOARD_ORIGIN?.split(",").map((o) => o.trim()) ?? DEFAULT_ORIGINS);
+  const originOverride = options.origins ?? process.env.DASHBOARD_ORIGIN?.split(",").map((o) => o.trim()).filter(Boolean);
+  const origins = originOverride ? [...originOverride] : defaultOrigins(host, port);
   const pollMs = options.pollMs ?? 2_000;
   const watchers = new Set<ServerResponse>();
   let ledger: Ledger | null = null;
@@ -47,6 +56,7 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
 
   const server = createServer((request, response) => {
     void handle(request, response).catch((error: unknown) => {
+      if (response.headersSent) return;
       sendJson(response, 500, { error: error instanceof Error ? error.message : "Dashboard request failed." });
     });
   });
@@ -79,6 +89,7 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
       const rates = await readRates(env);
       const store = openOnce();
       sync(rates.version);
+      lastMark = ledgerMark();
       const runs = summarizeRuns(store, rates);
       sendJson(response, 200, {
         generatedAt: new Date().toISOString(),
@@ -96,15 +107,18 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
           costPi: run.costPi,
           durationMs: run.durationMs,
           calls: run.calls.length,
+          unrated: run.unrated,
         })),
       }, corsHeaders(origin, origins));
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/api/settings") {
-      const current = await readDefaultModel(env).catch(() => null);
+      const saved = await readDefaultModel(env).catch(() => null);
+      const current = saved ?? (await readStandingModel(env).catch(() => null));
       sendJson(response, 200, {
         current,
+        source: saved ? "default-model" : current ? "settings" : null,
         thinkingLevels: THINKING_LEVELS,
         models: await catalog(env),
       }, corsHeaders(origin, origins));
@@ -112,8 +126,15 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
     }
 
     if (request.method === "PUT" && url.pathname === "/api/settings") {
-      const body = await readBody(request);
-      const parsed = JSON.parse(body) as { provider?: unknown; model?: unknown; thinking?: unknown };
+      let parsed: { provider?: unknown; model?: unknown; thinking?: unknown };
+      try {
+        parsed = JSON.parse(await readBody(request)) as { provider?: unknown; model?: unknown; thinking?: unknown };
+      } catch (error) {
+        const status = error instanceof RequestBodyError ? error.status : 400;
+        const message = error instanceof RequestBodyError ? error.message : "Request body is not valid JSON.";
+        sendJson(response, status, { error: message }, corsHeaders(origin, origins));
+        return;
+      }
       const provider = String(parsed.provider ?? "").trim();
       const model = String(parsed.model ?? "").trim();
       const thinking = String(parsed.thinking ?? "low").trim();
@@ -167,7 +188,38 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
     }
   }
 
+  function ledgerMark(): string {
+    try {
+      const row = openOnce().db.prepare("SELECT COUNT(*) AS n, COALESCE(MAX(rowid), 0) AS last FROM calls").get() as {
+        n: number;
+        last: number;
+      };
+      return `${row.n}:${row.last}`;
+    } catch {
+      return "0:0";
+    }
+  }
+
+  let lastMark = "";
   const heartbeat = setInterval(() => {
+    if (watchers.size === 0) return;
+    void pollLedger();
+  }, pollMs);
+  heartbeat.unref();
+
+  async function pollLedger(): Promise<void> {
+    try {
+      const rates = await readRates(env);
+      sync(rates.version);
+      const mark = ledgerMark();
+      if (lastMark === "") lastMark = mark;
+      else if (mark !== lastMark) {
+        lastMark = mark;
+        broadcast("data");
+      }
+    } catch {
+      // A poll failure must not take the dashboard down.
+    }
     for (const watcher of watchers) {
       try {
         watcher.write(": ping\n\n");
@@ -175,10 +227,26 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
         watchers.delete(watcher);
       }
     }
-  }, pollMs);
-  heartbeat.unref();
+  }
+
+  server.on("error", (error: NodeJS.ErrnoException) => {
+    if (error.code === "EADDRINUSE") {
+      process.stderr.write(
+        `template-new-agent dashboard: ${host}:${port} is already in use. Stop the other dashboard, or set DASHBOARD_PORT.\n`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+    throw error;
+  });
 
   server.listen(port, host);
+  if (!originOverride && port === 0) {
+    server.once("listening", () => {
+      const bound = (server.address() as AddressInfo | null)?.port ?? port;
+      origins.splice(0, origins.length, ...defaultOrigins(host, bound));
+    });
+  }
 
   return {
     server,
@@ -298,7 +366,7 @@ async function sendFile(
   origins: string[],
 ): Promise<void> {
   const resolved = path.resolve(PUBLIC_DIR, file);
-  if (!resolved.startsWith(PUBLIC_DIR)) {
+  if (resolved !== PUBLIC_DIR && !resolved.startsWith(PUBLIC_DIR + path.sep)) {
     sendJson(response, 403, { error: "No." });
     return;
   }
@@ -338,18 +406,28 @@ async function readBody(request: IncomingMessage): Promise<string> {
   for await (const chunk of request) {
     const buffer = chunk as Buffer;
     size += buffer.length;
-    if (size > MAX_BODY) throw new Error("Request body is too large.");
+    if (size > MAX_BODY) throw new RequestBodyError("Request body is too large.", 413);
     chunks.push(buffer);
   }
   return Buffer.concat(chunks).toString("utf8");
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+class RequestBodyError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+const invoked = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : "";
+if (invoked === import.meta.url) {
   const dashboard = startDashboard();
   const announce = (): void => {
     const address = dashboard.server.address();
     const bound = typeof address === "object" && address ? address.port : 8792;
-    write(`template-new-agent dashboard on http://127.0.0.1:${bound}\n`);
+    const hostBound = typeof address === "object" && address && "address" in address ? address.address : "127.0.0.1";
+    write(`template-new-agent dashboard on http://${hostBound}:${bound}\n`);
   };
   if (dashboard.server.listening) announce();
   else dashboard.server.once("listening", announce);

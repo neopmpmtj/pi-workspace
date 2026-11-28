@@ -12,6 +12,10 @@ export interface AgentSpec {
   port: number | null;
   /** Page on :8786. Null when this agent is not served there. */
   sitePath: string | null;
+  /** Override file the launcher reads. Default: default-model.json. */
+  modelFile?: string;
+  /** Field name inside modelFile. Default: thinking. */
+  thinkingKey?: "thinking" | "effort";
 }
 
 export const PI_ROOT = path.resolve(import.meta.dirname, "..");
@@ -24,7 +28,15 @@ export const IMAGE_DESCRIBER_PAGE = "http://127.0.0.1:5173";
 export const AGENTS: readonly AgentSpec[] = [
   { id: "cos", name: "Cos orchestrator", home: "agent", port: 8787, sitePath: "/cos/" },
   { id: "image-describer", name: "Image describer", home: "agent-image-describer/image-describer", port: 8788, sitePath: null },
-  { id: "web-master", name: "Web master", home: "agent-web-master/web-master", port: 8789, sitePath: "/web-master/" },
+  {
+    id: "web-master",
+    name: "Web master",
+    home: "agent-web-master/web-master",
+    port: 8789,
+    sitePath: "/web-master/",
+    modelFile: "default-web-master-model.json",
+    thinkingKey: "effort",
+  },
   { id: "tasks", name: "Tasks", home: "agent-tasks-agent/tasks-agent", port: 8791, sitePath: "/tasks/" },
   {
     id: "google-workspace",
@@ -54,4 +66,17 @@ export function agentDir(root: string, agent: AgentSpec): string {
 
 export function dashboardAgents(): readonly AgentSpec[] {
   return AGENTS.filter((agent) => agent.port !== null);
+}
+
+export function agentModelFile(agent: AgentSpec): string {
+  return agent.modelFile ?? "default-model.json";
+}
+
+export function agentThinkingKey(agent: AgentSpec): "thinking" | "effort" {
+  return agent.thinkingKey ?? "thinking";
+}
+
+/** Agents that have a page on :8786, in roster order. */
+export function siteAgents(): readonly AgentSpec[] {
+  return AGENTS.filter((agent) => agent.sitePath !== null);
 }

@@ -156,17 +156,20 @@ transcript instead of vanishing. A failed *request* additionally records a `call
 
 ## Dashboard
 
-One process serves the API and the page — no Vite, no second install, no CORS list.
+One process serves the API and the page — no Vite, no second install. Same-origin
+requests need no CORS header; a browser on another origin must be listed in
+`DASHBOARD_ORIGIN` (default: this process's host and port, plus `localhost` when bound
+to `127.0.0.1`).
 
 | Route | Returns |
 |---|---|
 | `GET /api/data` | calls, per-model totals, run list, rate card identity |
-| `GET /api/settings` | current `default-model.json`, catalog models, effort levels |
+| `GET /api/settings` | standing model (`default-model.json`, else `settings.json`), catalog models, thinking levels |
 | `PUT /api/settings` | validates against the catalog, writes `default-model.json` |
-| `GET /api/events` | SSE; the page refetches when the ledger changes |
+| `GET /api/events` | SSE; the page refetches when the ledger changes, and reloads settings after a save |
 
 `#metrics` = time series (tokens or estimated cost, stacked by provider/model), per-model
-totals, and a run table that expands into individual calls. Changing model or effort writes
+totals, and a run table that expands into individual calls. Changing model or thinking writes
 `default-model.json` for the next launch. Changing provider waits until a model is chosen.
 
 The root is the folder above `dashboard/`, not `PI_CODING_AGENT_DIR`, so a stray environment

@@ -103,6 +103,7 @@ describe("dashboard", () => {
       calls: Array<{ total: number; costEstimated: number; costPi: number; origin: string }>;
       totals: Array<{ model: string; tokens: { total: number } }>;
       rates: { source: string; version: string };
+      runs: Array<{ unrated: number }>;
     };
     assert.equal(data.calls.length, 1);
     assert.equal(data.calls[0].total, 1010);
@@ -111,6 +112,7 @@ describe("dashboard", () => {
     assert.equal(data.calls[0].costPi, 0.000312);
     assert.equal(data.totals[0].model, "deepseek-flash");
     assert.equal(data.rates.source, "file");
+    assert.equal(data.runs[0].unrated, 0);
   });
 
   it("offers only catalog models in settings", async () => {
@@ -182,5 +184,168 @@ describe("dashboard", () => {
     const text = new TextDecoder().decode(first.value);
     assert.match(text, /event: ready/);
     controller.abort();
+  });
+
+  it("refuses a body that is not JSON", async () => {
+    const response = await fetch(`${base}/api/settings`, {
+      method: "PUT",
+      headers: { "content-type": "application/json", origin: ORIGIN },
+      body: "{ nope",
+    });
+    assert.equal(response.status, 400);
+    assert.match(((await response.json()) as { error: string }).error, /not valid JSON/);
+  });
+});
+
+describe("dashboard isolation", () => {
+  it("falls back to settings.json when default-model.json is absent", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cos-dash-settings-"));
+    const home = path.join(dir, "cos-orchestrator-agent");
+    await mkdir(path.join(home, "logs"), { recursive: true });
+    await writeFile(path.join(home, "models-store.json"), JSON.stringify(CATALOG), "utf8");
+    await writeFile(
+      path.join(home, "settings.json"),
+      JSON.stringify({ defaultProvider: "deepseek", defaultModel: "deepseek-flash", defaultThinkingLevel: "max" }),
+      "utf8",
+    );
+    const extra = startDashboard({ root: home, port: 0, origins: [ORIGIN] });
+    try {
+      await new Promise<void>((resolve) => {
+        if (extra.server.listening) resolve();
+        else extra.server.once("listening", resolve);
+      });
+      const url = `http://127.0.0.1:${(extra.server.address() as AddressInfo).port}`;
+      const settings = (await (await fetch(`${url}/api/settings`)).json()) as {
+        current: { provider: string; model: string; thinking: string };
+        source: string;
+      };
+      assert.equal(settings.source, "settings");
+      assert.equal(settings.current.provider, "deepseek");
+      assert.equal(settings.current.model, "deepseek-flash");
+      assert.equal(settings.current.thinking, "max");
+    } finally {
+      await extra.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a malformed rate card after falling back to the catalog", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cos-dash-rates-"));
+    const home = path.join(dir, "cos-orchestrator-agent");
+    await mkdir(path.join(home, "logs"), { recursive: true });
+    await writeFile(path.join(home, "models-store.json"), JSON.stringify(CATALOG), "utf8");
+    await writeFile(path.join(home, "model-rates.json"), "{ nope", "utf8");
+    const extra = startDashboard({ root: home, port: 0, origins: [ORIGIN] });
+    try {
+      await new Promise<void>((resolve) => {
+        if (extra.server.listening) resolve();
+        else extra.server.once("listening", resolve);
+      });
+      const url = `http://127.0.0.1:${(extra.server.address() as AddressInfo).port}`;
+      const data = (await (await fetch(`${url}/api/data`)).json()) as { rates: { source: string; error?: string } };
+      assert.equal(data.rates.source, "catalog");
+      assert.ok(data.rates.error);
+    } finally {
+      await extra.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("allows the bound origin when no allow-list is passed", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cos-dash-cors-"));
+    const home = path.join(dir, "cos-orchestrator-agent");
+    await mkdir(path.join(home, "logs"), { recursive: true });
+    await writeFile(path.join(home, "models-store.json"), JSON.stringify(CATALOG), "utf8");
+    const extra = startDashboard({ root: home, port: 0 });
+    try {
+      await new Promise<void>((resolve) => {
+        if (extra.server.listening) resolve();
+        else extra.server.once("listening", resolve);
+      });
+      const port = (extra.server.address() as AddressInfo).port;
+      const url = `http://127.0.0.1:${port}`;
+      const response = await fetch(`${url}/api/data`, { headers: { origin: url } });
+      assert.equal(response.status, 200);
+    } finally {
+      await extra.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("broadcasts an update when a new session line is ingested", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cos-dash-sse-"));
+    const home = path.join(dir, "cos-orchestrator-agent");
+    const sessionDir = path.join(home, "sessions", "--tmp--");
+    await mkdir(sessionDir, { recursive: true });
+    await mkdir(path.join(home, "logs"), { recursive: true });
+    const sessionFile = path.join(sessionDir, `2026-10-27T08-00-00-000Z_${SESSION_ID}.jsonl`);
+    await writeFile(sessionFile, `${SESSION}\n`, "utf8");
+    await writeFile(path.join(home, "models-store.json"), JSON.stringify(CATALOG), "utf8");
+    await writeFile(
+      path.join(home, "model-rates.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        currency: "USD",
+        unit: "per_million_tokens",
+        updatedAt: "2026-10-27T08:00:00Z",
+        models: { "deepseek-flash": [{ effectiveFrom: "2026-01-01T00:00:00Z", input: 0.3, output: 1.2, cacheRead: 0.006 }] },
+      }),
+      "utf8",
+    );
+    const extra = startDashboard({ root: home, port: 0, origins: [ORIGIN], pollMs: 50 });
+    try {
+      await new Promise<void>((resolve) => {
+        if (extra.server.listening) resolve();
+        else extra.server.once("listening", resolve);
+      });
+      const url = `http://127.0.0.1:${(extra.server.address() as AddressInfo).port}`;
+      await fetch(`${url}/api/data`);
+      const controller = new AbortController();
+      const response = await fetch(`${url}/api/events`, { signal: controller.signal });
+      const reader = response.body?.getReader();
+      assert.ok(reader);
+      const first = await reader.read();
+      assert.match(new TextDecoder().decode(first.value), /event: ready/);
+      const extraTurn = [
+        JSON.stringify({
+          type: "message",
+          id: "u2",
+          timestamp: "2026-10-27T08:01:00.000Z",
+          message: { role: "user", content: "Again?", timestamp: 2 },
+        }),
+        JSON.stringify({
+          type: "message",
+          id: "a2",
+          timestamp: "2026-10-27T08:01:01.000Z",
+          message: {
+            role: "assistant",
+            provider: "deepseek",
+            model: "deepseek-flash",
+            stopReason: "stop",
+            durationMs: 800,
+            usage: { input: 10, output: 5, cacheRead: 0, cacheWrite: 0, reasoning: 0, totalTokens: 15, cost: { total: 0.00001 } },
+          },
+        }),
+      ].join("\n");
+      await writeFile(sessionFile, `${SESSION}\n${extraTurn}\n`, "utf8");
+      const deadline = Date.now() + 2000;
+      let sawUpdate = false;
+      while (Date.now() < deadline) {
+        const next = await Promise.race([
+          reader.read(),
+          new Promise<{ done: true; value: undefined }>((resolve) => setTimeout(() => resolve({ done: true, value: undefined }), 100)),
+        ]);
+        const text = new TextDecoder().decode(next.value);
+        if (text.includes("event: update") && text.includes('"reason":"data"')) {
+          sawUpdate = true;
+          break;
+        }
+      }
+      controller.abort();
+      assert.equal(sawUpdate, true);
+    } finally {
+      await extra.close();
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

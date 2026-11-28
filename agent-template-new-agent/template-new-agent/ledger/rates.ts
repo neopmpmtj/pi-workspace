@@ -15,7 +15,7 @@ export async function readRates(env: NodeJS.ProcessEnv = process.env): Promise<R
   const fromFile = await readCard(rateCardPath(env));
   if (fromFile.snapshot) return fromFile.snapshot;
   const fromCatalog = await readCatalog(modelsStorePath(env));
-  if (fromCatalog) return fromCatalog;
+  if (fromCatalog) return fromFile.error ? { ...fromCatalog, error: fromFile.error } : fromCatalog;
   return {
     source: "none",
     updatedAt: null,

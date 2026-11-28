@@ -39,7 +39,12 @@ export function defaultModelPath(env: NodeJS.ProcessEnv = process.env): string {
   return path.join(agentDir(env), "default-web-master-model.json");
 }
 
-/** Instructions for `/ask` runs, editable from the dashboard. */
+/** Pi's own defaults. `/ask` uses these when `default-web-master-model.json` is absent. */
+export function settingsPath(env: NodeJS.ProcessEnv = process.env): string {
+  return path.join(agentDir(env), "settings.json");
+}
+
+/** Instructions for `/ask` runs. A missing or malformed file keeps the built-in default. */
 export function promptsPath(env: NodeJS.ProcessEnv = process.env): string {
   return path.join(agentDir(env), "prompts.json");
 }

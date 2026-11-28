@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, it } from "node:test";
-import { parseRateCard, versionOf } from "../ledger/rates.ts";
+import { parseRateCard, readRates, versionOf } from "../ledger/rates.ts";
 import { pickRate } from "../ledger/rate-table.ts";
 import { estimateCost } from "../ledger/tokens.ts";
 
@@ -70,5 +73,22 @@ describe("rate card", () => {
 
   it("rejects a card that is not JSON", () => {
     assert.throws(() => parseRateCard("{ nope"), SyntaxError);
+  });
+
+  it("keeps the catalog fallback error when the card is malformed", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cos-rates-"));
+    try {
+      await writeFile(path.join(dir, "model-rates.json"), "{ nope", "utf8");
+      await writeFile(
+        path.join(dir, "models-store.json"),
+        JSON.stringify({ deepseek: { models: [{ id: "deepseek-flash", cost: { input: 0.3, output: 1.2, cacheRead: 0.006 } }] } }),
+        "utf8",
+      );
+      const rates = await readRates({ PI_CODING_AGENT_DIR: dir });
+      assert.equal(rates.source, "catalog");
+      assert.ok(rates.error);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

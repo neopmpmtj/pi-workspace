@@ -2,7 +2,7 @@
 // before any file is replaced.
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { AGENTS, PI_ROOT, THINKING_LEVELS, agentById, agentDir, type AgentSpec } from "./agents.ts";
+import { AGENTS, PI_ROOT, THINKING_LEVELS, agentById, agentDir, agentModelFile, agentThinkingKey, type AgentSpec } from "./agents.ts";
 import { inputPhraseOptions } from "./input-phrase-options.ts";
 import { promptBuildOptions } from "./prompt-build-options.ts";
 
@@ -289,7 +289,8 @@ export async function writeAgentSettings(id: string, incoming: unknown, root = P
   const extensions = nullableExtensions(body.extensions, `${id}.extensions`);
   const packages = nullablePackages(body.packages, `${id}.packages`);
 
-  const modelFile = path.join(home, "default-model.json");
+  const modelFile = path.join(home, agentModelFile(agent));
+  const thinkingKey = agentThinkingKey(agent);
   const hasDefaultModel = await exists(modelFile);
   if (hasDefaultModel) {
     const current = await readObject(modelFile);
@@ -297,7 +298,7 @@ export async function writeAgentSettings(id: string, incoming: unknown, root = P
       ...current,
       provider,
       model,
-      thinking,
+      [thinkingKey]: thinking,
       updatedAt: new Date().toISOString(),
     });
   } else {
@@ -319,12 +320,12 @@ export async function writeAgentSettings(id: string, incoming: unknown, root = P
 async function readAgent(root: string, agent: AgentSpec): Promise<AgentSettingsView> {
   const home = agentDir(root, agent);
   const settings = await readObject(path.join(home, "settings.json"));
-  const modelFile = path.join(home, "default-model.json");
+  const modelFile = path.join(home, agentModelFile(agent));
   const saved = await exists(modelFile) ? await readObject(modelFile) : null;
   const source = saved ?? settings;
   const providerKey = saved ? "provider" : "defaultProvider";
   const modelKey = saved ? "model" : "defaultModel";
-  const thinkingKey = saved ? "thinking" : "defaultThinkingLevel";
+  const thinkingKey = saved ? agentThinkingKey(agent) : "defaultThinkingLevel";
   return {
     id: agent.id,
     name: agent.name,

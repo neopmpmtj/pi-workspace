@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { defaultModelPath } from "../ledger/env.ts";
+import { defaultModelPath, settingsPath } from "../ledger/env.ts";
 
 export const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 
@@ -10,6 +10,17 @@ export interface DefaultModel {
   model: string;
   effort: string;
   updatedAt: string;
+}
+
+/**
+ * The model `/ask` uses when the command names none: `default-web-master-model.json`
+ * when it exists, otherwise `settings.json` (`defaultProvider`, `defaultModel`,
+ * `defaultThinkingLevel`).
+ */
+export async function readStandingModel(env: NodeJS.ProcessEnv = process.env): Promise<DefaultModel | null> {
+  const saved = await readDefaultModel(env);
+  if (saved) return saved;
+  return readSettingsModel(env);
 }
 
 export async function readDefaultModel(env: NodeJS.ProcessEnv = process.env): Promise<DefaultModel | null> {
@@ -61,10 +72,48 @@ function name(value: unknown, field: string): string {
   return trimmed;
 }
 
+async function readSettingsModel(env: NodeJS.ProcessEnv): Promise<DefaultModel | null> {
+  let text: string;
+  try {
+    text = await readFile(settingsPath(env), "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    throw new Error("settings.json is not valid JSON.");
+  }
+  const root = parsed as { defaultProvider?: unknown; defaultModel?: unknown; defaultThinkingLevel?: unknown };
+  const provider = optionalName(root?.defaultProvider);
+  const model = optionalName(root?.defaultModel);
+  if (!provider || !model) return null;
+  return {
+    provider,
+    model,
+    effort: level(root.defaultThinkingLevel, "settings.json", "defaultThinkingLevel"),
+    updatedAt: new Date(0).toISOString(),
+  };
+}
+
+function optionalName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 100 || /[\r\n]/.test(trimmed)) return null;
+  return trimmed;
+}
+
 function effortLevel(value: unknown): string {
   if (value === undefined) return "low";
+  return level(value, "default-web-master-model.json", "effort");
+}
+
+function level(value: unknown, file: string, field: string): string {
+  if (value === undefined || value === null) return "low";
   if (typeof value !== "string" || !THINKING_LEVELS.includes(value as (typeof THINKING_LEVELS)[number])) {
-    throw new Error(`default-web-master-model.json effort must be one of ${THINKING_LEVELS.join(", ")}.`);
+    throw new Error(`${file} ${field} must be one of ${THINKING_LEVELS.join(", ")}.`);
   }
   return value;
 }

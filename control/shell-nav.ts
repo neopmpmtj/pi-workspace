@@ -1,11 +1,15 @@
+import { IMAGE_DESCRIBER_PAGE, siteAgents } from "./agents.ts";
+
+function navLabel(id: string, name: string): string {
+  return id === "cos" ? "Cos" : name;
+}
+
 /** One set of links for the project site. Shell pages and proxied dashboards both use it. */
 export const SHELL_LINKS: readonly { href: string; label: string }[] = [
   { href: "/", label: "Home" },
   { href: "/settings", label: "Settings" },
-  { href: "/cos/", label: "Cos" },
-  { href: "/web-master/", label: "Web master" },
-  { href: "/tasks/", label: "Tasks" },
-  { href: "http://127.0.0.1:5173", label: "Image describer" },
+  ...siteAgents().map((agent) => ({ href: agent.sitePath as string, label: navLabel(agent.id, agent.name) })),
+  { href: IMAGE_DESCRIBER_PAGE, label: "Image describer" },
 ];
 
 /** "/" is only the home page. A section matches itself and everything under it. */

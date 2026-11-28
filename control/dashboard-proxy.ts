@@ -3,6 +3,7 @@
  * on its own port. The dashboard's own address keeps working.
  */
 import { request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
+import { siteAgents } from "./agents.ts";
 import { escapeHtml, injectShellBar, shellNavAnchors } from "./shell-nav.ts";
 
 export interface DashboardPage {
@@ -13,11 +14,12 @@ export interface DashboardPage {
   prefix: string;
 }
 
-export const DASHBOARD_PAGES: readonly DashboardPage[] = [
-  { id: "cos", name: "Cos orchestrator", port: 8787, prefix: "/cos" },
-  { id: "web-master", name: "Web master", port: 8789, prefix: "/web-master" },
-  { id: "tasks", name: "Tasks", port: 8791, prefix: "/tasks" },
-];
+export const DASHBOARD_PAGES: readonly DashboardPage[] = siteAgents().map((agent) => ({
+  id: agent.id,
+  name: agent.name,
+  port: agent.port as number,
+  prefix: (agent.sitePath as string).replace(/\/$/, ""),
+}));
 
 export type DashboardMatch =
   | { kind: "redirect"; location: string }

@@ -25,6 +25,34 @@ const money = (value) => (value === null || value === undefined ? "—" : `$${va
 const esc = (text) => String(text ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const day = (iso) => (Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleDateString("en-CA") : "?");
 const time = (iso) => (Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleTimeString("en-GB") : "?");
+const datetime = (iso) => (Number.isFinite(Date.parse(iso)) ? `${day(iso)} ${time(iso)}` : "?");
+
+function shortLabel(text) {
+  const value = String(text ?? "");
+  if (!value) return `<span class="muted">—</span>`;
+  const clipped = value.length > 70 ? `${value.slice(0, 70)}…` : value;
+  return `<span title="${esc(value)}">${esc(clipped)}</span>`;
+}
+
+function estCell(costEstimated, unrated) {
+  if (unrated > 0) {
+    return costEstimated > 0
+      ? `${money(costEstimated)} <span class="origin mixed">+${unrated} unrated</span>`
+      : `<span class="origin mixed">unrated</span>`;
+  }
+  return money(costEstimated);
+}
+
+function chartTitle() {
+  return state.mode === "cost" ? "Estimated cost per day" : "Tokens per day";
+}
+
+function setLive(on) {
+  const node = el("live");
+  if (!node) return;
+  node.textContent = on ? "live" : "offline";
+  node.classList.toggle("off", !on);
+}
 
 async function load() {
   const response = await fetch(pageUrl("api/data"));
@@ -81,6 +109,8 @@ function series(calls, mode) {
 }
 
 function renderChart(calls) {
+  const heading = el("chart-heading");
+  if (heading) heading.textContent = chartTitle();
   const { days } = series(calls, state.mode);
   const keys = [...new Set(days.flatMap(([, bucket]) => [...bucket.keys()]))].sort();
   const colors = new Map(keys.map((key, index) => [key, PALETTE[index % PALETTE.length]]));
@@ -101,11 +131,11 @@ function renderChart(calls) {
   }
 
   const totalsPerDay = days.map(([, bucket]) => [...bucket.values()].reduce((sum, value) => sum + value, 0));
-  const max = Math.max(...totalsPerDay, 1);
+  const max = Math.max(...totalsPerDay, state.mode === "cost" ? 1e-6 : 1);
   const barWidth = Math.max(6, (chartWidth / days.length) * 0.62);
   const gap = chartWidth / days.length;
 
-  let svg = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">`;
+  let svg = `<svg viewBox="0 0 ${width} ${height}">`;
   for (let line = 0; line <= 4; line += 1) {
     const y = 8 + chartHeight - (chartHeight * line) / 4;
     const value = (max * line) / 4;
@@ -136,27 +166,21 @@ function renderTools(tools) {
         .map(([name, count]) => `${esc(name)}×${count}`)
         .join(", ");
       const flag = tool.costStatus === "rated" ? "" : ` <span class="origin mixed">${esc(tool.costStatus)}</span>`;
-      return `<tr><td>${time(tool.startedAt)}</td><td>${esc(tool.tool)}</td><td>${providers || "unknown"}</td><td class="num">${num(tool.searches)}</td><td class="num">${num(tool.urls)}</td><td class="num">${num(tool.results)}</td><td class="num">${money(tool.costEstimated)}${flag}</td><td>${esc(tool.status)}</td><td class="num">${num(tool.durationMs)}</td></tr>`;
+      return `<tr><td>${datetime(tool.startedAt)}</td><td>${esc(tool.tool)}</td><td>${providers || "unknown"}</td><td class="num">${num(tool.searches)}</td><td class="num">${num(tool.urls)}</td><td class="num">${num(tool.results)}</td><td class="num">${money(tool.costEstimated)}${flag}</td><td>${esc(tool.status)}</td><td class="num">${num(tool.durationMs)}</td></tr>`;
     })
     .join("");
   el("tools").innerHTML = head + (rows || `<tr><td colspan="9" class="muted">No web searches yet.</td></tr>`);
 }
 
 function renderTotals(totals) {
-  const head = `<tr><th>model</th><th class="num">calls</th><th class="num">total</th><th class="num">input</th><th class="num">cached</th><th class="num">output</th><th class="num">est</th><th class="num">pi</th></tr>`;
+  const head = `<tr><th>model</th><th class="num">calls</th><th class="num">total</th><th class="num">input</th><th class="num">cached</th><th class="num">cache write</th><th class="num">output</th><th class="num">reasoning</th><th class="num">est</th><th class="num">pi</th></tr>`;
   const rows = totals
     .map((row) => {
-      // An unrated model has no price on the card. Showing $0.000000 would read as free.
-      const est =
-        row.unrated > 0
-          ? row.costEstimated > 0
-            ? `${money(row.costEstimated)} <span class="origin mixed">+${row.unrated} unrated</span>`
-            : `<span class="origin mixed">unrated</span>`
-          : money(row.costEstimated);
-      return `<tr><td>${esc(row.provider)}/${esc(row.model)}</td><td class="num">${num(row.calls)}</td><td class="num">${num(row.tokens.total)}</td><td class="num">${num(row.tokens.input)}</td><td class="num">${num(row.tokens.cacheRead)}</td><td class="num">${num(row.tokens.output)}</td><td class="num">${est}</td><td class="num">${money(row.costPi)}</td></tr>`;
+      const est = estCell(row.costEstimated, row.unrated ?? 0);
+      return `<tr><td>${esc(row.provider)}/${esc(row.model)}</td><td class="num">${num(row.calls)}</td><td class="num">${num(row.tokens.total)}</td><td class="num">${num(row.tokens.input)}</td><td class="num">${num(row.tokens.cacheRead)}</td><td class="num">${num(row.tokens.cacheWrite)}</td><td class="num">${num(row.tokens.output)}</td><td class="num">${num(row.tokens.reasoning)}</td><td class="num">${est}</td><td class="num">${money(row.costPi)}</td></tr>`;
     })
     .join("");
-  el("totals").innerHTML = head + (rows || `<tr><td colspan="8" class="muted">No calls yet.</td></tr>`);
+  el("totals").innerHTML = head + (rows || `<tr><td colspan="10" class="muted">No calls yet.</td></tr>`);
 }
 
 function renderRuns(runs, calls) {
@@ -170,15 +194,16 @@ function renderRuns(runs, calls) {
     .reverse()
     .map((run) => {
       const open = state.open.has(run.runId);
-      const cells = `<tr class="run" data-run="${esc(run.runId)}"><td>${time(run.startedAt)}</td><td><span class="origin ${run.origin}">${run.origin}</span></td><td>${esc(run.label.slice(0, 70)) || "<span class='muted'>—</span>"}</td><td class="num">${run.calls}</td><td class="num">${num(run.totalTokens)}</td><td class="num">${money(run.costEstimated)}</td><td class="num">${money(run.costPi)}</td><td class="num">${num(run.durationMs)}</td></tr>`;
+      const origin = esc(run.origin);
+      const cells = `<tr class="run" data-run="${esc(run.runId)}"><td>${datetime(run.startedAt)}</td><td><span class="origin ${origin}">${origin}</span></td><td>${shortLabel(run.label)}</td><td class="num">${run.calls}</td><td class="num">${num(run.totalTokens)}</td><td class="num">${estCell(run.costEstimated, run.unrated ?? 0)}</td><td class="num">${money(run.costPi)}</td><td class="num">${num(run.durationMs)}</td></tr>`;
       if (!open) return cells;
       const detail = (byRun.get(run.runId) ?? [])
-        .map(
-          (call) =>
-            `<tr><td>${time(call.startedAt)}</td><td>${call.origin}</td><td>${esc(call.provider)}/${esc(call.model)}</td><td class="num">${num(call.input)}</td><td class="num">${num(call.cacheRead)}</td><td class="num">${num(call.output)}</td><td class="num">${num(call.reasoning)}</td><td class="num">${num(call.total)}</td><td class="num">${money(call.costEstimated)}</td><td class="num">${money(call.costPi)}</td><td class="num">${num(call.durationMs)}</td></tr>`,
-        )
+        .map((call) => {
+          const callOrigin = esc(call.origin);
+          return `<tr><td>${datetime(call.startedAt)}</td><td>${callOrigin}</td><td>${esc(call.provider)}/${esc(call.model)}</td><td class="num">${num(call.input)}</td><td class="num">${num(call.cacheRead)}</td><td class="num">${num(call.cacheWrite)}</td><td class="num">${num(call.output)}</td><td class="num">${num(call.reasoning)}</td><td class="num">${num(call.total)}</td><td class="num">${money(call.costEstimated)}</td><td class="num">${money(call.costPi)}</td><td class="num">${num(call.durationMs)}</td></tr>`;
+        })
         .join("");
-      return `${cells}<tr class="calls"><td colspan="8"><table><tr><th>when</th><th>origin</th><th>model</th><th class="num">in</th><th class="num">cached</th><th class="num">out</th><th class="num">reasoning</th><th class="num">total</th><th class="num">est</th><th class="num">pi</th><th class="num">ms</th></tr>${detail}</table></td></tr>`;
+      return `${cells}<tr class="calls"><td colspan="8"><table><tr><th>when</th><th>origin</th><th>model</th><th class="num">in</th><th class="num">cached</th><th class="num">cache write</th><th class="num">out</th><th class="num">reasoning</th><th class="num">total</th><th class="num">est</th><th class="num">pi</th><th class="num">ms</th></tr>${detail}</table></td></tr>`;
     })
     .join("");
   el("runs").innerHTML = head + (rows || `<tr><td colspan="8" class="muted">No runs yet.</td></tr>`);
@@ -194,6 +219,7 @@ function renderRuns(runs, calls) {
 
 async function loadSettings() {
   const response = await fetch(pageUrl("api/settings"));
+  if (!response.ok) throw new Error((await response.json()).error ?? "request failed");
   state.settings = await response.json();
   const { current, models, effortLevels } = state.settings;
   const provider = el("provider");
@@ -204,35 +230,68 @@ async function loadSettings() {
   fillModels();
   el("effort").innerHTML = effortLevels.map((level) => `<option>${level}</option>`).join("");
   if (current?.effort) el("effort").value = current.effort;
+  const sourceNote = state.settings.source === "settings" ? " (from settings.json)" : "";
   el("default-model").textContent = current
-    ? `next launch: ${current.provider}/${current.model} · effort ${current.effort}`
+    ? `next launch: ${current.provider}/${current.model} · effort ${current.effort}${sourceNote}`
     : "next launch: no default saved";
 }
 
 function fillModels() {
   const provider = el("provider").value;
   const models = state.settings.models.filter((model) => model.provider === provider);
+  const current = state.settings.current;
+  const preferred = current && current.provider === provider ? current.model : el("model").value;
   el("model").innerHTML = models
     .map(
       (model) =>
         `<option value="${esc(model.id)}">${esc(model.id)} — ${esc(model.name)}${model.cost ? ` · $${model.cost.input}/$${model.cost.output}` : ""}</option>`,
     )
     .join("");
-  const current = state.settings.current;
-  if (current && current.provider === provider) el("model").value = current.model;
+  if (models.some((model) => model.id === preferred)) {
+    el("model").value = preferred;
+    return true;
+  }
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = "Choose a model";
+  el("model").prepend(blank);
+  el("model").value = "";
+  return false;
 }
 
 async function save() {
+  const provider = el("provider");
+  const model = el("model");
+  const effort = el("effort");
+  if (!model.value) {
+    el("save-state").textContent = "Choose a model for this provider.";
+    return;
+  }
   el("save-state").textContent = "saving…";
-  const body = { provider: el("provider").value, model: el("model").value, effort: el("effort").value };
-  const response = await fetch(pageUrl("api/settings"), {
-    method: "PUT",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const result = await response.json();
-  el("save-state").textContent = response.ok ? `saved · ${result.note}` : result.error;
-  if (response.ok) await loadSettings();
+  provider.disabled = true;
+  model.disabled = true;
+  effort.disabled = true;
+  try {
+    const response = await fetch(pageUrl("api/settings"), {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ provider: provider.value, model: model.value, effort: effort.value }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      el("save-state").textContent = result.error ?? "Could not save.";
+      await loadSettings();
+      return;
+    }
+    el("save-state").textContent = `saved · ${result.note}`;
+    await loadSettings();
+  } catch (error) {
+    el("save-state").textContent = error instanceof Error ? error.message : "Could not save.";
+  } finally {
+    provider.disabled = false;
+    model.disabled = false;
+    effort.disabled = false;
+  }
 }
 
 /* ---------- web search route ---------- */
@@ -341,7 +400,11 @@ async function loadRates() {
   el("rates-tools-note").textContent = `source: ${data.tools.source} · version ${data.tools.version} · fetch $${data.tools.fetch.perUrl}/url${data.tools.unrated.length ? ` · unrated: ${data.tools.unrated.join(", ")}` : ""}`;
 }
 
-el("provider").addEventListener("change", fillModels);
+el("provider").addEventListener("change", () => {
+  el("save-state").textContent = fillModels() ? "" : "Choose a model for this provider.";
+});
+el("model").addEventListener("change", () => void save());
+el("effort").addEventListener("change", () => void save());
 el("route-add-btn").addEventListener("click", () => {
   const name = el("route-add").value;
   if (!name || routeState.providers.includes(name)) return;
@@ -350,7 +413,6 @@ el("route-add-btn").addEventListener("click", () => {
   refreshAdd();
 });
 el("route-save").addEventListener("click", () => void saveRoute());
-el("save").addEventListener("click", () => void save());
 for (const button of document.querySelectorAll("#series-mode button")) {
   button.addEventListener("click", () => {
     state.mode = button.dataset.mode;
@@ -361,18 +423,40 @@ for (const button of document.querySelectorAll("#series-mode button")) {
 
 const events = new EventSource(pageUrl("api/events"));
 let timer = null;
-events.addEventListener("update", () => {
+let loaded = false;
+events.addEventListener("open", () => setLive(true));
+events.addEventListener("error", () => setLive(false));
+events.addEventListener("update", (event) => {
   clearTimeout(timer);
-  timer = setTimeout(() => void load(), 250);
+  let reason = "data";
+  try {
+    reason = JSON.parse(event.data)?.reason ?? "data";
+  } catch {
+    reason = "data";
+  }
+  timer = setTimeout(() => {
+    if (reason === "settings") void loadSettings().catch(() => {});
+    else void load();
+  }, 250);
 });
-events.addEventListener("ready", () => void load());
+events.addEventListener("ready", () => {
+  setLive(true);
+  if (!loaded) return;
+  void load();
+});
 
 window.addEventListener("hashchange", show);
 show();
 
-void loadSettings();
+void loadSettings().catch((error) => {
+  el("save-state").textContent = error instanceof Error ? error.message : "Could not load settings.";
+});
 void loadRoute();
 void loadRates();
-void load().catch((error) => {
-  el("status").textContent = error instanceof Error ? error.message : "dashboard unavailable";
-});
+void load()
+  .then(() => {
+    loaded = true;
+  })
+  .catch((error) => {
+    el("status").textContent = error instanceof Error ? error.message : "dashboard unavailable";
+  });

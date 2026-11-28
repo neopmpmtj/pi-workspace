@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { readDefaultModel, writeDefaultModel } from "../src/default-model.ts";
+import { readDefaultModel, readStandingModel, writeDefaultModel } from "../src/default-model.ts";
 
 async function withEnv<T>(run: (env: NodeJS.ProcessEnv, agent: string) => Promise<T>): Promise<T> {
   const root = await mkdtemp(path.join(tmpdir(), "web-master-"));
@@ -67,6 +67,21 @@ describe("default-web-master-model.json", () => {
       await mkdir(agent, { recursive: true });
       await writeFile(path.join(agent, "default-web-master-model.json"), "{ not json", "utf8");
       await assert.rejects(readDefaultModel(env), /not valid JSON/);
+    });
+  });
+
+  it("uses settings.json when the override file is absent", async () => {
+    await withEnv(async (env, agent) => {
+      await mkdir(agent, { recursive: true });
+      await writeFile(
+        path.join(agent, "settings.json"),
+        JSON.stringify({ defaultProvider: "deepseek", defaultModel: "deepseek-flash", defaultThinkingLevel: "high" }),
+        "utf8",
+      );
+      const standing = await readStandingModel(env);
+      assert.equal(standing?.provider, "deepseek");
+      assert.equal(standing?.model, "deepseek-flash");
+      assert.equal(standing?.effort, "high");
     });
   });
 });

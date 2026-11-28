@@ -44,7 +44,7 @@ export function settingsPath(env: NodeJS.ProcessEnv = process.env): string {
   return path.join(agentDir(env), "settings.json");
 }
 
-/** Instructions for `/ask` runs, editable from the dashboard. */
+/** Instructions for `/ask` runs. A missing or malformed file keeps the built-in default. */
 export function promptsPath(env: NodeJS.ProcessEnv = process.env): string {
   return path.join(agentDir(env), "prompts.json");
 }

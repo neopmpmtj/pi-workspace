@@ -34,14 +34,12 @@ dashboard. `server.ts` + `public/` stay the web surface, unchanged on :8786.
 
 ## Running the web page
 
-There is no systemd unit for the project dashboard; it is started by hand and detached:
+The project site is `pi-site.service` (`scripts/serve-site.sh` → `control/server.ts`) on
+both hosts. Bind and token live in the optional machine-local `~/.config/pi-site.env`
+(`PI_SITE_BIND`, `PI_SITE_TOKEN`). Copy `scripts/systemd/pi-site.service` to
+`~/.config/systemd/user/` and `systemctl --user enable --now pi-site.service`.
 
-```bash
-cd ~/.pi && setsid nohup /home/pmpmt/.nvm/versions/node/v24.21.0/bin/node \
-  --experimental-strip-types control/server.ts > ~/.cache/pi-project-dashboard.log 2>&1 < /dev/null &
-```
-
-One polling server per port: check `ss -tlnp | grep 8786` before starting another.
+One polling server per port: check `ss -tlnp | grep 8786` before starting another by hand.
 
 ## Commands
 

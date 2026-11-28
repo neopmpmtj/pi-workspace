@@ -154,6 +154,36 @@ describe("project dashboard store", () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it("reads and writes web-master's override file as effort", async () => {
+    const root = await fixture();
+    try {
+      const home = path.join(root, "agent-web-master/web-master");
+      await writeFile(
+        path.join(home, "default-web-master-model.json"),
+        `${JSON.stringify({ provider: "deepseek", model: "deepseek-flash", effort: "high" }, null, 2)}\n`,
+      );
+      const plane = await readControlPlane(root);
+      const web = plane.agents.find((agent) => agent.id === "web-master");
+      assert.equal(web?.modelSource, "default-model");
+      assert.equal(web?.thinking, "high");
+      await writeAgentSettings("web-master", {
+        provider: "openai",
+        model: "gpt-5.4",
+        thinking: "medium",
+        tools: [],
+        enabledModels: null,
+        extensions: null,
+        packages: null,
+      }, root);
+      const saved = JSON.parse(await readFile(path.join(home, "default-web-master-model.json"), "utf8")) as Record<string, unknown>;
+      assert.equal(saved.provider, "openai");
+      assert.equal(saved.model, "gpt-5.4");
+      assert.equal(saved.effort, "medium");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("a store file that is missing (per-machine files, seeded from the sample)", () => {
