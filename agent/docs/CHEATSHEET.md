@@ -159,7 +159,8 @@ transcript instead of vanishing. A failed *request* additionally records a `call
 One process serves the API and the page — no Vite, no second install. Same-origin
 requests need no CORS header; a browser on another origin must be listed in
 `DASHBOARD_ORIGIN` (default: this process's host and port, plus `localhost` when bound
-to `127.0.0.1`).
+to `127.0.0.1`; a request whose `Origin` matches its own `Host` is always accepted, so a
+wildcard bind needs no list and an empty `DASHBOARD_ORIGIN` counts as unset).
 
 | Route | Returns |
 |---|---|

@@ -270,6 +270,49 @@ describe("dashboard isolation", () => {
     }
   });
 
+  it("accepts a same-origin request when bound to a wildcard address", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "template-dash-wild-"));
+    const home = path.join(dir, "template-new-agent");
+    await mkdir(path.join(home, "logs"), { recursive: true });
+    await writeFile(path.join(home, "models-store.json"), JSON.stringify(CATALOG), "utf8");
+    const extra = startDashboard({ root: home, host: "0.0.0.0", port: 0 });
+    try {
+      await new Promise<void>((resolve) => {
+        if (extra.server.listening) resolve();
+        else extra.server.once("listening", resolve);
+      });
+      const url = `http://127.0.0.1:${(extra.server.address() as AddressInfo).port}`;
+      assert.equal((await fetch(`${url}/api/data`, { headers: { origin: url } })).status, 200);
+      assert.equal((await fetch(`${url}/api/data`, { headers: { origin: "http://evil.example" } })).status, 403);
+    } finally {
+      await extra.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reads an empty DASHBOARD_ORIGIN as unset", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "template-dash-empty-"));
+    const home = path.join(dir, "template-new-agent");
+    await mkdir(path.join(home, "logs"), { recursive: true });
+    await writeFile(path.join(home, "models-store.json"), JSON.stringify(CATALOG), "utf8");
+    const previous = process.env.DASHBOARD_ORIGIN;
+    process.env.DASHBOARD_ORIGIN = "";
+    const extra = startDashboard({ root: home, port: 0 });
+    try {
+      await new Promise<void>((resolve) => {
+        if (extra.server.listening) resolve();
+        else extra.server.once("listening", resolve);
+      });
+      const url = `http://127.0.0.1:${(extra.server.address() as AddressInfo).port}`;
+      assert.equal((await fetch(`${url}/api/data`, { headers: { origin: url } })).status, 200);
+    } finally {
+      if (previous === undefined) delete process.env.DASHBOARD_ORIGIN;
+      else process.env.DASHBOARD_ORIGIN = previous;
+      await extra.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it("broadcasts an update when a new session line is ingested", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "template-dash-sse-"));
     const home = path.join(dir, "template-new-agent");

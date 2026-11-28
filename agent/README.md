@@ -123,7 +123,8 @@ Port 8787 is this dashboard. The image describer API uses 8788.
 One process serves both the API and the page: no Vite, no second install.
 Same-origin requests need no CORS header; a browser on another origin must be listed in
 `DASHBOARD_ORIGIN` (default: this process's host and port, plus `localhost` when bound
-to `127.0.0.1`).
+to `127.0.0.1`; a request whose `Origin` matches its own `Host` is always accepted, so a
+wildcard bind needs no list and an empty `DASHBOARD_ORIGIN` counts as unset).
 The agent home is the folder above `dashboard/`, so an unrelated `PI_CODING_AGENT_DIR` in the
 shell cannot point it at the wrong ledger; `DASHBOARD_ROOT`, `DASHBOARD_PORT`,
 `DASHBOARD_HOST` and `DASHBOARD_ORIGIN` override that.

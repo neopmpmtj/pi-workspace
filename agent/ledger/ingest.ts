@@ -51,14 +51,17 @@ export function syncSessions(
   options: { sessionsRoot: string; ratesVersion: string },
 ): IngestStats {
   const stats: IngestStats = { files: 0, newCalls: 0, newTurns: 0, merged: 0 };
-  for (const file of sessionFiles(options.sessionsRoot)) {
+  for (const session of sessionFiles(options.sessionsRoot)) {
+    const stored = fileOffset(ledger.db, session.file);
+    // The size comes from the directory walk, so an untouched file costs one stat
+    // and never a read: the dashboard polls this every couple of seconds.
+    if (session.size === stored) continue;
     let buffer: Buffer;
     try {
-      buffer = readFileSync(file);
+      buffer = readFileSync(session.file);
     } catch {
       continue;
     }
-    const stored = fileOffset(ledger.db, file);
     // A shorter file means it was replaced or truncated; start over. Repeated
     // call ids keep that safe.
     const from = buffer.length < stored ? 0 : stored;
@@ -70,8 +73,8 @@ export function syncSessions(
     const complete = text.slice(0, lastNewline + 1);
 
     stats.files += 1;
-    ingestChunk(ledger, file, complete, options.ratesVersion, stats);
-    setFileOffset(ledger.db, file, from + Buffer.byteLength(complete, "utf8"));
+    ingestChunk(ledger, session.file, complete, options.ratesVersion, stats);
+    setFileOffset(ledger.db, session.file, from + Buffer.byteLength(complete, "utf8"));
   }
   return stats;
 }
@@ -239,7 +242,13 @@ function randomSuffix(value: unknown): string {
   return `${String(value ?? "")}-${Math.random().toString(16).slice(2, 10)}`;
 }
 
-function* sessionFiles(root: string): Generator<string> {
+interface SessionFile {
+  file: string;
+  /** Bytes on disk, so the caller can skip a read when nothing was appended. */
+  size: number;
+}
+
+function* sessionFiles(root: string): Generator<SessionFile> {
   let entries: string[];
   try {
     entries = readdirSync(root);
@@ -255,6 +264,6 @@ function* sessionFiles(root: string): Generator<string> {
       continue;
     }
     if (stat.isDirectory()) yield* sessionFiles(full);
-    else if (entry.endsWith(".jsonl")) yield full;
+    else if (entry.endsWith(".jsonl")) yield { file: full, size: stat.size };
   }
 }

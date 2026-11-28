@@ -19,11 +19,27 @@ const DEFAULT_PORT = 8789;
 const PUBLIC_DIR = path.join(import.meta.dirname, "public");
 const MAX_BODY = 8_192;
 
+/** Bind addresses that name no origin a browser can use. */
+const WILDCARD_HOSTS = new Set(["", "0.0.0.0", "::", "[::]", "::0"]);
+
+/**
+ * Browser origins accepted without a DASHBOARD_ORIGIN list. A wildcard bind has no
+ * address of its own, so it contributes nothing: the request's own Host decides (see
+ * isSameOrigin).
+ */
 function defaultOrigins(host: string, port: number): string[] {
+  if (WILDCARD_HOSTS.has(host)) return [];
   const origins = [`http://${host}:${port}`];
   if (host === "127.0.0.1") origins.push(`http://localhost:${port}`);
   if (host === "localhost") origins.push(`http://127.0.0.1:${port}`);
   return origins;
+}
+
+/** An Origin equal to the request's own Host is same-origin, whatever the bind address. */
+function isSameOrigin(origin: string, request: IncomingMessage): boolean {
+  const host = request.headers.host;
+  if (!host) return false;
+  return origin === `http://${host}` || origin === `https://${host}`;
 }
 
 export interface DashboardOptions {
@@ -50,7 +66,9 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
   const env: NodeJS.ProcessEnv = { ...process.env, PI_CODING_AGENT_DIR: root };
   const host = options.host ?? process.env.DASHBOARD_HOST ?? "127.0.0.1";
   const port = options.port ?? Number(process.env.DASHBOARD_PORT ?? DEFAULT_PORT);
-  const originOverride = options.origins ?? process.env.DASHBOARD_ORIGIN?.split(",").map((o) => o.trim()).filter(Boolean);
+  const fromEnv = process.env.DASHBOARD_ORIGIN?.split(",").map((o) => o.trim()).filter(Boolean);
+  // An empty DASHBOARD_ORIGIN means unset, not "refuse every browser".
+  const originOverride = options.origins ?? (fromEnv?.length ? fromEnv : undefined);
   const origins = originOverride ? [...originOverride] : defaultOrigins(host, port);
   const pollMs = options.pollMs ?? 2_000;
   const watchers = new Set<ServerResponse>();
@@ -74,7 +92,7 @@ export function startDashboard(options: DashboardOptions = {}): Dashboard {
       response.end();
       return;
     }
-    if (origin && !origins.includes(origin)) {
+    if (origin && !origins.includes(origin) && !isSameOrigin(origin, request)) {
       sendJson(response, 403, { error: `Origin ${origin} is not allowed. Add it to DASHBOARD_ORIGIN.` }, corsHeaders(origin, origins));
       return;
     }

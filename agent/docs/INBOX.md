@@ -100,3 +100,40 @@ file-dedupe work.
 
 - [ ] Paid voice once there is income: one branch in `speak.sh` (OpenAI `gpt-4o-mini-tts`,
       ~$0.015/1k chars). The seam exists already; nothing else changes.
+
+## Dashboard, site and settings page (pending from the 2026-11-28 review)
+
+- [ ] `/ask --set-default-effort default` is documented in three places but always throws:
+      `agent/src/args.ts` accepts `default` in `EFFORT_LEVELS`, while `agent/src/default-model.ts`
+      validates the saved value against `THINKING_LEVELS`, which has no `default`. Pick one: map it
+      to `low` on save, or drop it from `EFFORT_LEVELS` and the help in `agent/README.md:43` +
+      `agent/docs/CHEATSHEET.md:109`.
+- [ ] `agent/README.md:21` (the file tree) still calls the field "effort"; the dashboard label, the
+      launcher and `default-model.json`'s key are all `thinking` (`README.md:133`).
+- [ ] web-master's doc copies still claim "no CORS setup" (`agent-web-master/README.md:178`) and
+      "no CORS list" (`agent-web-master/web-master/docs/CHEATSHEET.md:128`), and its
+      `GET /api/settings` row (`:140`) omits the settings.json fallback and the new `source` field —
+      the same text corrected in cos's README/CHEATSHEET on 2026-11-28.
+- [ ] `control/public/settings.html:20` says "default-model.json when that file exists"; the store
+      writes web-master's `default-web-master-model.json` (`modelFile` in `control/agents.ts`).
+      Name the per-agent override, not one hard-coded file.
+- [ ] `scripts/serve-site.sh:13` still says "DASHBOARD-style env is not used here … reads
+      PROJECT_PORT (127.0.0.1)", but `control/server.ts:22` reads `PI_SITE_BIND`, which
+      `docs/pi-state-summary.md` and the voice runbook rely on.
+- [ ] **The laptop's installed `pi-site` unit is stale.** `~/.config/systemd/user/pi-site.service`
+      was copied before `EnvironmentFile=-%h/.config/pi-site.env` was added (the tracked copy and
+      the VPS have it), so a `pi-site.env` on this host is silently ignored. Copy the tracked unit,
+      `daemon-reload`, restart.
+- [ ] **web-master's model catalogue was empty and is seeded by hand** (2026-11-28: copied
+      `~/.pi/agent/models-store.json`; all four `enabledModels` are in it). Root cause: Pi refreshes
+      the remote catalogue only on a network-enabled chat start, and web-master runs on `/ask`, so
+      its `models-store.json` stayed `{}`. The blank provider/model selects that came from it are
+      still possible: the settings tab does not say the catalogue is missing. Build that guard, or
+      regenerate the seed when it drifts.
+- [ ] Stale `DASHBOARD_PORT` / `DASHBOARD_ORIGIN` in two machine-local `.env` files:
+      `agent-tasks-agent/.env` says 8790 (roster and live port are 8791) and
+      `agent-template-new-agent/.env` says 8789, which is web-master's port. Inert today because
+      `control/processes.ts` sets `DASHBOARD_PORT` itself and same-origin is now always accepted;
+      wrong the moment either file is sourced by hand.
+- [ ] Host notes claim pi `1.5.0` in two places (`/home/pmpmt/AGENTS.md:29` and `:79`); the runtime
+      is `1.7.0`. Update the untracked host file and re-check the "devDeps must match" line.
