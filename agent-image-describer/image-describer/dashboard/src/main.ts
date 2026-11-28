@@ -15,6 +15,29 @@ import "./style.css";
 const app = document.querySelector("#app");
 if (!(app instanceof HTMLElement)) throw new Error("Missing #app");
 
+const projectSite = "http://127.0.0.1:8786";
+const siteNav = document.createElement("nav");
+siteNav.className = "pi-shell";
+siteNav.setAttribute("aria-label", "Site");
+for (const [href, label] of [
+  [`${projectSite}/`, "Home"],
+  [`${projectSite}/settings`, "Settings"],
+  [`${projectSite}/cos/`, "Cos"],
+  [`${projectSite}/web-master/`, "Web master"],
+  [`${projectSite}/tasks/`, "Tasks"],
+] as const) {
+  const link = document.createElement("a");
+  link.href = href;
+  link.textContent = label;
+  siteNav.append(link);
+}
+const here = document.createElement("a");
+here.href = "#metrics";
+here.textContent = "Image describer";
+here.setAttribute("aria-current", "page");
+siteNav.append(here);
+document.body.prepend(siteNav);
+
 const status = document.createElement("p");
 status.className = "status";
 status.textContent = "loading";

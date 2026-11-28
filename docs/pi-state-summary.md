@@ -95,13 +95,15 @@ JEV details: `docs/pi-state-of-jev.md`.
 
 | Port | What | How it starts |
 | --- | --- | --- |
-| 8786 | Project settings | `control/server.ts`, by hand |
-| 8787 | COS usage | `npm run dashboard` or `:8786` Start |
+| 8786 | Project site | `control/server.ts`, by hand. Settings, host switches, and pages `/cos/`, `/web-master/`, `/tasks/` forwarded to the ports below |
+| 8787 | COS usage | `npm run dashboard` or `:8786` Start. Also at `:8786/cos/` |
 | 8788 | image-describer API | same |
-| 5173 | image-describer page | Vite; also the leftover bash helper |
-| 8789 | web-master usage | `npm run dashboard` or `:8786` Start |
+| 5173 | image-describer page | Vite; linked from `:8786`, not forwarded. Also the leftover bash helper |
+| 8789 | web-master usage | `npm run dashboard` or `:8786` Start. Also at `:8786/web-master/` |
 | 8790 | unused | keep-agent was removed 2026-11-07; do not restore a dashboard here |
-| 8791 | tasks-agent usage | `npm run dashboard` or `:8786` Start |
+| 8791 | tasks-agent usage | `npm run dashboard` or `:8786` Start. Also at `:8786/tasks/` |
+
+8786 stays on `127.0.0.1`. The three usage pages use relative asset and API URLs, so the same files work on their own port and under 8786. Host switches on `/settings` are not gates: laptop speech (`~/.config/pi-speech.env`), wakeword (`wakewordctl`), and Telegram `voice.replyMode` in the laptop `telegram.json` (`always` or `manual`). Image describer is a link to `:5173`.
 
 `xtra/bash-system-scripts/start-dashboards.sh` is a **hand-run leftover**. It starts 8787, 8788, 8789, 5173 only. It is not an agent list. See `xtra/xtra-info.md`.
 

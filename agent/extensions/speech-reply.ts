@@ -23,91 +23,35 @@
  * or a missing file means: never speak, never spawn.
  */
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, writeSync } from "node:fs";
+import { existsSync, writeSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { recordCommandIfUnsaved } from "../src/session-command.ts";
+import { fileChoice, parseFlag, persist, SPEECH_TUI_KEY } from "../src/speech-switch.ts";
 import { speechFinished, speechStarted } from "../src/speech-activity.ts";
+
+export { fileChoice, parseFlag, persist } from "../src/speech-switch.ts";
 
 const SPEECH_ENV = join(homedir(), ".config", "pi-speech.env");
 const SPEAK = join(homedir(), ".pi", "agent", "scripts", "speech", "speak.sh");
 const LIMIT = "1200";
-const KEY = "PI_SPEECH_TUI";
-
-const ON = new Set(["1", "on", "true", "yes"]);
-const OFF = new Set(["0", "off", "false", "no"]);
 
 /** The answer `/speech` gave in this session: live, and beats everything else. */
 let sessionChoice: boolean | undefined;
 
-export function parseFlag(raw: string): boolean | undefined {
-  const value = raw.trim().replace(/^["']|["']$/g, "").toLowerCase();
-  if (ON.has(value)) return true;
-  if (OFF.has(value)) return false;
-  return undefined;
-}
-
-/** PI_SPEECH_TUI as the machine-local file states it, or undefined if silent. */
-export function fileChoice(file: string = SPEECH_ENV): boolean | undefined {
-  if (!existsSync(file)) return undefined;
-  try {
-    for (const raw of readFileSync(file, "utf8").split("\n")) {
-      const line = raw.trim();
-      if (!line || line.startsWith("#")) continue;
-      const [, key, value] = /^([A-Z0-9_]+)=(.*)$/.exec(line) ?? [];
-      if (key === KEY) return parseFlag(value ?? "");
-    }
-  } catch {
-    // A broken env file must not break the session; stay silent instead.
-  }
-  return undefined;
-}
-
 /** Where the effective answer came from, for `/speech` status. */
 function resolve(): { on: boolean; source: string } {
   if (sessionChoice !== undefined) return { on: sessionChoice, source: "this session (/speech)" };
-  const fromEnv = parseFlag(process.env[KEY] ?? "");
-  if (fromEnv !== undefined) return { on: fromEnv, source: `$${KEY}` };
+  const fromEnv = parseFlag(process.env[SPEECH_TUI_KEY] ?? "");
+  if (fromEnv !== undefined) return { on: fromEnv, source: `$${SPEECH_TUI_KEY}` };
   const fromFile = fileChoice();
   if (fromFile !== undefined) return { on: fromFile, source: "~/.config/pi-speech.env" };
-  return { on: false, source: `~/.config/pi-speech.env (no ${KEY})` };
+  return { on: false, source: `~/.config/pi-speech.env (no ${SPEECH_TUI_KEY})` };
 }
 
 /** Read on every turn, never cached at load: that is what makes /speech hot. */
 function tuiSpeechEnabled(): boolean {
   return resolve().on;
-}
-
-/**
- * Rewrites the PI_SPEECH_TUI line in the machine-local file, keeping every
- * other line and comment, atomically. Returns an error message or undefined.
- */
-export function persist(value: boolean, file: string = SPEECH_ENV): string | undefined {
-  try {
-    const current = existsSync(file) ? readFileSync(file, "utf8") : "";
-    const lines = current === "" ? [] : current.replace(/\n+$/, "").split("\n");
-    const wanted = `${KEY}=${value ? "1" : "0"}`;
-    let replaced = false;
-    const out: string[] = [];
-    for (const line of lines) {
-      const [, key] = /^\s*([A-Z0-9_]+)=/.exec(line) ?? [];
-      if (key !== KEY) out.push(line);
-      else if (!replaced) {
-        out.push(wanted);
-        replaced = true;
-      }
-      // A duplicate PI_SPEECH_TUI is dropped: only the first one would be read.
-    }
-    if (!replaced) out.push(wanted);
-    mkdirSync(dirname(file), { recursive: true });
-    const tmp = `${file}.tmp-${process.pid}`;
-    writeFileSync(tmp, `${out.join("\n")}\n`, "utf8");
-    chmodSync(tmp, 0o600);
-    renameSync(tmp, file);
-    return undefined;
-  } catch (error) {
-    return error instanceof Error ? error.message : String(error);
-  }
 }
 
 /** Assistant text parts only: tool calls, thinking and images are not speech. */
@@ -159,8 +103,8 @@ function apply(pi: ExtensionAPI, ctx: ExtensionCommandContext, want: boolean, co
     pi,
     ctx,
     want
-      ? `[ok] speech on — laptop answers are spoken from now on (${KEY}=1 saved)`
-      : `[ok] speech off — laptop answers stay silent from now on (${KEY}=0 saved) · Telegram is unaffected`,
+      ? `[ok] speech on — laptop answers are spoken from now on (${SPEECH_TUI_KEY}=1 saved)`
+      : `[ok] speech off — laptop answers stay silent from now on (${SPEECH_TUI_KEY}=0 saved) · Telegram is unaffected`,
     command,
   );
 }

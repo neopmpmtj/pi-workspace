@@ -3,7 +3,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { connect } from "node:net";
 import path from "node:path";
-import { agentDir, dashboardAgents, PI_ROOT, type AgentSpec } from "./agents.ts";
+import { agentDir, agentOpenUrl, dashboardAgents, PI_ROOT, PROJECT_PORT, type AgentSpec } from "./agents.ts";
 import { readControlPlane, SettingsError } from "./store.ts";
 
 export interface AgentRun {
@@ -11,6 +11,8 @@ export interface AgentRun {
   name: string;
   port: number;
   url: string;
+  /** Page on this site, or the image-describer Vite page. */
+  openUrl: string;
   provider: string;
   model: string;
   listening: boolean;
@@ -35,6 +37,7 @@ export async function listRuns(root = PI_ROOT): Promise<AgentRun[]> {
       name: agent.name,
       port,
       url: `http://127.0.0.1:${port}`,
+      openUrl: agentOpenUrl(agent),
       provider: card?.provider ?? "",
       model: card?.model ?? "",
       listening: await portOpen(port),
@@ -46,10 +49,7 @@ export async function listRuns(root = PI_ROOT): Promise<AgentRun[]> {
 
 export async function startAgent(id: string, root = PI_ROOT): Promise<AgentRun> {
   const agent = requireDashboard(id);
-  if (await portOpen(agent.port!)) {
-    openBrowser(`http://127.0.0.1:${agent.port}`);
-    return one(root, agent);
-  }
+  if (await portOpen(agent.port!)) return one(root, agent);
   const child = spawn("npm", ["run", "dashboard"], {
     cwd: agentDir(root, agent),
     env: {
@@ -72,7 +72,6 @@ export async function startAgent(id: string, root = PI_ROOT): Promise<AgentRun> 
     stopOwned(agent.id);
     throw new SettingsError(`${agent.name} dashboard did not open on port ${agent.port}.`);
   }
-  openBrowser(`http://127.0.0.1:${agent.port}`);
   return one(root, agent);
 }
 
@@ -86,7 +85,8 @@ export async function stopAgent(id: string, root = PI_ROOT): Promise<AgentRun> {
 
 export async function openAgent(id: string, root = PI_ROOT): Promise<AgentRun> {
   const agent = requireDashboard(id);
-  openBrowser(`http://127.0.0.1:${agent.port}`);
+  const target = agent.sitePath ? `http://127.0.0.1:${PROJECT_PORT}${agent.sitePath}` : agentOpenUrl(agent);
+  if (target) openBrowser(target);
   return one(root, agent);
 }
 

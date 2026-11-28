@@ -186,6 +186,30 @@ select:disabled {
   cursor: default;
 }
 
+nav.pi-shell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 0;
+  padding: 8px 16px;
+  background: #1d2128;
+  border-bottom: 1px solid #313844;
+  font: 14px "Segoe UI", sans-serif;
+}
+
+nav.pi-shell a {
+  color: #9aa6b2;
+  background: transparent;
+}
+
+nav.pi-shell a[aria-current="page"] {
+  color: #e7ecf2;
+  background: #313844;
+}
+
 nav {
   display: flex;
   gap: 4px;

@@ -10,24 +10,37 @@ export interface AgentSpec {
   home: string;
   /** Dashboard port. Null when this agent has no dashboard. */
   port: number | null;
+  /** Page on :8786. Null when this agent is not served there. */
+  sitePath: string | null;
 }
 
 export const PI_ROOT = path.resolve(import.meta.dirname, "..");
 
 export const PROJECT_PORT = 8786;
 
+/** Image describer's page. Its API stays on :8788. */
+export const IMAGE_DESCRIBER_PAGE = "http://127.0.0.1:5173";
+
 export const AGENTS: readonly AgentSpec[] = [
-  { id: "cos", name: "Cos orchestrator", home: "agent", port: 8787 },
-  { id: "image-describer", name: "Image describer", home: "agent-image-describer/image-describer", port: 8788 },
-  { id: "web-master", name: "Web master", home: "agent-web-master/web-master", port: 8789 },
-  { id: "tasks", name: "Tasks", home: "agent-tasks-agent/tasks-agent", port: 8791 },
+  { id: "cos", name: "Cos orchestrator", home: "agent", port: 8787, sitePath: "/cos/" },
+  { id: "image-describer", name: "Image describer", home: "agent-image-describer/image-describer", port: 8788, sitePath: null },
+  { id: "web-master", name: "Web master", home: "agent-web-master/web-master", port: 8789, sitePath: "/web-master/" },
+  { id: "tasks", name: "Tasks", home: "agent-tasks-agent/tasks-agent", port: 8791, sitePath: "/tasks/" },
   {
     id: "google-workspace",
     name: "Google Workspace",
     home: "agent-gog-workspace-agents/sm-google-workspace/sm-google-workspace",
     port: null,
+    sitePath: null,
   },
 ];
+
+/** Where Open sends the browser. Site pages stay on :8786; image describer stays on :5173. */
+export function agentOpenUrl(agent: AgentSpec): string {
+  if (agent.sitePath) return agent.sitePath;
+  if (agent.id === "image-describer") return IMAGE_DESCRIBER_PAGE;
+  return "";
+}
 
 export const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 

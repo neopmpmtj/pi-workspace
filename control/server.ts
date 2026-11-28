@@ -4,7 +4,10 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PROJECT_PORT } from "./agents.ts";
+import { forwardDashboard, matchDashboard } from "./dashboard-proxy.ts";
+import { readHostSpeech, readHostTelegram, readWakeword, requireOn, writeHostSpeech, writeHostTelegram, writeWakeword } from "./host-switches.ts";
 import { listRuns, openAgent, startAgent, startAll, stopAgent, stopAll } from "./processes.ts";
+import { shellNavAnchors } from "./shell-nav.ts";
 import { readControlPlane, SettingsError, writeAgentSettings, writeGate, writeInputPhrase, writePromptBuild, type ControlPlane } from "./store.ts";
 
 const PUBLIC_DIR = path.join(import.meta.dirname, "public");
@@ -36,7 +39,7 @@ async function route(request: IncomingMessage, response: ServerResponse): Promis
   const url = new URL(request.url ?? "/", `http://${HOST}`);
   const method = request.method ?? "GET";
   if (method === "GET" && FILES[url.pathname]) {
-    await sendFile(response, FILES[url.pathname]);
+    await sendFile(response, FILES[url.pathname], url.pathname);
     return;
   }
   if (method === "GET" && url.pathname === "/api/agents") {
@@ -82,6 +85,40 @@ async function route(request: IncomingMessage, response: ServerResponse): Promis
     sendJson(response, 200, { agent: await writeAgentSettings(agentSettings[1], await readJson(request)) });
     return;
   }
+  if (method === "GET" && url.pathname === "/api/host/speech") {
+    sendJson(response, 200, readHostSpeech());
+    return;
+  }
+  if (method === "PUT" && url.pathname === "/api/host/speech") {
+    sendJson(response, 200, writeHostSpeech(requireOn(await readJson(request))));
+    return;
+  }
+  if (method === "GET" && url.pathname === "/api/host/telegram-voice") {
+    sendJson(response, 200, readHostTelegram());
+    return;
+  }
+  if (method === "PUT" && url.pathname === "/api/host/telegram-voice") {
+    sendJson(response, 200, writeHostTelegram(requireOn(await readJson(request))));
+    return;
+  }
+  if (method === "GET" && url.pathname === "/api/host/wakeword") {
+    sendJson(response, 200, await readWakeword());
+    return;
+  }
+  if (method === "POST" && url.pathname === "/api/host/wakeword") {
+    sendJson(response, 200, await writeWakeword(requireOn(await readJson(request))));
+    return;
+  }
+  const dash = matchDashboard(url.pathname);
+  if (dash?.kind === "redirect") {
+    response.writeHead(308, { location: dash.location + url.search, "cache-control": "no-store" });
+    response.end();
+    return;
+  }
+  if (dash?.kind === "forward") {
+    forwardDashboard(request, response, dash.page, dash.upstreamPath + url.search);
+    return;
+  }
   sendJson(response, 404, { error: "Not found." });
 }
 
@@ -99,9 +136,12 @@ function logNotes(plane: ControlPlane): void {
   for (const line of notes) console.error(line);
 }
 
-async function sendFile(response: ServerResponse, name: string): Promise<void> {
+async function sendFile(response: ServerResponse, name: string, pathname = ""): Promise<void> {
   const file = path.join(PUBLIC_DIR, name);
-  const body = await readFile(file);
+  let body: Buffer = await readFile(file);
+  if (name.endsWith(".html")) {
+    body = Buffer.from(body.toString("utf8").replace("<!-- shell-nav -->", shellNavAnchors(pathname)));
+  }
   const type = TYPES[path.extname(name)] ?? "application/octet-stream";
   response.writeHead(200, { "content-type": type, "cache-control": "no-store" });
   response.end(body);

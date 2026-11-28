@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { fileChoice, parseFlag, persist } from "../extensions/speech-reply.ts";
+import { fileChoice, parseFlag, persist } from "../src/speech-switch.ts";
 
 function tempEnv(contents?: string): string {
 	const dir = mkdtempSync(join(tmpdir(), "pi-speech-toggle-"));

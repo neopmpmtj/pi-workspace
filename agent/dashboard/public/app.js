@@ -1,5 +1,8 @@
 /* cos-orchestrator-agent dashboard. No framework and no build step: the server serves this
-   file, and everything below renders from /api/data. */
+   file, and everything below renders from api/data on this page. */
+function pageUrl(path) {
+  return new URL(String(path).replace(/^\//, ""), document.baseURI).href;
+}
 
 const PALETTE = ["#6ea8fe", "#4ade80", "#fbbf24", "#f472b6", "#a78bfa", "#22d3ee", "#fb923c", "#94a3b8"];
 const state = { data: null, mode: "tokens", settings: null, open: new Set() };
@@ -24,7 +27,7 @@ const day = (iso) => (Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleD
 const time = (iso) => (Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleTimeString("en-GB") : "?");
 
 async function load() {
-  const response = await fetch("/api/data");
+  const response = await fetch(pageUrl("api/data"));
   if (!response.ok) throw new Error((await response.json()).error ?? "request failed");
   state.data = await response.json();
   render();
@@ -163,7 +166,7 @@ function renderRuns(runs, calls) {
 }
 
 async function loadSettings() {
-  const response = await fetch("/api/settings");
+  const response = await fetch(pageUrl("api/settings"));
   state.settings = await response.json();
   const { current, models, thinkingLevels } = state.settings;
   const provider = el("provider");
@@ -215,7 +218,7 @@ async function save() {
   model.disabled = true;
   thinking.disabled = true;
   try {
-    const response = await fetch("/api/settings", {
+    const response = await fetch(pageUrl("api/settings"), {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ provider: provider.value, model: model.value, thinking: thinking.value }),
@@ -250,7 +253,7 @@ for (const button of document.querySelectorAll("#series-mode button")) {
   });
 }
 
-const events = new EventSource("/api/events");
+const events = new EventSource(pageUrl("api/events"));
 let timer = null;
 events.addEventListener("update", () => {
   clearTimeout(timer);

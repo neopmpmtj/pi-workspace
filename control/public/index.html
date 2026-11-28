@@ -7,21 +7,23 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body data-page="landing">
+    <nav class="pi-shell" aria-label="Site">
+      <!-- shell-nav -->
+    </nav>
     <header>
       <div>
         <p class="eyebrow">~/.pi</p>
         <h1>Project</h1>
       </div>
-      <nav>
-        <a href="/settings">Settings</a>
+      <div class="actions">
         <button type="button" id="start-all">Start all</button>
         <button type="button" id="stop-all">Stop all</button>
-      </nav>
+      </div>
     </header>
     <main>
       <section>
         <h2>Agent dashboards</h2>
-        <p class="note">Start opens that dashboard in a new browser tab. Stop only stops a dashboard this page started.</p>
+        <p class="note">Start runs that dashboard. Stop only stops a dashboard this page started. Open goes to its page.</p>
         <div id="rows" class="stack"></div>
         <p id="landing-status" class="status" role="status"></p>
       </section>

@@ -157,6 +157,9 @@ Properties worth keeping:
 - **Precedence:** a `/speech` answer for this session → `$PI_SPEECH_TUI` → the env file. A
   stale shell variable can therefore not undo a `/speech off`, and the next session starts
   from the file again.
+- **The project site writes the same file.** Settings at `http://127.0.0.1:8786/settings` calls
+  `agent/src/speech-switch.ts`, the writer `/speech` uses. It does not set the in-process
+  session choice, so a session that already ran `/speech` keeps that choice until it restarts.
 - **The file is the durable store, and it is written surgically:** only the `PI_SPEECH_TUI`
   line changes; comments, the voice and rate lines, and a duplicate line (dropped, because
   only the first would be read) are handled atomically via temp-file rename, mode 600.
@@ -165,7 +168,7 @@ Properties worth keeping:
 - **Telegram is untouched** by this command: it is the TUI surface only. The VPS reply mode
   stays in `telegram.json`.
 - **Tested** by `agent/test/speech-toggle.test.ts` (parse, replace, append, duplicate, create,
-  private mode) — `npm test` in `agent/`.
+  private mode) and `control/site.test.ts` (the same writer from the project site).
 
 ## 6. Durability checklist
 

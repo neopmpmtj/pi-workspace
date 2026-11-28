@@ -49,13 +49,18 @@ function initLanding() {
           ]),
           el("span", { class: state }, [agent.listening ? "running" : "stopped"]),
         ]),
-        el("div", { class: "actions" }, [
-          el("button", { type: "button", onclick: () => act(`/api/agents/${agent.id}/start`) }, ["Start"]),
-          el("button", { type: "button", onclick: () => act(`/api/agents/${agent.id}/stop`) }, ["Stop"]),
-          el("button", { type: "button", onclick: () => act(`/api/agents/${agent.id}/open`) }, ["Open"]),
-        ]),
+        el("div", { class: "actions" }, openActions(agent)),
       ]));
     }
+  }
+
+  function openActions(agent) {
+    const actions = [
+      el("button", { type: "button", onclick: () => act(`/api/agents/${agent.id}/start`) }, ["Start"]),
+      el("button", { type: "button", onclick: () => act(`/api/agents/${agent.id}/stop`) }, ["Stop"]),
+    ];
+    if (agent.openUrl) actions.push(el("a", { class: "button", href: agent.openUrl }, ["Open"]));
+    return actions;
   }
 
   async function act(url) {
@@ -81,11 +86,13 @@ function initLanding() {
 async function initSettings() {
   const main = document.getElementById("settings");
   const note = main.querySelector(".note");
+  main.append(await hostSection());
   let plane;
   try {
     plane = await request("/api/settings");
   } catch (error) {
     main.append(el("p", { class: "status error" }, [error.message]));
+    if (note) main.prepend(note);
     return;
   }
   // A file that could not be read is reported, not hidden: the page stays usable with the rest.
@@ -113,6 +120,103 @@ function unreadableCard(title, file) {
 
 function section(title, cards) {
   return el("section", { class: "stack" }, [el("h2", {}, [title]), ...cards]);
+}
+
+async function hostSection() {
+  return section("This laptop", [await speechCard(), await wakewordCard(), await telegramCard()]);
+}
+
+function hostCard(title, note, control, status) {
+  return el("div", { class: "card" }, [
+    el("h3", {}, [title]),
+    control,
+    el("p", { class: "meta" }, [note]),
+    status,
+  ]);
+}
+
+async function speechCard() {
+  const status = el("p", { class: "status" });
+  let body;
+  try {
+    body = await request("/api/host/speech");
+  } catch (error) {
+    return hostCard("Speech", "Writes PI_SPEECH_TUI in ~/.config/pi-speech.env.", el("p", { class: "status error" }, [error.message]), status);
+  }
+  const box = el("input", { type: "checkbox", ...(body.on ? { checked: "checked" } : {}) });
+  box.addEventListener("change", () => {
+    void saveHost(box, status, "/api/host/speech", { on: box.checked }, "PUT", () => "Saved.");
+  });
+  return hostCard(
+    "Speech",
+    "Writes PI_SPEECH_TUI in ~/.config/pi-speech.env. A session that already used /speech keeps that choice until it restarts.",
+    el("label", { class: "inline" }, [box, "Speak laptop answers"]),
+    status,
+  );
+}
+
+async function wakewordCard() {
+  const status = el("p", { class: "status" });
+  let body;
+  try {
+    body = await request("/api/host/wakeword");
+  } catch (error) {
+    return hostCard("Wakeword", "Calls wakewordctl.", el("p", { class: "status error" }, [error.message]), status);
+  }
+  if (body.error) setStatus(status, body.error, "error");
+  else setStatus(status, wakewordLine(body), "ok");
+  const box = el("input", { type: "checkbox", ...(body.enabled ? { checked: "checked" } : {}) });
+  box.addEventListener("change", () => {
+    void saveHost(box, status, "/api/host/wakeword", { on: box.checked }, "POST", wakewordLine);
+  });
+  return hostCard(
+    "Wakeword",
+    "Calls wakewordctl. A voice session already open in pi closes with /wakeword off in that session.",
+    el("label", { class: "inline" }, [box, "Listen for Hey Pamela"]),
+    status,
+  );
+}
+
+function wakewordLine(body) {
+  return `enabled ${body.enabled ? "on" : "off"} · listener ${body.running ? "running" : "stopped"}`;
+}
+
+async function telegramCard() {
+  const status = el("p", { class: "status" });
+  const note = "On is replyMode always. Off is manual. A running agent keeps the previous mode until it restarts. This is the laptop file.";
+  let body;
+  try {
+    body = await request("/api/host/telegram-voice");
+  } catch (error) {
+    return hostCard("Telegram voice", note, el("p", { class: "status error" }, [error.message]), status);
+  }
+  if (body.missing) {
+    return hostCard("Telegram voice", note, el("p", { class: "status error" }, ["telegram.json is missing on this laptop. Nothing was created."]), status);
+  }
+  if (body.error) setStatus(status, body.error, "error");
+  else if (body.mode) setStatus(status, `mode ${body.mode}`, "ok");
+  const box = el("input", { type: "checkbox", ...(body.on ? { checked: "checked" } : {}), ...(body.error ? { disabled: "disabled" } : {}) });
+  box.addEventListener("change", () => {
+    void saveHost(box, status, "/api/host/telegram-voice", { on: box.checked }, "PUT", (saved) => saved.mode ? `mode ${saved.mode}` : "Saved.");
+  });
+  return hostCard("Telegram voice", note, el("label", { class: "inline" }, [box, "Speak Telegram replies"]), status);
+}
+
+async function saveHost(box, status, url, body, method, detail) {
+  const previous = !box.checked;
+  box.disabled = true;
+  setStatus(status, "Saving.", "");
+  try {
+    const saved = await request(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    if (typeof saved.on === "boolean") box.checked = saved.on;
+    if (typeof saved.enabled === "boolean") box.checked = saved.enabled;
+    setStatus(status, detail(saved), "ok");
+  } catch (error) {
+    box.checked = previous;
+    setStatus(status, error.message, "error");
+  } finally {
+    box.disabled = false;
+  }
 }
 
 function gateCard(gate) {

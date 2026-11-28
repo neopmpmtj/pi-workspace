@@ -47,6 +47,10 @@ The agent has the same actions through the **`wakeword` tool**; a terminal uses
 `agent/scripts/wakeword/wakewordctl <action>`. Ending any of these actions during a voice
 session also closes the session (the vad process is stopped first).
 
+The project site at `http://127.0.0.1:8786/settings` calls this same `wakewordctl on|off`.
+That saves `enabled` and starts or stops the listener. It does not end a voice session
+already open inside pi; `/wakeword off` in that session does.
+
 ## Config `~/.config/pi-wakeword.json`
 
 ```json

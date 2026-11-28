@@ -19,6 +19,29 @@ body {
   color: var(--text);
 }
 
+.pi-shell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px 16px;
+  background: #1d2128;
+  border-bottom: 1px solid #313844;
+  font: 14px "Segoe UI", sans-serif;
+}
+.pi-shell a {
+  color: #9aa6b2;
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.pi-shell a[aria-current="page"] {
+  color: #e7ecf2;
+  background: #313844;
+}
+
 header, main {
   width: min(960px, calc(100% - 32px));
   margin: 0 auto;
@@ -40,7 +63,7 @@ h3 { font-size: 1rem; }
 .eyebrow { margin: 0 0 4px; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.75rem; }
 .note { margin: 8px 0 16px; }
 
-nav { display: flex; gap: 8px; align-items: center; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 a { color: var(--accent); }
 
 button, input, select, textarea {
