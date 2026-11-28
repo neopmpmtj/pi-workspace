@@ -223,6 +223,14 @@ between them; they must stay identical. Do not re-derive this — it is already 
 
 When the user asks "are they the same?", run the parity script before answering.
 
+## Decision nodes: two standing rules
+
+- **A new decision node** lives in `~/.pi/decision-nodes/<name>/` and reads its own slice of the
+  JSON `classify.py` already returns, so one message stays one JEV call. The node stays out of
+  `jev-classifier-multi/src` — that folder is the classifier, not the routing.
+- **`classes/calendar.py` stays one file** until its questions and `decide` no longer fit there.
+  A `classes/calendar/` package waits for that day.
+
 ## Where things go (keep it modular)
 
 Before creating a file, decide its home — and register it in the same change. A file nobody

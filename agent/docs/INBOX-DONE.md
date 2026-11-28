@@ -65,6 +65,8 @@ item died with a change elsewhere — record it and move on, do not reopen it.
 ## Next decision nodes (agreed 2026-11-05)
 
 - 2026-11-05 — `classes/__init__.py` loads every module → done with the `reminder`, `reminder_done` and `vetoes` modules.
+- 2026-11-28 — "A new decision node lives in `decision-nodes/<name>/` and reads its own slice" → moved to `AGENTS.md` → "Decision nodes: two standing rules" (it was a rule, not a task).
+- 2026-11-28 — "`classes/calendar.py` stays one file" → same home in `AGENTS.md`; nothing to build until its questions stop fitting.
 
 ## Reminder routing on this host (found 2026-11-06)
 
@@ -103,6 +105,10 @@ item died with a change elsewhere — record it and move on, do not reopen it.
 - 2026-11-28 — gog day-8 verdict ping → it never arrived because the timer was never installed (no log, no unit). Ran by hand on the VPS after a dry-run: verdict **OK**, token 9 days old, message delivered, VPS keepalive timer disabled. Units now tracked at `scripts/systemd/gog-keepalive-day8.{service,timer}`.
 - 2026-11-28 — Verify the first live Telegram turn and `/usage` → both in daily use since the restart.
 - 2026-11-28 — Delete `~/.pi/agent#copy/` → gone.
+- 2026-11-28 — Prune `~/.pi/z.old` → removed, 126 MB freed (it was gitignored and untracked; `df` on `/home` 279 G free).
+- 2026-11-28 — "The bare `pi` wrapper has no effect on a minimal PATH" → fixed twice over: `~/.config/environment.d/10-pi-path.conf` puts `~/.local/bin` and the nvm bin in the `systemd --user` environment (`show-environment` confirms), and `~/.bashrc` exports `~/.local/bin` first **before** the non-interactive guard and again after nvm init, so nvm can no longer shadow the wrapper.
+- 2026-11-28 — "The pre-start pull duplicates `auto-sync`" → decided: keep both, one reads at session start and one writes at session end; recorded in `docs/pi-state-summary.md` → "Sync: one writer each, on purpose".
+- 2026-11-28 — The server's static `gho_` GitHub credential → the 2026-11-23 reinstall had wiped `gh`, `~/.config/gh` and the credential helper. Redone without sudo (the laptop's static gh binary copied over, token piped through `gh auth login --with-token`, `setup-git`), verified by cloning the private `pi-workspace` and a `push --dry-run`. Runbook has the three commands.
 
 ## Launcher audit (2026-11-18)
 
@@ -117,3 +123,9 @@ item died with a change elsewhere — record it and move on, do not reopen it.
 ## Voice-first access (from 2026-11-25)
 
 - 2026-11-25 — Laptop TUI speech → `agent/extensions/speech-reply.ts`, enabled by `PI_SPEECH_TUI=1` in `~/.config/pi-speech.env`; runbook `voice-first-accessibility.md`.
+
+## Closed at the owner's request (2026-11-28)
+
+- 2026-11-28 — Voice **input** on Telegram (local Whisper) → not wanted: typing is good enough today. Reopen only if that changes.
+- 2026-11-28 — Desktop screen reader (Orca + `spd-say`) → not wanted for now; pi's own speech covers the reading that matters.
+- 2026-11-28 — `setup-host.sh` on the home server (piper voice) → not wanted: the box is not a chat surface and has no pi home.

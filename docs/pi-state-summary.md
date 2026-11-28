@@ -91,6 +91,19 @@ JEV details: `docs/pi-state-of-jev.md`.
 
 ---
 
+## Sync: one writer each, on purpose
+
+Two mechanisms touch the tree and that is deliberate, recorded here so nobody "fixes" it twice:
+
+| When | Who | Does |
+| --- | --- | --- |
+| session start | `scripts/pre-sync.sh` in both launchers (debounced 120 s) | `git pull --ff-only`; loud when the clone is ahead/behind |
+| session end | `extensions/auto-sync.ts` | commits the working tree and pushes |
+
+The launcher pull is the deterministic read at the boundary; the extension is the write at the
+end. Neither replaces the other, and a `diverged` warning from either is a real signal, not
+noise. Decided 2026-11-28 (INBOX "pre-start pull duplicates auto-sync").
+
 ## Dashboards and how they start
 
 | Port | What | How it starts |

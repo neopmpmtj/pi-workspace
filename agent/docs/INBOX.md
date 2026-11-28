@@ -47,14 +47,6 @@ is recoverable from the git history of this file.
       the description was not optimised against trigger queries. Both need a harness with
       subagents; the measured self-test results are in `evals/README.md`.
 
-## Next decision nodes (agreed 2026-11-05)
-
-- [ ] A new decision node lives in `~/.pi/decision-nodes/<name>/` and reads its own slice of
-      the JSON `classify.py` already returns, so one message stays one JEV call. The node
-      stays out of `jev-classifier-multi/src`.
-- [ ] Leave `classes/calendar.py` as one file until its questions and `decide` no longer fit
-      there. A `classes/calendar/` package waits for that.
-
 ## Reminder routing
 
 - [ ] The classifier misses the natural "done" phrasing: "I have taken the tablet" came back
@@ -76,20 +68,6 @@ is recoverable from the git history of this file.
       client (drive.file) + one browser consent, then install the user unit and prove an archive;
       or (b) drop the Drive copy and keep the working nightly local archive
       (`pi-host-backup.timer`). The old failing system timer needs a sudo password to disable.
-- [ ] `~/.pi/z.old` is 226 MB across two archive runs. Everything tracked is in git and the
-      runtime state was recovered, so it can be pruned — on request only.
-- [ ] **The bare `pi` wrapper has no effect on a minimal PATH.** On a login or inherited shell
-      `~/.local/bin/pi` wins, but a bare `env -i` PATH finds no `pi` at all, so a cron job,
-      systemd unit or `ssh host 'pi …'` runs nothing (or the nvm symlink with no `.env`). Two ways
-      out: put `~/.local/bin` in the environment `systemd --user`/cron actually see, or drop the
-      wrapper and export keys where needed. Decide when revisited.
-- [ ] **The pre-start `git pull` in `pi-cos-orchestrator-agent` duplicates
-      `extensions/auto-sync.ts`.** The launcher pulls (debounced 120 s), the extension syncs on
-      its own schedule. Keep one and record which in `docs/pi-state-summary.md`; left as-is until
-      then — belt-and-braces, not a fire.
-- [ ] The server's GitHub credential is a static `gho_` token — reinstall it
-      (`gh auth token | ssh lan-pmpmt 'gh auth login --with-token'`) if it is ever revoked; clone
-      RTX-repo work over HTTPS or `gh repo clone`, not `git@github.com:`.
 
 ## LAN server pmpmt home, downloads and videos
 
@@ -127,10 +105,5 @@ file-dedupe work.
 
 ## Voice-first access
 
-- [ ] Voice *input* on Telegram: the bridge already exposes transcription providers, so this is
-      a local Whisper provider, no cloud, no key (`sherpa-onnx-node` or `whisper.cpp`).
 - [ ] Paid voice once there is income: one branch in `speak.sh` (OpenAI `gpt-4o-mini-tts`,
       ~$0.015/1k chars). The seam exists already; nothing else changes.
-- [ ] Home server: run `bash ~/.pi/agent/scripts/speech/setup-host.sh` when the box exists.
-- [ ] Desktop screen reader (Orca + speech-dispatcher, `spd-say` baseline) so the *laptop*
-      speaks everything, not only pi.

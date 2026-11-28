@@ -49,6 +49,21 @@ Final shape: **gh + HTTPS for GitHub, SSH still fine for reading and for other h
 | `git push --dry-run origin HEAD:refs/heads/pi-agent-probe` | `* [new branch]` (write access) |
 | same push from a `pi-cloud` tool call | ok |
 
+## Re-done after the 2026-11-23 reinstall (2026-11-28)
+
+The reinstall wiped `gh`, `~/.config/gh` and the `credential.helper` entry, so server→GitHub was
+dead again. Redone without sudo:
+
+```bash
+scp ~/.local/bin/gh lan-pmpmt:~/.local/bin/gh            # same x86-64 binary, static
+gh auth token | ssh lan-pmpmt '~/.local/bin/gh auth login --with-token -h github.com'
+ssh lan-pmpmt '~/.local/bin/gh auth setup-git'
+```
+
+Verified the same day: the server clones the private `neopmpmtj/pi-workspace` and
+`git push --dry-run` to a new branch succeeds. `gh` is **not** on the server's non-login PATH —
+use `~/.local/bin/gh` in scripts, which is what the credential helper does.
+
 ## Keeping it alive
 
 - The credential is the laptop's `gho_` OAuth token, stored in the server's keyring. It does not
