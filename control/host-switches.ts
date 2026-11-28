@@ -1,13 +1,19 @@
 /**
- * Host switches for the project site. Speech and Telegram write their own files.
- * Wakeword goes through wakewordctl, the same script /wakeword uses.
+ * Host switches for the project site, this host only.
+ *
+ * Speech writes PI_SPEECH_TUI and PI_SPEECH_TELEGRAM in ~/.config/pi-speech.env
+ * (speech-switch.ts is the one writer). Wakeword goes through wakewordctl, the
+ * same script /wakeword uses. Telegram's voice.replyMode is READ here and never
+ * written: the bridge loads it at startup, so a page that flipped it would be
+ * promising an effect it cannot give. The live Telegram switch is the
+ * PI_SPEECH_TELEGRAM gate read by speak.sh — see remote-host.ts.
  */
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileChoice, persist } from "../agent/src/speech-switch.ts";
-import { readTelegramVoice, writeTelegramVoice, type TelegramVoiceState } from "../agent/src/telegram-voice-switch.ts";
+import { readTelegramVoice, type TelegramVoiceState } from "../agent/src/telegram-voice-switch.ts";
 import { SettingsError } from "./store.ts";
 
 export const WAKEWORD_CTL = join(homedir(), ".pi", "agent", "scripts", "wakeword", "wakewordctl");
@@ -30,12 +36,6 @@ export function writeHostSpeech(on: boolean): { on: boolean } {
 
 export function readHostTelegram(): TelegramVoiceState {
   return readTelegramVoice();
-}
-
-export function writeHostTelegram(on: boolean): TelegramVoiceState {
-  const problem = writeTelegramVoice(on);
-  if (problem) throw new SettingsError(problem);
-  return readHostTelegram();
 }
 
 export function requireOn(body: unknown): boolean {

@@ -27,7 +27,7 @@ import { existsSync, writeSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { recordCommandIfUnsaved } from "../src/session-command.ts";
-import { fileChoice, parseFlag, persist, SPEECH_TUI_KEY } from "../src/speech-switch.ts";
+import { fileChoice, parseFlag, persist, SPEECH_TUI_KEY, speechEnvMtime } from "../src/speech-switch.ts";
 import { speechFinished, speechStarted } from "../src/speech-activity.ts";
 
 export { fileChoice, parseFlag, persist } from "../src/speech-switch.ts";
@@ -36,12 +36,20 @@ const SPEECH_ENV = join(homedir(), ".config", "pi-speech.env");
 const SPEAK = join(homedir(), ".pi", "agent", "scripts", "speech", "speak.sh");
 const LIMIT = "1200";
 
-/** The answer `/speech` gave in this session: live, and beats everything else. */
-let sessionChoice: boolean | undefined;
+/**
+ * The answer `/speech` gave in this session, and when the file was written for
+ * it. A later write by someone else (the project site on :8786) bumps the
+ * file's mtime, so the newest writer wins instead of a stale session choice
+ * masking the switch the user just clicked.
+ */
+let sessionChoice: { on: boolean; at: number } | undefined;
 
 /** Where the effective answer came from, for `/speech` status. */
 function resolve(): { on: boolean; source: string } {
-  if (sessionChoice !== undefined) return { on: sessionChoice, source: "this session (/speech)" };
+  if (sessionChoice && speechEnvMtime() <= sessionChoice.at) {
+    return { on: sessionChoice.on, source: "this session (/speech)" };
+  }
+  sessionChoice = undefined;
   const fromEnv = parseFlag(process.env[SPEECH_TUI_KEY] ?? "");
   if (fromEnv !== undefined) return { on: fromEnv, source: `$${SPEECH_TUI_KEY}` };
   const fromFile = fileChoice();
@@ -92,8 +100,9 @@ function fail(pi: ExtensionAPI, ctx: ExtensionCommandContext, text: string, comm
 }
 
 function apply(pi: ExtensionAPI, ctx: ExtensionCommandContext, want: boolean, command: string): void {
-  sessionChoice = want;
   const problem = persist(want);
+  // Timestamped after the write, so our own line is not seen as "newer".
+  sessionChoice = { on: want, at: speechEnvMtime() };
   if (problem) {
     // The switch still works for this session; say plainly that it did not stick.
     show(pi, ctx, `[warn] speech ${want ? "on" : "off"} for this session · could not write ${SPEECH_ENV}: ${problem}`, command);

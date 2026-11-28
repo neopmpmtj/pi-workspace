@@ -87,6 +87,7 @@ async function initSettings() {
   const main = document.getElementById("settings");
   const note = main.querySelector(".note");
   main.append(await hostSection());
+  main.append(await vpsSection());
   let plane;
   try {
     plane = await request("/api/settings");
@@ -123,7 +124,10 @@ function section(title, cards) {
 }
 
 async function hostSection() {
-  return section("This laptop", [await speechCard(), await wakewordCard(), await telegramCard()]);
+  const cards = [await speechCard(), await wakewordCard()];
+  const local = await localTelegramCard();
+  if (local) cards.push(local);
+  return section("This host", cards);
 }
 
 function hostCard(title, note, control, status) {
@@ -149,7 +153,7 @@ async function speechCard() {
   });
   return hostCard(
     "Speech",
-    "Writes PI_SPEECH_TUI in ~/.config/pi-speech.env. A session that already used /speech keeps that choice until it restarts.",
+    "Writes PI_SPEECH_TUI in ~/.config/pi-speech.env. Shared with /speech: whichever was written last wins, and the next answer obeys it — no restart.",
     el("label", { class: "inline" }, [box, "Speak laptop answers"]),
     status,
   );
@@ -181,25 +185,68 @@ function wakewordLine(body) {
   return `enabled ${body.enabled ? "on" : "off"} · listener ${body.running ? "running" : "stopped"}`;
 }
 
-async function telegramCard() {
-  const status = el("p", { class: "status" });
-  const note = "On is replyMode always. Off is manual. A running agent keeps the previous mode until it restarts. This is the laptop file.";
+async function localTelegramCard() {
+  // Present only where a telegram.json exists: on the VPS. The laptop has none,
+  // and a card that can only ever say "missing" is not a control.
   let body;
   try {
     body = await request("/api/host/telegram-voice");
-  } catch (error) {
-    return hostCard("Telegram voice", note, el("p", { class: "status error" }, [error.message]), status);
+  } catch {
+    return undefined;
   }
-  if (body.missing) {
-    return hostCard("Telegram voice", note, el("p", { class: "status error" }, ["telegram.json is missing on this laptop. Nothing was created."]), status);
-  }
+  if (body.missing) return undefined;
+  const status = el("p", { class: "status" });
   if (body.error) setStatus(status, body.error, "error");
-  else if (body.mode) setStatus(status, `mode ${body.mode}`, "ok");
-  const box = el("input", { type: "checkbox", ...(body.on ? { checked: "checked" } : {}), ...(body.error ? { disabled: "disabled" } : {}) });
-  box.addEventListener("change", () => {
-    void saveHost(box, status, "/api/host/telegram-voice", { on: box.checked }, "PUT", (saved) => saved.mode ? `mode ${saved.mode}` : "Saved.");
-  });
-  return hostCard("Telegram voice", note, el("label", { class: "inline" }, [box, "Speak Telegram replies"]), status);
+  else setStatus(status, `mode ${body.mode || "unset"} · read when the bridge starts`, "ok");
+  return hostCard(
+    "Telegram reply mode",
+    "Read-only: telegram.json is read at bridge startup, so this page will not pretend to change it live. Use the VPS card for the live switch.",
+    el("p", { class: "meta" }, ["voice.replyMode"]),
+    status,
+  );
+}
+
+async function vpsSection() {
+  const status = el("p", { class: "status" }, ["Reading…"]);
+  const body = el("div", {});
+  const card = el("div", { class: "card" }, [
+    el("h3", {}, ["VPS · Telegram bridge"]),
+    body,
+    el("p", { class: "meta" }, ["PI_SPEECH_TELEGRAM on the host that owns the bot, reached over ssh. speak.sh reads it on every reply, so a change is in force on the next one."]),
+    status,
+  ]);
+
+  function vpsLine(state) {
+    const notes = state.notes.on ? "voice notes on" : "voice notes off (text replies)";
+    const mode = `mode ${state.mode || "unset"}`;
+    const engine = state.engine === "ok" ? "speak.sh ok" : `speak.sh ${state.engine}`;
+    return `${notes} · bridge ${state.bridge} · ${mode} · ${engine}`;
+  }
+
+  async function refresh() {
+    body.replaceChildren();
+    setStatus(status, "Reading…", "");
+    let state;
+    try {
+      state = await request("/api/host/vps");
+    } catch (error) {
+      setStatus(status, error.message, "error");
+      return;
+    }
+    if (!state.reachable) {
+      setStatus(status, state.detail || `${state.host} did not answer`, "error");
+      return;
+    }
+    const box = el("input", { type: "checkbox", ...(state.notes.on ? { checked: "checked" } : {}) });
+    box.addEventListener("change", () => {
+      void saveHost(box, status, "/api/host/vps/notes", { on: box.checked }, "PUT", vpsLine);
+    });
+    body.append(el("label", { class: "inline" }, [box, "Speak Telegram voice notes"]));
+    setStatus(status, vpsLine(state), "ok");
+  }
+
+  void refresh();
+  return section("VPS", [card]);
 }
 
 async function saveHost(box, status, url, body, method, detail) {

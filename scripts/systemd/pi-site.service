@@ -1,0 +1,16 @@
+[Unit]
+Description=Project site on 127.0.0.1:8786 — agent switches, settings, dashboard pages
+Documentation=file:%h/.pi/docs/pi-state-summary.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.pi/scripts/serve-site.sh
+Restart=on-failure
+RestartSec=2
+# The VPS is the Telegram side; the page reaches it over ssh, never the reverse.
+Environment=PI_SITE_VPS_HOST=neopmpmtj
+
+[Install]
+WantedBy=default.target

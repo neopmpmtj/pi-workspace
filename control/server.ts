@@ -5,7 +5,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PROJECT_PORT } from "./agents.ts";
 import { forwardDashboard, matchDashboard } from "./dashboard-proxy.ts";
-import { readHostSpeech, readHostTelegram, readWakeword, requireOn, writeHostSpeech, writeHostTelegram, writeWakeword } from "./host-switches.ts";
+import { readHostSpeech, readHostTelegram, readWakeword, requireOn, writeHostSpeech, writeWakeword } from "./host-switches.ts";
+import { readVpsSpeech, writeVpsNotes } from "./remote-host.ts";
 import { listRuns, openAgent, startAgent, startAll, stopAgent, stopAll } from "./processes.ts";
 import { shellNavAnchors } from "./shell-nav.ts";
 import { readControlPlane, SettingsError, writeAgentSettings, writeGate, writeInputPhrase, writePromptBuild, type ControlPlane } from "./store.ts";
@@ -94,11 +95,23 @@ async function route(request: IncomingMessage, response: ServerResponse): Promis
     return;
   }
   if (method === "GET" && url.pathname === "/api/host/telegram-voice") {
+    // Read-only. The bridge loads replyMode at startup; the live Telegram switch
+    // is /api/host/vps/notes (PI_SPEECH_TELEGRAM, read by speak.sh per reply).
     sendJson(response, 200, readHostTelegram());
     return;
   }
-  if (method === "PUT" && url.pathname === "/api/host/telegram-voice") {
-    sendJson(response, 200, writeHostTelegram(requireOn(await readJson(request))));
+  if (method === "GET" && url.pathname === "/api/host/vps") {
+    sendJson(response, 200, await readVpsSpeech());
+    return;
+  }
+  if (method === "PUT" && url.pathname === "/api/host/vps/notes") {
+    const on = requireOn(await readJson(request));
+    const state = await writeVpsNotes(on);
+    if (!state.reachable) {
+      sendJson(response, 502, { error: state.detail || "the VPS did not answer", ...state });
+      return;
+    }
+    sendJson(response, 200, state);
     return;
   }
   if (method === "GET" && url.pathname === "/api/host/wakeword") {

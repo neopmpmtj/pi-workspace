@@ -8,6 +8,7 @@ import { readTelegramVoice, writeTelegramVoice } from "../agent/src/telegram-voi
 import { matchDashboard, stoppedPage } from "./dashboard-proxy.ts";
 import { injectShellBar } from "./shell-nav.ts";
 import { parseWakewordStatus, runWakeword, writeWakeword } from "./host-switches.ts";
+import { parseSnapshot, readVpsSpeech, toggleCommand, VPS_AGENT_UNIT, writeVpsNotes, type Exec, type ExecResult } from "./remote-host.ts";
 import { SettingsError } from "./store.ts";
 
 function tempDir(): string {
@@ -122,5 +123,86 @@ describe("dashboard paths on 8786", () => {
     assert.match(stopped, /\/api\/agents\/tasks\/start/);
     assert.match(stopped, /class="pi-shell"/);
     assert.match(stopped, /href="\/tasks\/" aria-current="page"/);
+  });
+});
+
+describe("the VPS card", () => {
+  const status = (telegram: boolean, mode = "always") =>
+    JSON.stringify({ host: "vps", file: "/home/pmpmt/.config/pi-speech.env", tui: false, telegram, speak: "ok", mode }) + "\n";
+
+  /** Records every ssh call and answers by command, so no test touches the network. */
+  function fakeSsh(answer: (command: string) => ExecResult): { exec: Exec; calls: string[] } {
+    const calls: string[] = [];
+    const exec: Exec = async (file, args) => {
+      const command = args[args.length - 1] ?? "";
+      calls.push(`${file} ${args.slice(0, -1).join(" ")} ${command}`);
+      return answer(command);
+    };
+    return { exec, calls };
+  }
+
+  it("sends only the two allowlisted shapes, and nothing free-form", () => {
+    assert.equal(toggleCommand({ action: "status" }), 'exec "$HOME/.pi/agent/scripts/speech/host-toggle.sh" status');
+    assert.equal(
+      toggleCommand({ action: "set", key: "telegram", value: "off" }),
+      'exec "$HOME/.pi/agent/scripts/speech/host-toggle.sh" set telegram off',
+    );
+    assert.throws(() => toggleCommand({ action: "set", key: "mode" as never, value: "on" }), /unknown switch/);
+    assert.throws(() => toggleCommand({ action: "set", key: "tui", value: "maybe" as never }), /unknown value/);
+  });
+
+  it("reads the last JSON line and refuses anything else", () => {
+    assert.deepEqual(parseSnapshot(status(false)), {
+      host: "vps", file: "/home/pmpmt/.config/pi-speech.env", tui: false, telegram: false, speak: "ok", mode: "always",
+    });
+    assert.equal(parseSnapshot("not json\n"), undefined);
+    assert.equal(parseSnapshot('{"error":"node not found"}'), undefined);
+    assert.equal(parseSnapshot('{"telegram":"yes"}'), undefined);
+  });
+
+  it("reports the switch and the bridge in one call, over one ssh host", async () => {
+    const calls: string[] = [];
+    const exec: Exec = async (_file, args) => {
+      const command = args[args.length - 1] ?? "";
+      calls.push(command);
+      return command.includes("host-toggle")
+        ? { code: 0, stdout: status(true), stderr: "" }
+        : { code: 0, stdout: "active\n", stderr: "" };
+    };
+    const state = await readVpsSpeech({ host: "neopmpmtj", exec });
+    assert.deepEqual(state, { host: "neopmpmtj", reachable: true, notes: { on: true }, mode: "always", bridge: "active", engine: "ok" });
+    assert.deepEqual(calls, ['exec "$HOME/.pi/agent/scripts/speech/host-toggle.sh" status', `systemctl --user is-active ${VPS_AGENT_UNIT}`]);
+  });
+
+  it("says unreachable with the ssh reason instead of a fake off", async () => {
+    const { exec } = fakeSsh(() => ({ code: 255, stdout: "", stderr: "ssh: connect to host neopmpmtj port 22: Connection timed out" }));
+    const state = await readVpsSpeech({ host: "neopmpmtj", exec });
+    assert.equal(state.reachable, false);
+    assert.equal(state.bridge, "unknown");
+    assert.match(state.detail ?? "", /Connection timed out/);
+  });
+
+  it("writes the note switch and reports what the VPS says afterwards", async () => {
+    const { exec, calls } = fakeSsh((command) => {
+      if (command.includes("set telegram off")) return { code: 0, stdout: status(false, "manual"), stderr: "" };
+      if (command.includes("host-toggle")) return { code: 0, stdout: status(false, "manual"), stderr: "" };
+      return { code: 0, stdout: "active\n", stderr: "" };
+    });
+    const state = await writeVpsNotes(false, { host: "neopmpmtj", exec });
+    assert.equal(state.notes.on, false);
+    assert.equal(state.mode, "manual");
+    assert.equal(calls.length, 3, "one write, then a fresh status and bridge read");
+    assert.match(calls[0] ?? "", /set telegram off$/);
+  });
+
+  it("does not claim success when the write failed", async () => {
+    const { exec } = fakeSsh((command) =>
+      command.includes("set telegram")
+        ? { code: 3, stdout: '{"error":"could not write /home/pmpmt/.config/pi-speech.env: EACCES"}', stderr: "" }
+        : { code: 255, stdout: "", stderr: "ssh: Could not resolve hostname neopmpmtj" },
+    );
+    const state = await writeVpsNotes(true, { host: "neopmpmtj", exec });
+    assert.equal(state.reachable, false);
+    assert.match(state.detail ?? "", /resolve hostname|could not write/);
   });
 });

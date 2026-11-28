@@ -18,8 +18,9 @@
 #     --limit N   max characters spoken (default 1600, 0 = no limit)
 #
 # Prints the absolute path of the produced file on stdout, one line.
-# Exit 0 = file exists and is playable. Exit 5 = a text-only reply was armed
-# (print-to-screen.sh) and this turn must stay silent, no file produced.
+# Exit 0 = file exists and is playable. Exit 5 = this surface must stay silent
+# and send text instead: print-to-screen.sh armed a one-shot flag, or the
+# durable switch PI_SPEECH_TELEGRAM=0 is in force for non-local playback.
 # Anything else = nothing produced.
 #
 # Why it exists: three surfaces (Telegram on the VPS, the laptop TUI, the
@@ -78,6 +79,17 @@ if [ -f "$FLAG" ]; then
     if [ "$age" -ge 0 ] && [ "$age" -lt "$MAX_AGE" ]; then
         exit 5
     fi
+fi
+
+# --- 0b. a surface switched off from the site (durable, no restart) --------
+# The Telegram bridge runs this script fresh for every voice artifact, so a
+# PI_SPEECH_TELEGRAM=0 written into the machine-local env file is in force on
+# the very next reply: no bridge restart, no reload. Exit 5 is the same answer
+# the one-shot flag gives, so the bridge's documented fallback delivers the
+# planned text reply. --play marks the laptop TUI, which has its own switch
+# (PI_SPEECH_TUI, read by the TUI extension); it is never gated from here.
+if [ "$PLAY" -eq 0 ] && [ "${PI_SPEECH_TELEGRAM:-1}" = "0" ]; then
+    exit 5
 fi
 
 # --- 1. gather text -------------------------------------------------

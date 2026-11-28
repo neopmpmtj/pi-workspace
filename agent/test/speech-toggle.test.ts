@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { fileChoice, parseFlag, persist } from "../src/speech-switch.ts";
+import { fileChoice, parseFlag, persist, persistTelegram, speechEnvMtime, telegramChoice } from "../src/speech-switch.ts";
 
 function tempEnv(contents?: string): string {
 	const dir = mkdtempSync(join(tmpdir(), "pi-speech-toggle-"));
@@ -59,5 +59,30 @@ describe("speech toggle persistence", () => {
 	it("reports silence when the key is absent", () => {
 		assert.equal(fileChoice(tempEnv("PI_SPEECH_LANG=en\n")), undefined);
 		assert.equal(fileChoice(join(tmpdir(), "no-such-pi-speech.env")), undefined);
+	});
+});
+
+describe("the telegram key lives in the same file, with its own rule", () => {
+	it("reads absent as on: no key must never mute the bridge", () => {
+		assert.equal(telegramChoice(tempEnv("PI_SPEECH_TUI=1\n")), undefined, "absent is not off");
+		assert.equal(telegramChoice(tempEnv("PI_SPEECH_TELEGRAM=0\n")), false);
+		assert.equal(telegramChoice(tempEnv("PI_SPEECH_TELEGRAM=1\n")), true);
+	});
+
+	it("writes one key without touching the other", () => {
+		const file = tempEnv("PI_SPEECH_TUI=1\nPI_SPEECH_TELEGRAM=1\n");
+		assert.equal(persistTelegram(false, file), undefined);
+		assert.equal(readFileSync(file, "utf8"), "PI_SPEECH_TUI=1\nPI_SPEECH_TELEGRAM=0\n");
+		assert.equal(fileChoice(file), true);
+		assert.equal(telegramChoice(file), false);
+	});
+
+	it("reports the file's mtime so a newer write can win", () => {
+		const file = tempEnv("PI_SPEECH_TUI=1\n");
+		const before = speechEnvMtime(file);
+		assert.ok(before > 0);
+		assert.equal(persist(false, file), undefined);
+		assert.ok(speechEnvMtime(file) >= before);
+		assert.equal(speechEnvMtime(join(tmpdir(), "no-such-env-file")), 0);
 	});
 });
