@@ -95,6 +95,10 @@ record them. The ledger feeds the dashboard and the `/usage` command.
 - If the user asks to print *and* the answer is only a file, attach the file and keep the
   caption short — the caption is the printed text.
 - Do not say "voice failed" when the text arrives; that is the gate working as designed.
+- **Laptop TUI voice** is switched live with `/speech on|off` (`/speech` alone shows the state,
+  `toggle` flips it; no restart, in force from the next answer). The durable store is
+  `PI_SPEECH_TUI` in `~/.config/pi-speech.env` (`=1` on this laptop); Telegram's reply mode is
+  a separate file, `telegram.json`. Runbook: `docs/runbooks/voice-first-accessibility.md`.
 
 - Say when you do not know, or when the answer depends on something you cannot see.
 - Do not claim to have done something you did not do.

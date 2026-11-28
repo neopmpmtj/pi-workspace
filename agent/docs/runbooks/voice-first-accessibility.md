@@ -119,7 +119,7 @@ printf 'text test'  | scripts/speech/speak.sh -o /tmp/v.ogg; echo $?   # 5, no f
 
 | Step | Why | Cost |
 | --- | --- | --- |
-| ~~Laptop TUI speech extension~~ — done 2026-11-25 | laptop sessions went unspoken | `agent/extensions/speech-reply.ts`, off unless `PI_SPEECH_TUI=1` |
+| ~~Laptop TUI speech extension~~ — done 2026-11-25 | laptop sessions went unspoken | `agent/extensions/speech-reply.ts`, off unless `PI_SPEECH_TUI=1`; live `/speech on\|off` since 2026-11-28 |
 | Voice *input* on Telegram | typing will get hard too; the bridge already supports transcription providers | local Whisper (`sherpa-onnx-node` or `whisper.cpp`), no cloud |
 | Better voice (paid) | naturalness, once there is income | one branch in `speak.sh`; OpenAI `gpt-4o-mini-tts` ≈ $0.015/1k chars |
 | Desktop screen reader (Orca + speech-dispatcher) | reading *anything else* on the laptop, not just pi | `spd-say` baseline; no Piper module for speech-dispatcher exists |
@@ -137,6 +137,35 @@ It speaks on `turn_end`, only for a response that used no tools (the final answe
 thinking in between), queues one note at a time, and renders a warning in the TUI when the
 speech command fails — so a silent laptop is a visible error, not a mystery. The VPS keeps it
 off: it has no audio device, and its speech goes out as Telegram voice notes.
+
+### The live switch
+
+| command | effect |
+| --- | --- |
+| `/speech on` | speak laptop answers from the next answer on, and save `PI_SPEECH_TUI=1` |
+| `/speech off` | stay silent from the next answer on, and save `PI_SPEECH_TUI=0` |
+| `/speech` or `/speech status` | `speech on\|off · source <where the value came from> · speak.sh ok\|MISSING` |
+| `/speech toggle` | the opposite of what is in force now |
+
+Properties worth keeping:
+
+- **No restart.** The extension reads the gate on every turn instead of at load, so a switch
+  is in force for the very next answer. New *code* still needs `/reload` (or a new session) —
+  the command itself can never be half-loaded.
+- **The command outlives the gate.** It is registered before the on/off check, so `/speech on`
+  exists while speech is off. That was the point: editing the env file used to need a restart.
+- **Precedence:** a `/speech` answer for this session → `$PI_SPEECH_TUI` → the env file. A
+  stale shell variable can therefore not undo a `/speech off`, and the next session starts
+  from the file again.
+- **The file is the durable store, and it is written surgically:** only the `PI_SPEECH_TUI`
+  line changes; comments, the voice and rate lines, and a duplicate line (dropped, because
+  only the first would be read) are handled atomically via temp-file rename, mode 600.
+- **A failed write is not a silent lie.** The switch still works for the session and
+  `/speech` prints `[warn] … could not write ~/.config/pi-speech.env: <err>`.
+- **Telegram is untouched** by this command: it is the TUI surface only. The VPS reply mode
+  stays in `telegram.json`.
+- **Tested** by `agent/test/speech-toggle.test.ts` (parse, replace, append, duplicate, create,
+  private mode) — `npm test` in `agent/`.
 
 ## 6. Durability checklist
 
